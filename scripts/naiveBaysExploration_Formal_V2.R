@@ -1,0 +1,494 @@
+# AFGR October 22 2015
+
+# This script is going to be used to perform several tasks within the T1QA project which are listed below:
+#	1.) Explain population demographics
+#	2.) Explain QAP measures
+#	3.) Explore relationship between demographics and QAP measures
+#	4.) Explore relationship between QAP measures and manual SBIA QA
+
+
+## Load Library(s)
+source("/home/adrose/R/x86_64-redhat-linux-gnu-library/helperFunctions/afgrHelpFunc.R")
+install_load('corrplot', 'ggplot2', 'psych', 'e1071', 'pROC', 'ggm')
+
+## Declare some functions
+# Declare a function which will return the LM of regressed QAP values predicting the input column
+residualizeInputRow <- function(dataFrame, colToResid, qaMetricVal){
+   qaCol <- qapValNames[qaMetricVal]
+   grepQA <- grep(qaCol, names(dataFrame))
+   if(length(grepQA) > 1 ){
+     grepQA <- grepQA[1]
+   }
+   raceCol <- dataFrame$race2
+   sexCol <- dataFrame$sex
+   ageCol <- dataFrame$ageAtGo1Scan
+   icvCol <- dataFrame$mprageMassICV
+   ageSquared <- ageCol^2
+   ageCubed <- ageCol^3
+   regressedValues <- lm(dataFrame[,colToResid]~dataFrame[,grepQA]+ageCol+ageSquared+ageCubed
+                                               +sexCol+raceCol+icvCol, data=dataFrame, 
+                                               na.action=na.omit)
+   return(regressedValues)
+} 
+
+
+## Load the data
+qapRawOutput <- read.csv("/home/adrose/qapQA/data/qap_anatomical_spatial_.csv")
+kurtVals <- read.csv("/home/adrose/qapQA/data/allTissueSkewAndKurtVals.csv")
+manualQAData <- read.csv("/home/analysis/redcap_data/201507/n1601_go1_datarel_073015.csv")
+qapRawOutput <- merge(qapRawOutput,kurtVals ,by.x="subject", by.y="bblid")
+
+# add bblid and scan id columns to qapRawOutput variable 
+# prime a NA value bblid column
+naCol <- rep(NA, length(qapRawOutput$subject))
+qapRawOutput$bblid <- naCol
+qapRawOutput$scanid <- naCol
+
+# Now go through each subject id and split the string and reutnr just the first value of that strsplit
+for (subjectIndex in 1:length(qapRawOutput$subject)){
+  stringSplitOutput <- strsplit(as.character(qapRawOutput$subject[subjectIndex]), split="_")[[1]][1]
+  qapRawOutput$bblid[subjectIndex] <- stringSplitOutput
+  stringSplitOutput <- strsplit(as.character(qapRawOutput$subject[subjectIndex]), split="_")[[1]][2]
+  qapRawOutput$scanid[subjectIndex] <- stringSplitOutput
+}
+
+# Now turn them back into factors 
+qapRawOutput$bblid <- as.factor(qapRawOutput$bblid)
+qapRawOutput$scanid <- as.factor(qapRawOutput$scanid)
+
+# Now merge the data 
+mergedQAP <- merge(qapRawOutput, manualQAData, by="scanid")
+mergedQAP <- mergedQAP[!duplicated(mergedQAP),]
+
+## Declare some variables
+manualQAValue <- "mprageSbiaExclude"
+
+manualQAColVal <- grep(manualQAValue, names(mergedQAP))
+
+qapValNames <- names(mergedQAP)[5:38]
+
+### Begin describing dataset
+# Create a pdf to catch all of the exploratory graphs
+pdf(file="subjectExploratoryInformation.pdf")
+
+## Begin with subject age
+# Whole population
+hist(mergedQAP$ageAtGo1Scan/12, main="Distribution of QAP Subject Age", xlab="Subject Age in Years")
+
+# Flagged Images
+hist(mergedQAP$ageAtGo1Scan[which(mergedQAP[,manualQAColVal]==1)]/12, main="Distribution of Flagged Subject Age", xlab="Subject Age in Years")
+
+# Non-Flagged Images
+hist(mergedQAP$ageAtGo1Scan[which(mergedQAP$mprageSbiaExclude==0)]/12, main="Distribution of Non-Flagged Subject Age", xlab="Subject Age in Years")
+
+# Now perform a t test between the two population age's
+t.test(mergedQAP$ageAtGo1Scan, formula = mergedQAP$ageAtGo1Scan ~ mergedQAP$mprageSbiaExclude)
+
+## Now explore gender differences 
+# Whole Population Gender
+barplot(table(mergedQAP$sex), main = "n of Gender", xlab = "Gender", ylab = "n of Gender", names.arg=c("male", "female"))
+
+# Now Flagged Images Gender
+barplot(table(mergedQAP$sex[which(mergedQAP$mprageSbiaExclude==1)]), main = "n of Gender for Flagged Images", xlab = "Gender", ylab = "n of Gender", names.arg=c("male", "female"))
+
+# Now Non-Flagged Images Gender
+barplot(table(mergedQAP$sex[which(mergedQAP$mprageSbiaExclude==0)]), main = "n of Gender for Non-Flagged Images", xlab = "Gender", ylab = "n of Gender", names.arg=c("male", "female"))
+
+## Now work on race
+barplot(table(mergedQAP$race2), main = "n of Race Values", xlab = "Race Values", ylab = "n of Race Value", names.arg=c("White","Black","Other"))
+
+# Now Race of Flagged Images
+barplot(table(mergedQAP$race2[which(mergedQAP$mprageSbiaExclude==1)]), main = "n of Race Values for Falgged Images", xlab = "Race Values", ylab = "n of Race Value", names.arg=c("White","Black"))
+
+# Now Race of Non-Flagged Images
+barplot(table(mergedQAP$race2[which(mergedQAP$mprageSbiaExclude==0)]), main = "n of Race Values for Non-Falgged Images", xlab = "Race Values", ylab = "n of Race Value", names.arg=c("White","Black","Other"))
+
+dev.off()
+###Done with Exploring Dataset
+
+
+### Begin Exploring QAP Measures
+## Create a histogram for each QAP value
+# Prime a pdf to output all QAp exploration graphs into
+pdf(file="qapValExploratoryInformation.pdf")
+
+
+# Now create a histogram for ech QAP value
+for(valueToHist in qapValNames){
+  mainTitle <- paste("Distribution of", valueToHist, sep=" ")
+  xAxisTitle <- paste(valueToHist, "Values", sep=" ")
+  valueToHistCol <- grep(valueToHist, names(mergedQAP))
+  # Use an if statement to protect against grep returning multiple indicies
+  if(length(valueToHistCol) > 1){
+    valueToHistCol <- valueToHistCol[1]
+    }
+  hist(mergedQAP[,valueToHistCol], main = mainTitle, xlab=xAxisTitle)
+}
+
+## Now explore corrllation within QAP Values
+corrplot(cor(mergedQAP[,qapValNames]), method="circle")
+corrplot(cor(mergedQAP[,qapValNames]), method="ellipse")
+
+## Now look for group differences between flagged and unflagged image's QAP values
+for(valueToBarPlot in qapValNames){
+  pdf(paste(valueToBarPlot, ".pdf", sep=''))
+  mainTitle <- paste("Average", valueToBarPlot, "Value vs Manual QA", sep=" ")
+  yAxisTitle <- paste("Average", valueToBarPlot, "Value", sep=" ")
+  foo <- summarySE(mergedQAP, measurevar=valueToBarPlot, groupvars=manualQAValue)
+  barPlotToPrint <- ggplot(foo, aes(x=factor(mprageSbiaExclude), y=foo[,3], fill=factor(mprageSbiaExclude))) + 
+                           geom_bar(stat="identity", position=position_dodge(), size=.1) + 
+                           geom_errorbar(aes(ymin=foo[,3]-se, ymax=foo[,3]+se), 
+                           width = .2, position=position_dodge(.9)) + 
+                           ggtitle(mainTitle) + 
+                           xlab("Manual QA Value") +
+                           ylab(yAxisTitle) 
+  print(barPlotToPrint)
+  dev.off()    
+}
+
+## Now look for siginifianct differences between QAP Measures for flagged and unflagged groups 
+dataFrameToExport <- data.frame(QAP_Factor <-character(0), QA_Method <- character(0), N_of_Pass <- numeric(0), Mean_of_Pass <- numeric(0), N_of_Fail <- numeric(0), Mean_of_Fail <- numeric(0), P_Value <- numeric(0))
+for(valueToTest in qapValNames){
+  foo <- summarySE(mergedQAP, measurevar=valueToTest, groupvars=manualQAValue)
+  bar <- t.test(mergedQAP[valueToTest], formula=mergedQAP[valueToTest]~mergedQAP[manualQAValue])
+    for(rowValue in 2:3){
+      rowToBind <- valueToTest
+      rowToBind <- cbind(rowToBind, valueToTest)
+      rowToBind <- cbind(rowToBind, foo[1,2])
+      rowToBind <- cbind(rowToBind, foo[1,3])
+      rowToBind <- cbind(rowToBind, foo[2,2])
+      rowToBind <- cbind(rowToBind, foo[2,3])
+      rowToBind <- cbind(rowToBind, bar$p.value)
+      #rowToBind <- as.numeric(rowToBind)
+    }
+    dataFrameToExport <- rbind(dataFrameToExport, rowToBind)
+}
+
+dev.off()
+### Done with exploring QAP values
+
+### Now explore differences between qap values and neruoimage values
+## Start with exploring predictive power of QAp measure vs CT or other vals
+# Prime a pdf
+pdf("qapVsNeuroImagingInformation.pdf")
+
+## Now explore neoruimage output vs QAP output relationships 
+grepPattern <- c("mprage_fs_ct", "mprage_mars_vol", "mprage_fs_vol")
+
+dataFrameToExport <- data.frame()
+for(qapMetricVal in 1:length(qapValNames)){
+  ## Change the value in grepPattern to work with differnt neuroimaging values ##
+  for(neuroImgVal in grepPattern[1]){
+    allGrepPatternCols <- grep(neuroImgVal, names(mergedQAP))
+    vectorToBind <- vector()
+    for(grepPatternCol in allGrepPatternCols){
+      fittedPVal <- summary(residualizeInputRow(mergedQAP, grepPatternCol, qapMetricVal))$coefficients[2,4]
+      vectorToBind <- append(vectorToBind, fittedPVal)
+    }
+    dataFrameToExport <- rbind(dataFrameToExport, vectorToBind)
+  }
+}
+colnames(dataFrameToExport) <- names(mergedQAP)[allGrepPatternCols]
+rownames(dataFrameToExport) <- qapValNames
+
+# Now create a data frame with similar loops but calculating partial correllation
+p.cor.data.frame <- data.frame()
+for(qapMetricName in qapValNames){
+  for(neuroImgVal in grepPattern[1]){
+    allGrepPatternCols <- grep(neuroImgVal, names(mergedQAP))
+    p.cor.vector <- vector()
+    for(grepPatternCol in allGrepPatternCols){
+      p.cor.string <- c(qapMetricName, names(mergedQAP)[grepPatternCol], "ageAtGo1Scan", "sex", "race2", "mprageMassICV")
+      tmp <- mergedQAP[complete.cases(mergedQAP[,grepPatternCol]),]
+      tmp <- tmp[complete.cases(tmp$mprageMassICV),]
+      p.cor.val <- pcor(p.cor.string, var(tmp[p.cor.string])) 
+      p.cor.vector <- append(p.cor.vector, p.cor.val)      
+    }
+  p.cor.data.frame <- rbind(p.cor.data.frame, p.cor.vector)
+  }
+  print(paste("done with ", qapMetricName, sep =''))
+}
+
+colnames(p.cor.data.frame) <- names(mergedQAP)[allGrepPatternCols]
+rownames(p.cor.data.frame) <- qapValNames
+
+# Now I want to find the # of Significant values within the data frame
+barPlotDataFrame <- apply(dataFrameToExport,2,function(x){ifelse(x<0.05,1,0)})
+# Now extract only the partial correllations for the signifiacnt relationships
+sig.p.cor.vals <- barPlotDataFrame * p.cor.data.frame
+sig.p.cor.vals[sig.p.cor.vals==0] <- NA
+# make the p cor data frame workable
+bar.plot.p.cor.data.frame <- as.data.frame(apply(sig.p.cor.vals,1,function(x) median(x, na.rm=TRUE)))
+bar.plot.p.cor.data.frame$qapVals <- as.factor(rownames(bar.plot.p.cor.data.frame))
+bar.plot.p.cor.data.frame$p.cors <- as.numeric(as.character(bar.plot.p.cor.data.frame[,1]))
+# make the # of sig ct vals data frame workable
+barPlotDataFrame <- as.data.frame(rowSums(barPlotDataFrame))
+barPlotDataFrame$qapVals <- as.factor(rownames(barPlotDataFrame))
+barPlotDataFrame$sigVal <- barPlotDataFrame[,1]
+# declare some aestehtic variables 
+minVal <- min(as.numeric(as.character(barPlotDataFrame[,1])))-4
+maxVal <- max(as.numeric(as.character(barPlotDataFrame[,1])))+2
+# Now plot the # Of sig CT Vals vs QAP Measures barplot
+ggplot(barPlotDataFrame, aes(x=qapVals,y=as.numeric(as.character(sigVal)), fill=as.numeric(as.character(sigVal)))) + 
+      geom_bar(stat="identity") + 
+      theme(axis.text.x = element_text(angle=45,hjust=1)) + 
+      labs(title="# Sig CT Vals vs QAP Measures", x="QAP Measures", y="# of Sig  Values") + 
+      scale_y_continuous(breaks=seq(minVal,maxVal,3)) + 
+      theme(legend.position='none')
+# Now plot the average partial correllation
+ggplot(bar.plot.p.cor.data.frame, aes(x=qapVals, y=p.cors, fill=p.cors)) + 
+      geom_bar(stat="identity") +
+      theme(axis.text.x = element_text(angle=45,hjust=1)) +
+      labs(title = "Median Partial Correllation of Sig Val Relationships w/ CT Vals", x = "QAP Measures", y = "Partial Correllation") + 
+      theme(legend.position = 'none')
+
+
+
+
+## Now compare mars vol count
+freesurferDataFrame <- data.frame()
+for(qapMetricVal in 1:length(qapValNames)){
+  ## Change the value in grepPattern to work with differnt neuroimaging values ##
+  for(neuroImgVal in grepPattern[3]){
+    allGrepPatternCols <- grep(neuroImgVal, names(mergedQAP))
+    vectorToBind <- vector()
+    for(grepPatternCol in allGrepPatternCols){
+      fittedPVal <- summary(residualizeInputRow(mergedQAP, grepPatternCol, qapMetricVal))$coefficients[2,4]
+      vectorToBind <- append(vectorToBind, fittedPVal)
+    }
+    freesurferDataFrame <- rbind(freesurferDataFrame, vectorToBind)
+  }
+}
+
+# Now produce the partial correllation values 
+p.cor.data.frame <- data.frame()
+for(qapMetricName in qapValNames){
+  for(neuroImgVal in grepPattern[2]){
+    allGrepPatternCols <- grep(neuroImgVal, names(mergedQAP))
+    p.cor.vector <- vector()
+    for(grepPatternCol in allGrepPatternCols){
+      p.cor.string <- c(qapMetricName, names(mergedQAP)[grepPatternCol], "ageAtGo1Scan", "sex", "race2", "mprageMassICV")
+      tmp <- mergedQAP[complete.cases(mergedQAP[,grepPatternCol]),]
+      tmp <- tmp[complete.cases(tmp$mprageMassICV),]
+      p.cor.val <- pcor(p.cor.string, var(tmp[p.cor.string])) 
+      p.cor.vector <- append(p.cor.vector, p.cor.val)      
+    }
+  p.cor.data.frame <- rbind(p.cor.data.frame, p.cor.vector)
+  }
+  print(paste("done with ", qapMetricName, sep =''))
+}
+
+colnames(p.cor.data.frame) <- names(mergedQAP)[allGrepPatternCols]
+rownames(p.cor.data.frame) <- qapValNames
+
+colnames(freesurferDataFrame) <- names(mergedQAP)[allGrepPatternCols]
+rownames(freesurferDataFrame) <- qapValNames
+barPlotDataFrame <- apply(freesurferDataFrame,2,function(x){ifelse(x<0.05,1,0)})
+sig.p.cor.vals <- barPlotDataFrame * p.cor.data.frame
+sig.p.cor.vals[sig.p.cor.vals==0] <- NA
+# make the p cor data frame workable
+bar.plot.p.cor.data.frame <- as.data.frame(apply(sig.p.cor.vals,1,function(x) median(x, na.rm=TRUE)))
+bar.plot.p.cor.data.frame$qapVals <- as.factor(rownames(bar.plot.p.cor.data.frame))
+bar.plot.p.cor.data.frame$p.cors <- as.numeric(as.character(bar.plot.p.cor.data.frame[,1]))
+
+
+barPlotDataFrame <- as.data.frame(rowSums(barPlotDataFrame))
+barPlotDataFrame$qapVals <- as.factor(rownames(barPlotDataFrame))
+barPlotDataFrame$sigVal <- barPlotDataFrame[,1]
+minVal <- min(as.numeric(as.character(barPlotDataFrame[,1])))-4
+maxVal <- max(as.numeric(as.character(barPlotDataFrame[,1])))+2
+# Now plot # of sig vals vs freesurfer vol predicition
+ggplot(barPlotDataFrame, aes(x=qapVals,y=as.numeric(as.character(sigVal)), fill=as.numeric(as.character(sigVal)))) + 
+      geom_bar(stat="identity") + 
+      theme(axis.text.x = element_text(angle=45,hjust=1)) + 
+      labs(title="# Sig freesurfer Vol Vals vs QAP Measures", x="QAP Measures", y="# of Sig  Values") + 
+      scale_y_continuous(breaks=seq(minVal,maxVal,3)) + 
+      theme(legend.position='none')
+# Now plot median partial correalltion 
+ggplot(bar.plot.p.cor.data.frame, aes(x=qapVals, y=p.cors, fill=p.cors)) + 
+      geom_bar(stat="identity") +
+      theme(axis.text.x = element_text(angle=45,hjust=1)) +
+      labs(title = "Median Partial Correllation of Sig Val Relationships w/ Freesurfer Vols", x = "QAP Measures", y = "Partial Correllation") + 
+      theme(legend.position = 'none')
+
+
+## Now compare mars vol sig val count
+marsDataFrame <- data.frame()
+for(qapMetricVal in 1:length(qapValNames)){
+  ## Change the value in grepPattern to work with differnt neuroimaging values ##
+  for(neuroImgVal in grepPattern[2]){
+    allGrepPatternCols <- grep(neuroImgVal, names(mergedQAP))
+    vectorToBind <- vector()
+    for(grepPatternCol in allGrepPatternCols){
+      fittedPVal <- summary(residualizeInputRow(mergedQAP, grepPatternCol, qapMetricVal))$coefficients[2,4]
+      vectorToBind <- append(vectorToBind, fittedPVal)
+    }
+    marsDataFrame <- rbind(marsDataFrame, vectorToBind)
+  }
+}
+
+# Now wirok with mars pcor values
+p.cor.data.frame <- data.frame()
+for(qapMetricName in qapValNames){
+  for(neuroImgVal in grepPattern[3]){
+    allGrepPatternCols <- grep(neuroImgVal, names(mergedQAP))
+    p.cor.vector <- vector()
+    for(grepPatternCol in allGrepPatternCols){
+      p.cor.string <- c(qapMetricName, names(mergedQAP)[grepPatternCol], "ageAtGo1Scan", "sex", "race2", "mprageMassICV")
+      tmp <- mergedQAP[complete.cases(mergedQAP[,grepPatternCol]),]
+      tmp <- tmp[complete.cases(tmp$mprageMassICV),]
+      p.cor.val <- pcor(p.cor.string, var(tmp[p.cor.string])) 
+      p.cor.vector <- append(p.cor.vector, p.cor.val)      
+    }
+  p.cor.data.frame <- rbind(p.cor.data.frame, p.cor.vector)
+  }
+  print(paste("done with ", qapMetricName, sep =''))
+}
+
+colnames(p.cor.data.frame) <- names(mergedQAP)[allGrepPatternCols]
+rownames(p.cor.data.frame) <- qapValNames
+
+colnames(marsDataFrame) <- names(mergedQAP)[allGrepPatternCols]
+rownames(marsDataFrame) <- qapValNames
+barPlotDataFrame <- apply(marsDataFrame,2,function(x){ifelse(x<0.05,1,0)})
+sig.p.cor.vals <- barPlotDataFrame * p.cor.data.frame
+sig.p.cor.vals[sig.p.cor.vals==0] <- NA
+bar.plot.p.cor.data.frame <- as.data.frame(apply(sig.p.cor.vals,1,function(x) median(x, na.rm=TRUE)))
+bar.plot.p.cor.data.frame$qapVals <- as.factor(rownames(bar.plot.p.cor.data.frame))
+bar.plot.p.cor.data.frame$p.cors <- as.numeric(as.character(bar.plot.p.cor.data.frame[,1]))
+barPlotDataFrame <- as.data.frame(rowSums(barPlotDataFrame))
+barPlotDataFrame$qapVals <- as.factor(rownames(barPlotDataFrame))
+barPlotDataFrame$sigVal <- barPlotDataFrame[,1]
+minVal <- min(as.numeric(as.character(barPlotDataFrame[,1])))-4
+maxVal <- max(as.numeric(as.character(barPlotDataFrame[,1])))+2
+ggplot(barPlotDataFrame, aes(x=qapVals,y=as.numeric(as.character(sigVal)), fill=as.numeric(as.character(sigVal)))) + 
+      geom_bar(stat="identity") + 
+      theme(axis.text.x = element_text(angle=45,hjust=1)) + 
+      labs(title="# Sig mars Vol Vals vs QAP Measures", x="QAP Measures", y="# of Sig  Values") + 
+      scale_y_continuous(breaks=seq(minVal,maxVal,3)) + 
+      theme(legend.position='none')
+ggplot(bar.plot.p.cor.data.frame, aes(x=qapVals, y=p.cors, fill=p.cors)) + 
+      geom_bar(stat="identity") +
+      theme(axis.text.x = element_text(angle=45,hjust=1)) +
+      labs(title = "Median Partial Correllation of Sig Val Relationships w/ Mars Vols", x = "QAP Measures", y = "Partial Correllation") + 
+      theme(legend.position = 'none')
+
+
+
+
+## Now find relationship betwen mars and freesurfer vol sig values
+# Start with freesurfer dataframe
+xVal <- apply(freesurferDataFrame,2,function(x){ifelse(x<0.05,1,0)})
+xVal <- as.data.frame(rowSums(xVal))
+xVal$qapVals <- as.factor(rownames(xVal))
+xVal$sigVal <- xVal[,1]
+# Now work with mars df 
+yVal <- apply(marsDataFrame,2,function(x){ifelse(x<0.05,1,0)})
+yVal <- as.data.frame(rowSums(yVal))
+yVal$qapVals <- as.factor(rownames(yVal))
+yVal$sigVal <- yVal[,1]
+
+corVal <- cor(xVal$sigVal, yVal$sigVal)
+plot(yVal$sigVal, xVal$sigVal, main="# of Sig ants vol vals vs # of sig freesurfer vol vals", xlab="# Of Sig Ants Vals", ylab = "# Of Sig FS Vals")
+text(yVal$sigVal, xVal$sigVal, labels=yVal$qapVals, pos = 2)
+legend(x='bottomright', legend=paste('Cor =' ,round(corVal,2)))
+
+## Now find qap variables that significantly predict flag status and build 
+## a multivariate analysis from ones that significantly predict the flag status
+# Begin with finding signifcant linear relationships 
+simpLinRegDataFrame <- data.frame(qapVal = as.character(), pVal = as.numeric())
+for(qapMetricVal in names(mergedQAP)[5:30]){
+  qapValNames <- manualQAValue
+  qapMetricColVal <- grep(qapMetricVal, names(mergedQAP))
+  if(length(qapMetricColVal) > 1 ){
+    qapMetricColVal <- qapMetricColVal[1]
+  }
+  outputPVal <- summary(residualizeInputRow(mergedQAP, qapMetricColVal, 1))$coefficients[2,4]
+  vectorToBind <- append(qapMetricVal, outputPVal)
+  simpLinRegDataFrame <- rbind(simpLinRegDataFrame, vectorToBind)
+  simpLinRegDataFrame[,1] <- as.character(simpLinRegDataFrame[,1])
+  simpLinRegDataFrame[,2] <- as.character(simpLinRegDataFrame[,2])
+}
+qapValNames <- names(mergedQAP)[5:30]
+## Nothing returned significant from this analysis
+## Lowest p-value was ~ .1 so I am going to use the logisitc regression below gather 
+## The variables to build the multivariate analysis from
+
+dev.off()
+## Done with exploring QAp vs neuroimaging value relationship
+
+### Now explore predictive power of individual QAP measures
+
+#Prime a pdf
+pdf('predictivePower.pdf')
+
+## Start with naive bayes 
+naiveBaysPredicted <- data.frame()
+isolatedVars <- mergedQAP[qapValNames]
+isolatedVars <- cbind(isolatedVars, mergedQAP[manualQAValue])
+isolatedVars$mprageSbiaExclude <- as.factor(isolatedVars$mprageSbiaExclude)
+
+for(qapMetricVal in qapValNames){
+  qapCol <- grep(qapMetricVal, names(isolatedVars))
+  if(length(qapCol) > 1){
+    qapCol <- qapCol[1]
+  }
+  model <- naiveBayes(mprageSbiaExclude ~ isolatedVars[,qapCol], data=isolatedVars)
+  flagsPredic <- unname(table(predict(model,isolatedVars)))[2]
+  vectorToAppend <- cbind(qapMetricVal, flagsPredic)
+  naiveBaysPredicted <- rbind(naiveBaysPredicted, vectorToAppend)
+} 
+
+## Now try logistic regression
+dataFrameToPlot <- data.frame()
+pValDataFrame <- data.frame()
+## I am also going to grab the p value the qap value predicitng the flagged status, and build a 
+## multivariate regression model with the significant variables
+pValDataFrame <- data.frame()
+for(qapMetricVal in qapValNames){
+  qapCol <- grep(qapMetricVal, names(isolatedVars))
+    if(length(qapCol) > 1){
+      qapCol <- qapCol[1]
+    }
+  model <- glm(mprageSbiaExclude~isolatedVars[,qapCol], data=isolatedVars, family="binomial")
+  pVal <- summary(model)$coefficients[2,4]
+  predicVals <- predict(model, newdata=isolatedVars, type='response')
+  areaUnderCurve <- auc(roc(response=isolatedVars$mprageSbiaExclude, predictor=predicVals, levels=c(0,1), auc=TRUE,    ci=TRUE, plot.roc=TRUE))
+  vectorToAppend <- cbind(qapMetricVal, areaUnderCurve)
+  vectorToAppendTwo <- cbind(qapMetricVal, pVal)
+  dataFrameToPlot <- rbind(dataFrameToPlot, vectorToAppend)
+  pValDataFrame <- rbind(pValDataFrame, vectorToAppendTwo)
+}
+dataFrameToPlot$areaUnderCurve <- as.numeric(as.character(dataFrameToPlot$areaUnderCurve))
+ggplot(dataFrameToPlot, aes(x=as.factor(qapMetricVal),y=areaUnderCurve, fill=areaUnderCurve)) + geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) + theme(axis.text.x = element_text(angle=45,hjust=1)) + labs(title="Area Under ROC Curve Predicting mprageSbiaExclude", x="QAP Measures", y="Area Under ROC Curve") + coord_cartesian(ylim=c(.4,.75))
+
+
+## Build the multivariate model below here
+listOfSigVals <- as.character(pValDataFrame[which(as.numeric(as.character(pValDataFrame[,2]))<.05),1])
+#listOfRegressors <- c("sex","race2","mprageMassICV","ageAtGo1Scan")
+listOfRegressors <- c("sex","race2","ageAtGo1Scan")
+multiFormula <- as.formula(paste(manualQAValue, "~", paste(listOfSigVals,collapse="+"),"+" ,paste(listOfRegressors, collapse="+")))
+simpFormula <- as.formula(paste(manualQAValue, "~", paste(listOfRegressors, collapse="+")))
+multiVariateModel <- lm(multiFormula, data=mergedQAP)
+simpVariateModel <- lm(simpFormula, data=mergedQAP)
+# test for a difference between the two models
+modelDiff <- anova(multiVariateModel, simpVariateModel)
+
+# Build a logit regression using both of these models and find aoc
+model <- glm(multiVariateModel, data=mergedQAP, family='binomial')
+predicVals <- predict(model, newdata=mergedQAP, type='response')
+areaUnderCurveMulti <- auc(roc(response=mergedQAP$mprageSbiaExclude, predictor=predicVals, levels=c(0,1), auc=TRUE,    ci=TRUE, plot.roc=TRUE))
+model <- glm(simpVariateModel, data=mergedQAP, family='binomial')
+predicVals <- predict(model, newdata=mergedQAP, type='response')
+areaUnderCurveSimp <- auc(roc(response=mergedQAP$mprageSbiaExclude, predictor=predicVals, levels=c(0,1), auc=TRUE,    ci=TRUE, plot.roc=TRUE))
+# plot difference in aoc for both the the two pervious models
+dataFrameToPlot <- rbind(cbind(c("multi"), areaUnderCurveMulti),cbind(c("demo"),areaUnderCurveSimp))
+dataFrameToPlot <- as.data.frame(dataFrameToPlot)
+manual ggplot(dataFrameToPlot, aes(x=V1,y=as.numeric(as.character(areaUnderCurveMulti)))) + 
+      geom_bar(stat="identity", width=0.5, position=position_dodge(width=0.5)) + 
+      labs(title="AOC Predicting mprageSbiaExclude demo vs multi selec model", x="Model Type", y="Area Under ROC Curve") 
+
+
+
+dev.off()
+## Done with exploring predictive power of individual qap metrics
