@@ -15,11 +15,10 @@ install_load('corrplot', 'ggplot2', 'psych', 'e1071', 'pROC', 'ggm', 'visreg', '
 ###################
 ## Load the data ##
 ###################
-qapRawOutput <- read.csv("/home/adrose/qapQA/data/n1601_qap_output.csv")
-#kurtVals <- read.csv("/home/adrose/qapQA/data/allTissueSkewAndKurtVals.csv")
-kurtVals <- read.csv("/home/adrose/qapQA/data/n1601_skew_kurt_values.csv")
-manualQAData <- read.csv("/home/analysis/redcap_data/201511/go1/n1601_go1_datarel_113015.csv")
-manualQAData2 <- read.csv("/home/adrose/qapQA/data/n1601_manual_ratings.csv")
+qapRawOutput <- read.csv("/home/adrose/qapQA/data/n920_qap_output_validation.csv")
+kurtVals <- read.csv("/home/adrose/qapQA/data/n920_skew_kurt_values_validation.csv")
+manualQAData <- read.csv("/home/adrose/qapQA/data/n550_mgi_demo_dx_2013-12-13.csv")
+manualQAData2 <- read.csv("/home/adrose/qapQA/data/n920_manual_ratings_validation.csv")
 
 # Here we will collapse the bins into 4 distinct groups based on average rating
 # We want 4 distinct rating bins 0 - bad, 1-1.33 - decent, 1.667 - good, 2 - stellar
@@ -56,14 +55,22 @@ qapRawOutput$scanid <- as.factor(qapRawOutput$scanid)
 mergedQAP <- merge(qapRawOutput, manualQAData, by="scanid")
 mergedQAP <- mergedQAP[!duplicated(mergedQAP),]
 
+# Now create the three data sets - Go2, mgi penn, and mgi pitt
+mergedQAP.pitt <- mergedQAP[which(mergedQAP$SiteID==70),]
+mergedQAP.go2  <- merge(qapRawOutput, manualQAData2, by="bblid")
+mergedQAP.go2 <- mergedQAP.go2[which(mergedQAP.go2$bblid %in% mergedQAP$bblid.x == 'FALSE'),]
+mergedQAP.penn <- mergedQAP[which(mergedQAP$SiteID==71),]
+
+
 ## Declare some variables
 manualQAValue <- "averageRating"
 
 manualQAColVal <- grep(manualQAValue, names(mergedQAP))
 
-qapValNames <- names(mergedQAP)[5:40]
+qapValNames <- names(mergedQAP)[3:38]
 
 ## Now create a data set which only has good and bad data
+mergedQAP <- mergedQAP.pitt
 isolatedVars <- mergedQAP[qapValNames]
 isolatedVars <- cbind(mergedQAP$bblid.y, isolatedVars)
 isolatedVars <- cbind(isolatedVars, mergedQAP[manualQAValue])
@@ -92,7 +99,7 @@ outcome.done <- goodvsBadData$bblid
 flip.index <- c(0,0,1,1,1,0,1,0,1,1,1,1,0,0,0,0,1,1,1,0,1,1,1,1,0,0,0,0,0,0,0,0,1,0,1,1)
 flip.index <- c(0,0,1,1,1,0,1,0,1,1,1,1,0,0,0,0,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1)
 count <- 1
-pdf('roc_curve_good_vs_bad.pdf')
+pdf('roc_curve_good_vs_bad-pitt.pdf')
 for(qapVal in qapValNames){
   outcome.response <- rep(0, nrow(goodvsBadData))
   outcome <- as.numeric(unlist(goodvsBadData[qapVal]))
@@ -136,12 +143,12 @@ colnames(output.coords)[37] <- 'qapValSum'
 ## Now plot the AUC  ##
 ## For all ROC Curves##
 #######################
-pdf('predictingGoodVsBad.pdf')
+pdf('predictingGoodVsBad-penn.pdf')
 dataFrameToPlot <- as.data.frame(cbind(qapValNames, output.coords[10,1:36]))
 colnames(dataFrameToPlot)[2] <- 'areaUnderCurve'
 colnames(dataFrameToPlot)[1] <- 'qapMetricVal'
 dataFrameToPlot$areaUnderCurve <- as.numeric(as.character(dataFrameToPlot$areaUnderCurve))
-ggplot(dataFrameToPlot, aes(x=as.factor(qapMetricVal),y=areaUnderCurve, fill=areaUnderCurve)) + geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) + theme(axis.text.x = element_text(angle=45,hjust=1)) + labs(title="Area Under ROC Curve Predicting QC 0 vs QC 2", x="QAP Measures", y="Area Under ROC Curve") + coord_cartesian(ylim=c(.45,.9))
+ggplot(dataFrameToPlot, aes(x=as.factor(qapMetricVal),y=areaUnderCurve, fill=areaUnderCurve)) + geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) + theme(axis.text.x = element_text(angle=45,hjust=1)) + labs(title="Area Under ROC Curve Predicting QC 0 vs QC 2", x="QAP Measures", y="Area Under ROC Curve") + coord_cartesian(ylim=c(.45,1))
 dev.off()
 
 ###################

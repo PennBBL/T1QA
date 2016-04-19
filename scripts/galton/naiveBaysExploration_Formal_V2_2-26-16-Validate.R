@@ -49,11 +49,11 @@ residualizeInputRowNoQA <- function(dataFrame, colToResid){
 
 
 ## Load the data
-qapRawOutput <- read.csv("/home/adrose/qapQA/data/n1601_qap_output.csv")
+qapRawOutput <- read.csv("/home/adrose/qapQA/data/n920_qap_output_validation.csv")
 #kurtVals <- read.csv("/home/adrose/qapQA/data/allTissueSkewAndKurtVals.csv")
-kurtVals <- read.csv("/home/adrose/qapQA/data/n1601_skew_kurt_values.csv")
-manualQAData <- read.csv("/home/analysis/redcap_data/201507/n1601_go1_datarel_073015.csv")
-manualQAData2 <- read.csv("/home/adrose/qapQA/data/n1601_manual_ratings.csv")
+kurtVals <- read.csv("/home/adrose/qapQA/data/n920_skew_kurt_values_validation.csv")
+manualQAData <- read.csv("/home/adrose/qapQA/data/n550_mgi_demo_dx_2013-12-13.csv")
+manualQAData2 <- read.csv("/home/adrose/qapQA/data/n920_manual_ratings_validation.csv")
 
 # Here we will collapse the bins into 4 distinct groups based on average rating
 # We want 4 distinct rating bins 0 - bad, 1-1.33 - decent, 1.667 - good, 2 - stellar
@@ -90,21 +90,35 @@ qapRawOutput$scanid <- as.factor(qapRawOutput$scanid)
 mergedQAP <- merge(qapRawOutput, manualQAData, by="scanid")
 mergedQAP <- mergedQAP[!duplicated(mergedQAP),]
 
+# Now create the three data sets - Go2, mgi penn, and mgi pitt
+mergedQAP.pitt <- mergedQAP[which(mergedQAP$SiteID==70),]
+mergedQAP.go2  <- merge(qapRawOutput, manualQAData2, by="bblid")
+mergedQAP.go2 <- mergedQAP.go2[which(mergedQAP.go2$bblid %in% mergedQAP$bblid.x == 'FALSE'),]
+mergedQAP.penn <- mergedQAP[which(mergedQAP$SiteID==71),]
+
+
 ## Declare some variables
 manualQAValue <- "averageRating"
 
 manualQAColVal <- grep(manualQAValue, names(mergedQAP))
 
-qapValNames <- names(mergedQAP)[5:40]
+qapValNames <- names(mergedQAP)[3:38]
 
 ### Begin describing dataset
 # Create a pdf to catch all of the exploratory graphs
 pdf(file="subjectExploratoryInformation.pdf")
 
 ## Create a a barplot with the total spread for each rating category
-barplot(table(mergedQAP[manualQAValue]), main='Total Ratings for Each Bin', xlab='Rating Bin', ylab='# of Images')
-text(table(mergedQAP[manualQAValue])-25, labels=table(mergedQAP[manualQAValue]))
-
+mergedQAP <- mergedQAP.pitt
+barplot(table(mergedQAP[manualQAValue]), main='Total Ratings for Each Bin for PittMGI', xlab='Rating Bin', ylab='# of Images')
+text(table(mergedQAP[manualQAValue])-4, labels=table(mergedQAP[manualQAValue]))
+mergedQAP <- mergedQAP.penn
+barplot(table(mergedQAP[manualQAValue]), main='Total Ratings for Each Bin for PennMGI', xlab='Rating Bin', ylab='# of Images')
+text(table(mergedQAP[manualQAValue])-4, labels=table(mergedQAP[manualQAValue]))
+mergedQAP <- mergedQAP.go2
+barplot(table(mergedQAP[manualQAValue]), main='Total Ratings for Each Bin for Go2', xlab='Rating Bin', ylab='# of Images')
+text(table(mergedQAP[manualQAValue])*.5, labels=table(mergedQAP[manualQAValue]))
+dev.off()
 
 ## Begin with subject age
 # Whole population
@@ -166,31 +180,126 @@ dev.off()
 ### Begin Exploring QAP Measures
 ## Create a histogram for each QAP value
 # Prime a pdf to output all QAp exploration graphs into
-pdf(file="qapValExploratoryInformation.pdf")
-
 
 # Now create a histogram for ech QAP value
+pdf('pittHistVals.pdf')
 for(valueToHist in qapValNames){
   mainTitle <- paste("Distribution of", valueToHist, sep=" ")
   xAxisTitle <- paste(valueToHist, "Values", sep=" ")
   valueToHistCol <- grep(valueToHist, names(mergedQAP))
-  # Use an if statement to protect against grep returning multiple indicies
   if(length(valueToHistCol) > 1){
     valueToHistCol <- valueToHistCol[1]
-    }
-  hist(mergedQAP[,valueToHistCol], main = mainTitle, xlab=xAxisTitle)
+  }
+  tmp <- hist(mergedQAP.pitt[which(mergedQAP.pitt$averageRating==2),valueToHistCol], col=rgb(1,0,0,1), main=mainTitle, xlab=xAxisTitle, plot=F)
+  min <- floor(range(mergedQAP.penn[,valueToHist]))[1]
+  if (min < 0){
+    min <- min + (1.10*min)
+  }
+  if (min > 0){
+    min <- min - (1.10*min)
+  }
+  max <- ceiling(range(mergedQAP.penn[,valueToHist]))[2]
+  max <- max + (1.1*max)
+  distance <- tmp$breaks[2] - tmp$breaks[1]
+  breaksSeq <- seq(min, max, distance)
+  hist(mergedQAP.pitt[which(mergedQAP.pitt$averageRating==2),valueToHistCol], 
+       col=rgb(1,0,0,1), main=mainTitle, xlab=xAxisTitle, breaks=breaksSeq)
+  hist(mergedQAP.pitt[which(mergedQAP.pitt$averageRating==1.67),valueToHistCol], 
+       col=rgb(1,1,1,1), add=T, main=mainTitle, xlab=xAxisTitle, breaks=breaksSeq)
+  hist(mergedQAP.pitt[which(mergedQAP.pitt$averageRating==1),valueToHistCol], 
+       col=rgb(0,1,0,1), add=T, main=mainTitle, xlab=xAxisTitle, breaks=breaksSeq)
+  hist(mergedQAP.pitt[which(mergedQAP.pitt$averageRating==0),valueToHistCol], 
+       col=rgb(0,0,1,1), add=T, main=mainTitle, xlab=xAxisTitle, breaks=breaksSeq)
 }
+dev.off()
+pdf('pennHistVals.pdf')
+for(valueToHist in qapValNames){
+  mainTitle <- paste("Distribution of", valueToHist, sep=" ")
+  xAxisTitle <- paste(valueToHist, "Values", sep=" ")
+  valueToHistCol <- grep(valueToHist, names(mergedQAP))
+  if(length(valueToHistCol) > 1){
+    valueToHistCol <- valueToHistCol[1]
+  }
+  tmp <- hist(mergedQAP.penn[which(mergedQAP.penn$averageRating==2),valueToHistCol], col=rgb(1,0,0,1), main=mainTitle, xlab=xAxisTitle, plot=F)
+  min <- floor(range(mergedQAP.penn[,valueToHist]))[1]
+  if (min < 0){
+    min <- min + (1.10*min)
+  }
+  if (min > 0){
+    min <- min - (1.10*min)
+  }
+  max <- ceiling(range(mergedQAP.penn[,valueToHist]))[2]
+  max <- max + (1.1*max)
+  distance <- tmp$breaks[2] - tmp$breaks[1]
+  breaksSeq <- seq(min, max, distance)
+  hist(mergedQAP.penn[which(mergedQAP.penn$averageRating==2),valueToHistCol], 
+       col=rgb(1,0,0,1), main=mainTitle, xlab=xAxisTitle, breaks=breaksSeq)
+  hist(mergedQAP.penn[which(mergedQAP.penn$averageRating==1.67),valueToHistCol], 
+       col=rgb(1,1,1,1), add=T, main=mainTitle, xlab=xAxisTitle, breaks=breaksSeq)
+  hist(mergedQAP.penn[which(mergedQAP.penn$averageRating==1),valueToHistCol], 
+       col=rgb(0,1,0,1), add=T, main=mainTitle, xlab=xAxisTitle, breaks=breaksSeq)
+  hist(mergedQAP.penn[which(mergedQAP.penn$averageRating==0),valueToHistCol], 
+       col=rgb(0,0,1,1), add=T, main=mainTitle, xlab=xAxisTitle, breaks=breaksSeq)
+}
+dev.off()
+pdf('go2HistVals.pdf')
+for(valueToHist in qapValNames){
+  mainTitle <- paste("Distribution of", valueToHist, sep=" ")
+  xAxisTitle <- paste(valueToHist, "Values", sep=" ")
+  valueToHistCol <- grep(valueToHist, names(mergedQAP))
+  if(length(valueToHistCol) > 1){
+    valueToHistCol <- valueToHistCol[1]
+  }
+  tmp <- hist(mergedQAP.go2[which(mergedQAP.go2$averageRating==2),valueToHistCol],plot=F)
+  min <- floor(range(mergedQAP.penn[,valueToHist]))[1]
+  if (min < 0){
+    min <- min + (1.10*min)
+  }
+  if (min > 0){
+    min <- min - (1.10*min)
+  }
+  max <- ceiling(range(mergedQAP.penn[,valueToHist]))[2]
+  max <- max + (1.1*max)
+  distance <- tmp$breaks[2] - tmp$breaks[1]
+  breaksSeq <- seq(min, max, distance)
+  hist(mergedQAP.go2[which(mergedQAP.go2$averageRating==2),valueToHistCol], 
+       col=rgb(1,0,0,1), main=mainTitle, xlab=xAxisTitle, breaks=breaksSeq)
+  hist(mergedQAP.go2[which(mergedQAP.go2$averageRating==1.67),valueToHistCol], 
+       col=rgb(1,1,1,1), add=T, main=mainTitle, xlab=xAxisTitle, breaks=breaksSeq)
+  hist(mergedQAP.go2[which(mergedQAP.go2$averageRating==1),valueToHistCol], 
+       col=rgb(0,1,0,1), add=T, main=mainTitle, xlab=xAxisTitle, breaks=breaksSeq)
+  hist(mergedQAP.go2[which(mergedQAP.go2$averageRating==0),valueToHistCol], 
+       col=rgb(0,0,1,1), add=T, main=mainTitle, xlab=xAxisTitle, breaks=breaksSeq)
+}
+dev.off()
+
+
+
 
 ## Now explore corrllation within QAP Values
-corrplot(cor(mergedQAP[,qapValNames]), method="circle")
-corrplot(cor(mergedQAP[,qapValNames]), method="ellipse")
-corrplot(cor(mergedQAP[,qapValNames]), method="number")
+pdf('pittCorPlots.pdf')
+corrplot(cor(mergedQAP.pitt[,qapValNames]), method="circle")
+corrplot(cor(mergedQAP.pitt[,qapValNames]), method="ellipse")
+corrplot(cor(mergedQAP.pitt[,qapValNames]), method="number")
+dev.off()
 
+pdf('pennCorPlots.pdf')
+corrplot(cor(mergedQAP.penn[,qapValNames]), method="circle")
+corrplot(cor(mergedQAP.penn[,qapValNames]), method="ellipse")
+corrplot(cor(mergedQAP.penn[,qapValNames]), method="number")
+dev.off()
+
+pdf('go2CorPlots.pdf')
+corrplot(cor(mergedQAP.go2[,qapValNames]), method="circle")
+corrplot(cor(mergedQAP.go2[,qapValNames]), method="ellipse")
+corrplot(cor(mergedQAP.go2[,qapValNames]), method="number")
+dev.off()
 ## Now look for group differences between flagged and unflagged image's QAP values
+pdf('pittBarPlots.pdf')
 for(valueToBarPlot in qapValNames){
   mainTitle <- paste("Average", valueToBarPlot, "Value vs Manual QA", sep=" ")
   yAxisTitle <- paste("Average", valueToBarPlot, "Value", sep=" ")
-  foo <- summarySE(mergedQAP, measurevar=valueToBarPlot, groupvars=manualQAValue)
+  foo <- summarySE(mergedQAP.pitt, measurevar=valueToBarPlot, groupvars=manualQAValue)
   barPlotToPrint <- ggplot(foo, aes(x=factor(averageRating), y=foo[,3], fill=factor(averageRating))) + 
                            geom_bar(stat="identity", position=position_dodge(), size=.1) + 
                            geom_errorbar(aes(ymin=foo[,3]-se, ymax=foo[,3]+se), 
@@ -200,21 +309,56 @@ for(valueToBarPlot in qapValNames){
                            ylab(yAxisTitle)
   print(barPlotToPrint) 
 }
+dev.off()
+pdf('pennBarPlot.pdf')
+for(valueToBarPlot in qapValNames){
+  mainTitle <- paste("Average", valueToBarPlot, "Value vs Manual QA", sep=" ")
+  yAxisTitle <- paste("Average", valueToBarPlot, "Value", sep=" ")
+  foo <- summarySE(mergedQAP.penn, measurevar=valueToBarPlot, groupvars=manualQAValue)
+  barPlotToPrint <- ggplot(foo, aes(x=factor(averageRating), y=foo[,3], fill=factor(averageRating))) + 
+                           geom_bar(stat="identity", position=position_dodge(), size=.1) + 
+                           geom_errorbar(aes(ymin=foo[,3]-se, ymax=foo[,3]+se), 
+                           width = .2, position=position_dodge(.9)) + 
+                           ggtitle(mainTitle) + 
+                           xlab("Manual QA Value") +
+                           ylab(yAxisTitle)
+  print(barPlotToPrint) 
+}
+dev.off()
+pdf('go2BarPlot.pdf')
+for(valueToBarPlot in qapValNames){
+  mainTitle <- paste("Average", valueToBarPlot, "Value vs Manual QA", sep=" ")
+  yAxisTitle <- paste("Average", valueToBarPlot, "Value", sep=" ")
+  foo <- summarySE(mergedQAP.go2, measurevar=valueToBarPlot, groupvars=manualQAValue)
+  barPlotToPrint <- ggplot(foo, aes(x=factor(averageRating), y=foo[,3], fill=factor(averageRating))) + 
+                           geom_bar(stat="identity", position=position_dodge(), size=.1) + 
+                           geom_errorbar(aes(ymin=foo[,3]-se, ymax=foo[,3]+se), 
+                           width = .2, position=position_dodge(.9)) + 
+                           ggtitle(mainTitle) + 
+                           xlab("Manual QA Value") +
+                           ylab(yAxisTitle)
+  print(barPlotToPrint) 
+}
+dev.off()
 
-valueToBarPlot <- 'efc'
-mainTitle <- paste("Average", valueToBarPlot, "Value vs Manual QA", sep=" ")
-yAxisTitle <- paste("Average", valueToBarPlot, "Value", sep=" ")
-foo <- summarySE(mergedQAP, measurevar=valueToBarPlot, groupvars=manualQAValue)
-barPlotToPrint <- ggplot(foo, aes(x=factor(averageRating), y=foo[,3], fill=factor(averageRating))) + 
-                         geom_bar(stat="identity", position=position_dodge(), size=.1) + 
-                         geom_errorbar(aes(ymin=foo[,3]-se, ymax=foo[,3]+se), 
-                         width = .2, position=position_dodge(.9)) + 
-                         ggtitle(mainTitle) + 
-                         xlab("Manual QA Value") +
-                         ylab(yAxisTitle) + 
-                         scale_y_continuous(limits=c(.55,.58),oob=rescale_none)
-print(barPlotToPrint)
 
+####################
+####################
+####################
+####################
+####################
+####################
+####################
+####################
+#ONLY UP TO HERE HAS BEEN TESTED SO FAR
+####################
+####################
+####################
+####################
+####################
+####################
+####################
+####################
 ## Now look for siginifianct differences between QAP Measures for flagged and unflagged groups 
 dataFrameToExport <- data.frame(QAP_Factor <-character(0), QA_Method <- character(0), N_of_Pass <- numeric(0), Mean_of_Pass <- numeric(0), N_of_Fail <- numeric(0), Mean_of_Fail <- numeric(0), P_Value <- numeric(0))
 for(valueToTest in qapValNames){
