@@ -184,13 +184,13 @@ for(valueToHist in qapValNames){
 ## Now explore corrllation within QAP Values
 corrplot(cor(mergedQAP[,qapValNames]), method="circle")
 corrplot(cor(mergedQAP[,qapValNames]), method="ellipse")
-corrplot(cor(mergedQAP[,qapValNames]), method="number")
+corrplot(cor(mergedQAP[which(mergedQAP$averageRating!=0),qapValNames], use='complete'), method="ellipse")
 
 ## Now look for group differences between flagged and unflagged image's QAP values
 for(valueToBarPlot in qapValNames){
   mainTitle <- paste("Average", valueToBarPlot, "Value vs Manual QA", sep=" ")
   yAxisTitle <- paste("Average", valueToBarPlot, "Value", sep=" ")
-  foo <- summarySE(mergedQAP, measurevar=valueToBarPlot, groupvars=manualQAValue)
+  foo <- summarySE(mergedQAP, measurevar=valueToBarPlot, groupvars=manualQAValue, na.rm=T)
   barPlotToPrint <- ggplot(foo, aes(x=factor(averageRating), y=foo[,3], fill=factor(averageRating))) + 
                            geom_bar(stat="identity", position=position_dodge(), size=.1) + 
                            geom_errorbar(aes(ymin=foo[,3]-se, ymax=foo[,3]+se), 
@@ -286,8 +286,9 @@ for(qapMetricName in qapValNames){
     allGrepPatternCols <- append(allGrepPatternCols, 145)
     p.cor.vector <- vector()
     for(grepPatternCol in 145){
-      p.cor.string <- c(names(mergedQAP)[grepPatternCol], "ageAtGo1Scan",qapMetricName,"sex", "race2")
+      p.cor.string <- c(names(mergedQAP)[grepPatternCol],qapMetricName,"ageAtGo1Scan","sex", "race2")
       tmp <- mergedQAP[complete.cases(mergedQAP[,grepPatternCol]),]
+      tmp <- tmp[complete.cases(tmp[,qapMetricName]),]
       #tmp <- tmp[complete.cases(tmp$mprageMassICV),]
       p.cor.val <- pcor(p.cor.string, var(tmp[p.cor.string])) 
       p.cor.vector <- append(p.cor.vector, p.cor.val)      
@@ -347,7 +348,7 @@ ggplot(barPlotDataFrame, aes(x=qapVals,y=as.numeric(as.character(sigVal)), fill=
 ggplot(bar.plot.p.cor.data.frame, aes(x=qapVals, y=p.cors, fill=p.cors)) + 
       geom_bar(stat="identity") +
       theme(axis.text.x = element_text(angle=45,hjust=1)) +
-      labs(title = "Partial Correllation of Age w/ FS Mean Thickness", x = "QAP Measures", y = "Partial Correllation") + 
+      labs(title = "Partial Correllation of QAP w/ FS Mean Thickness", x = "QAP Measures", y = "Partial Correllation") + 
       theme(legend.position = 'none')
 
 
