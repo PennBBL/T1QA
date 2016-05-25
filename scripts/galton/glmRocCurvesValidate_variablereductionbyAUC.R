@@ -70,7 +70,7 @@ manualQAColVal <- grep(manualQAValue, names(mergedQAP))
 qapValNames <- names(mergedQAP)[3:38]
 
 ## Now create a data set which only has good and bad data
-mergedQAP <- mergedQAP.pitt
+mergedQAP <- mergedQAP.penn
 colnames(mergedQAP) <- gsub(pattern='.x', replacement = '', x = colnames(mergedQAP), fixed = TRUE)
 isolatedVars <- mergedQAP[qapValNames]
 isolatedVars <- cbind(mergedQAP$bblid, isolatedVars)
@@ -99,6 +99,10 @@ response <- as.numeric(unlist(goodvsBadData[manualQAValue]))
 outcome.done <- goodvsBadData$bblid
 flip.index <- c(0,0,1,1,1,0,1,0,1,1,1,1,0,0,0,0,1,1,1,0,1,1,1,1,0,0,0,0,0,0,0,0,1,0,1,1)
 flip.index <- c(0,0,1,1,1,0,1,0,1,1,1,1,0,0,0,0,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1)
+foo <- c('1', '5', '12', '17', '18', '20', '22', '30', '31', '32', '35', '36')
+foo <- as.numeric(foo)
+qapValNames <- qapValNames[foo]
+flip.index <- c(0,1,1,1,1,0,1,0,0,0,1,1)
 count <- 1
 pdf('roc_curve_good_vs_bad-pitt.pdf')
 for(qapVal in qapValNames){
@@ -127,7 +131,8 @@ for(qapVal in qapValNames){
   outcome.done <- cbind.all(outcome.done, outcome.response)
   count <- count + 1 
 } 
-sumAllOutcomes <- rowSums(matrix(as.numeric(outcome.done[,-1]), ncol=36, byrow=F))
+outcome.done <- apply(outcome.done[,-1], 2, as.numeric)
+sumAllOutcomes <- rowSums(outcome.done)
 roc.tmp <- roc(response ~ sumAllOutcomes)
 plot(roc.tmp, main= 'Total Flag QAP Vals', print.thres=TRUE, print.thrs.best.method="closest.topleft")
 legend(x='bottomright', legend=paste('AUC = ', auc(roc.tmp)))
@@ -144,7 +149,7 @@ colnames(output.coords)[37] <- 'qapValSum'
 ## Now plot the AUC  ##
 ## For all ROC Curves##
 #######################
-pdf('predictingGoodVsBad-pitt.pdf')
+pdf('predictingGoodVsBad-penn.pdf')
 dataFrameToPlot <- as.data.frame(cbind(qapValNames, output.coords[10,1:36]))
 colnames(dataFrameToPlot)[2] <- 'areaUnderCurve'
 colnames(dataFrameToPlot)[1] <- 'qapMetricVal'
@@ -163,7 +168,7 @@ outcome.done <- mergedQAP$bblid
 flip.index <- c(0,0,1,1,1,0,1,0,1,1,1,1,0,0,0,0,1,1,1,0,1,1,1,1,0,0,0,0,0,0,0,0,1,0,1,1)
 flip.index <- c(0,0,1,1,1,0,1,0,1,1,1,1,0,0,0,0,1,1,1,0,1,1,0,0,0,0,0,0,0,0,0,0,0,0,1,1)
 count <- 1
-pdf('roc_curve_bad_vs_all_else-pitt.pdf')
+pdf('roc_curve_bad_vs_all_else-penn.pdf')
 for(qapVal in qapValNames){
   outcome.response <- rep(0, nrow(mergedQAP))
   outcome <- as.numeric(unlist(mergedQAP[qapVal]))
@@ -190,7 +195,7 @@ for(qapVal in qapValNames){
   outcome.done <- cbind.all(outcome.done, outcome.response)
   count <- count + 1 
 } 
-sumAllOutcomes <- rowSums(matrix(as.numeric(outcome.done[,-1]), ncol=36, byrow=F))
+sumAllOutcomes <- rowSums(outcome.done[,-1])
 roc.tmp <- roc(response ~ sumAllOutcomes)
 plot(roc.tmp, main= 'Total Flag QAP Vals', print.thres=TRUE, print.thrs.best.method="closest.topleft")
 legend(x='bottomright', legend=paste('AUC = ', auc(roc.tmp)))
@@ -204,7 +209,7 @@ dev.off()
 ## For all ROC Curves##
 ## For 0 vs !0 data  ##
 #######################
-pdf('predictingGoodVsAllElse-pitt.pdf')
+pdf('predictingGoodVsAllElse-penn.pdf')
 dataFrameToPlot <- as.data.frame(cbind(qapValNames, output.coords[10,1:36]))
 colnames(dataFrameToPlot)[2] <- 'areaUnderCurve'
 colnames(dataFrameToPlot)[1] <- 'qapMetricVal'
