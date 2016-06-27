@@ -88,7 +88,8 @@ components.pca <- prcomp(tmp[,2:32], scale.=T, center=T)
 components <- predict(components.pca, tmp)[,1:12]
 tmp <- cbind(tmp, components)
 #cols.of.interest <- c(1,38,39,40,41,44,45,46,47,48,49,50,51,52,53,54,55)
-cols.of.interest <- c(1,33,34,35,36,39,40,41,42,43,44,45,46,47,48,49,50,51)
+#cols.of.interest <- c(1,33,34,35,36,39,40,41,42,43,44,45,46,47,48,49,50,51)
+cols.of.interest <- append(c(1), grep('PC', names(tmp)))
 lme.data <- tmp[,cols.of.interest]
 lme.data <- melt(lme.data, id.vars=c('bblid', 'ratingKS', 'ratingJB','ratingLV','averageRating.x','PC1','PC2','PC3','PC4','PC5','PC6','PC7',
                                 'PC8','PC9','PC10','PC11','PC12'))
@@ -138,6 +139,13 @@ model <- as.formula(value ~ cnr +
                 qi1 + snr + all.kurtosis + 
                all.skewness + csf.kurtosis + csf.skewness + gm.kurtosis + gm.skewness +
                wm.kurtosis + wm.skewness + hm.kurtosis + hm.skewness + bg.kurtosis +
+               bg.skewness + (1|variable))
+
+# Now lets declare the all data raw qap value model
+model <- as.formula(value ~ cnr + 
+               efc + fber + fwhm + 
+                qi1 + snr  + csf.kurtosis + csf.skewness + gm.kurtosis + gm.skewness +
+               wm.kurtosis + wm.skewness + bg.kurtosis +
                bg.skewness + (1|variable))
 
 # And now lets create our folds
@@ -288,9 +296,13 @@ stopCluster(cl)
 for(foo in qapValNames){
   model <- as.formula(paste('value ~ (1|variable) +', paste(foo)))
   print(model)
-  m4 <- glmer(model, data=train, family='binomial',
+  m4 <- glmer(model, data=mergedQAP, family='binomial',
       control=glmerControl(optimizer="bobyqa", 
       optCtrl = list(maxfun = 1000000)))
+  outcome <- as.vector(predict(m4, newdata=mergedQAP, type='response'))
+  response <- mergedQAP$value 
+  roc.tmp <- roc(response ~ outcome)
+  print(auc(roc.tmp))  
 }
 
 ## Now perform the out of smaple validation 
@@ -298,6 +310,7 @@ tmp <- merge(isolatedVars, manualQAData2, by='bblid')
 lme.data.validate <- melt(tmp, id.vars=names(tmp)[1:37], measure.vars=names(tmp)[34:36])
 lme.data.validate$value[lme.data.validate$value==2] <- 1
 lme.data.validate[,2:32] <- scale(lme.data.validate[,2:32], center=T, scale=T)
+auc.all <- NULL
 for(i in seq(1,5,1)){
   file.name <- paste('allGo1QapRawValues-', i, '.RData', sep='')
   load(file.name)
@@ -308,6 +321,7 @@ for(i in seq(1,5,1)){
   plot(roc.tmp, main='glmer Raw QAP Values Mgi', 
        print.thres=TRUE, print.thrs.best.method="closest.topleft")
   legend(x='bottomright', legend=paste('AUC = ', auc(roc.tmp)))
+  auc.all <- append(auc.all, auc(roc.tmp))
 }
 
 ## Now do the PCA analysis

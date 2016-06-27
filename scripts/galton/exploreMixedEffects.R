@@ -202,13 +202,20 @@ model <- as.formula(value ~ cnr +
                wm.kurtosis + wm.skewness + hm.kurtosis + hm.skewness + bg.kurtosis +
                bg.skewness + (1|variable))
 
+# Now lets declare the all data raw qap value model
+model <- as.formula(value ~ cnr + 
+               efc + fber + fwhm + 
+                qi1 + snr  + csf.kurtosis + csf.skewness + gm.kurtosis + gm.skewness +
+               wm.kurtosis + wm.skewness + bg.kurtosis +
+               bg.skewness + (1|variable))
+
 # Now lets create our folds 
 folds <- createFolds(raw.lme.data$value, k=5, list=T, returnTrain=T)
 
 # Now lets loop through each fold and build a model and validate on the left out sample
 cl <- makeCluster(length(folds))
 registerDoParallel(cl)
-outputAucs <- foreach(i=seq(1,length(folds)), .combine='c') %dopar% {
+outputAucs <- foreach(i=seq(1,length(folds)), .combine='rbind') %dopar% {
   library('lme4')
   library('pROC')
   set.seed(16)
@@ -232,6 +239,7 @@ outputAucs <- foreach(i=seq(1,length(folds)), .combine='c') %dopar% {
   legend(x='bottomright', legend=paste('AUC = ', auc(roc.tmp)))
   dev.off()
   auc(roc.tmp)
+  fixef(m1)
 }
 stopCluster(cl)
 
@@ -466,13 +474,20 @@ model <- as.formula(value ~ cnr +
                wm.kurtosis + wm.skewness + hm.kurtosis + hm.skewness + bg.kurtosis +
                bg.skewness + (1|variable))
 
+# Now lets declare the all data raw qap value model
+model <- as.formula(value ~ cnr + 
+               efc + fber + fwhm + 
+                qi1 + snr  + csf.kurtosis + csf.skewness + gm.kurtosis + gm.skewness +
+               wm.kurtosis + wm.skewness + bg.kurtosis +
+               bg.skewness + (1|variable))
+
 # Now lets create our folds 
-folds <- createFolds(raw.lme.data$value, k=10, list=T, returnTrain=T)
+folds <- createFolds(raw.lme.data$value, k=5, list=T, returnTrain=T)
 
 # Now lets loop through each fold and build a model and validate on the left out sample
 cl <- makeCluster(length(folds))
 registerDoParallel(cl)
-outputAucs <- foreach(i=seq(1,length(folds)), .combine='c') %dopar% {
+outputAucs <- foreach(i=seq(1,length(folds)), .combine='rbind') %dopar% {
   library('lme4')
   library('pROC')
   set.seed(16)
@@ -496,6 +511,7 @@ outputAucs <- foreach(i=seq(1,length(folds)), .combine='c') %dopar% {
   legend(x='bottomright', legend=paste('AUC = ', auc(roc.tmp)))
   dev.off()
   auc(roc.tmp)
+  fixef(m1)
 }
 stopCluster(cl)
 
@@ -699,7 +715,9 @@ for(i in seq(1,5,1)){
 
 
 
-
+### Now try to find a relationship between the log odds ratio's and cortical thickness data
+### Start with PCA because that was the most promising model
+### Although this may be changed to the raw QAP model - as the is a little bit more consisitent
 
 # Prepare the PCA data
 tmp <- merge(isolatedVars, manualQAData2, by='bblid')
@@ -748,12 +766,14 @@ raw.lme.data$value[raw.lme.data$value==1] <- 0
 raw.lme.data$value[raw.lme.data$value==2] <- 1
 
 # Now lets decalre the mdoel we are going to use 
-lmm.2 <- lmer(value ~ cnr + 
-               efc + fber + fwhm + fwhm_x + fwhm_y + fwhm_z +
-                qi1 + snr + all.kurtosis + 
-               all.skewness + csf.kurtosis + csf.skewness + gm.kurtosis + gm.skewness +
-               wm.kurtosis + wm.skewness + hm.kurtosis + hm.skewness + bg.kurtosis +
-               bg.skewness + (1|variable), data=raw.lme.data)
+model <- as.formula(value ~ cnr + 
+               efc + fber + fwhm + 
+                qi1 + snr  + csf.kurtosis + csf.skewness + gm.kurtosis + gm.skewness +
+               wm.kurtosis + wm.skewness + bg.kurtosis +
+               bg.skewness + (1|variable))
+lmm.2 <- glmer(model, data=raw.lme.data, family='binomial',
+        control=glmerControl(optimizer="bobyqa", 
+        optCtrl = list(maxfun = 10000000))) 
 response <- raw.lme.data$value
 outcome <- as.vector(predict(lmm.2, newdata=raw.lme.data ,type='response'))
 roc.tmp <- roc(response ~ outcome)
@@ -767,7 +787,7 @@ tmp <- merge(raw.lme.data, mergedQAP, by.x='bblid', by.y='bblid.x')
 tmp$outcome <- outcome
 tmp <- tmp[complete.cases(tmp$mprage_fs_mean_thickness),]
 cor(tmp$mprage_fs_mean_thickness, tmp$outcome, method='spearman')
-p.cor.string <- c('mprage_fs_mean_thickness', 'ageAtGo1Scan', 'outcome', 'sex', 'race2')
+p.cor.string <- c('mprage_fs_mean_thickness', 'ageAtGo1Scan', 'reg.vals', 'sex', 'race2')
 pcor(p.cor.string, var(tmp[p.cor.string]))
 
 
@@ -783,7 +803,6 @@ raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
 raw.lme.data$value[raw.lme.data$value==1] <- 0
 raw.lme.data$value[raw.lme.data$value==2] <- 1
 tmp <- merge(raw.lme.data, mergedQAP, by.x='bblid', by.y='bblid.x')
-tmp$outcome <- outcome
 tmp <- tmp[complete.cases(tmp$mprage_fs_mean_thickness),]
 lmer.data <- tmp
 rm(tmp)
