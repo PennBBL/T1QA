@@ -58,7 +58,7 @@ cols <- names(all.data)[c(8,9,10,13,14,15,16,19,25,26,29,31,34,35)]
 
 
 # Now attach the combined qap measure
-load('go1Weights.RData')
+load('/home/adrose/qapQA/data/tmp6-15/go1Weights.RData')
 # First do all
 reg.vals.go <- apply(all.data[cols], 1, function(x) weighted.mean(x, w))
 all.data <- cbind(all.data, reg.vals.go)

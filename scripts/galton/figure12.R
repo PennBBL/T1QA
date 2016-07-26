@@ -40,7 +40,7 @@ go1.data$averageRating <- as.factor(go1.data$averageRating)
 install_load('visreg', 'ggplot2', 'scales','gamm4')
 
 # Now make our linear model 
-thicknessModel <- as.formula(paste('meanThickness ~ reg.vals.go * averageRating + age + sex'))
+thicknessModel <- as.formula(paste('meanThickness ~ reg.vals.go + averageRating + age + sex'))
 fit <- lm(thicknessModel, data=go1.data)
 
 # Now print the output
@@ -48,4 +48,13 @@ pdf("figure12QAPPaper.pdf")
 visreg(fit, "reg.vals.go", by="averageRating", overlay=TRUE, xlab="Composite QAP",
        ylab="Mean FS CT Thickness", alpha=1)
 visreg(fit, "reg.vals.go")
+dev.off()
+
+
+# Now do some quick validation stuff for Taki's meeting
+newMeanVals <- lm(meanThickness ~ age + sex, data=go1.data)$residuals 
+corVal <- cor(newMeanVals, go1.data$reg.vals.go[complete.cases(go1.data$meanThickness)])
+pdf('ageRegCompQAP.pdf')
+visreg(fit, "reg.vals.go")
+legend(x="bottomright", legend=paste("Cor = -0.08"))
 dev.off()
