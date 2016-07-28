@@ -16,7 +16,7 @@ source('/home/adrose/qapQA/scripts/loadGo1Data.R')
 detachAllPackages()
 
 # Load Library(s)
-install_load('psych', 'caret','pROC', 'lme4', 'reshape2', 'foreach', 'doParallel', 'visreg', 'ggplot2')
+install_load('psych', 'caret','pROC', 'lme4', 'reshape2', 'foreach', 'doParallel', 'visreg', 'ggplot2', 'scales')
 
 # Set seed
 set.seed(18)
@@ -133,7 +133,8 @@ barPlotToPrint <- ggplot(ctVals0vsnot0, aes(x=factor(flaggedList), y=mprage_fs_m
                     width= .2, position=position_dodge(.9)) + 
                     ggtitle("Pred. Unusable Images CT vs Pred. Usable Images CT") + 
                     xlab("Prediced Class") +
-                    ylab("Mean FS Cortical Thickness")
+                    ylab("Mean FS Cortical Thickness")+ 
+                    scale_y_continuous(limits=c(2.5, 2.8),oob=rescale_none)
 
 fit1 <- lm(mprage_fs_mean_thickness ~ ageAtGo1Scan + flaggedList, data=mergedQAP)
 visreg(fit1, "ageAtGo1Scan", by="flaggedList", overlay=TRUE)
@@ -147,7 +148,9 @@ barPlotToPrintTrue <- ggplot(ctVals0vsnot0True, aes(x=factor(tmp), y=mprage_fs_m
                     width= .2, position=position_dodge(.9)) + 
                     ggtitle("Actual Unusable Images CT vs Actual Usable Images CT") + 
                     xlab("Actual Class") +
-                    ylab("Mean FS Cortical Thickness")
+                    ylab("Mean FS Cortical Thickness")+ 
+                    scale_y_continuous(limits=c(2.5, 2.8),oob=rescale_none)
+
 fit2 <- lm(mprage_fs_mean_thickness ~ ageAtGo1Scan + tmp, data=mergedQAP)
 visreg(fit2, "ageAtGo1Scan", by="tmp", overlay=TRUE)
 mergedQAP$averageRating <- as.factor(mergedQAP$averageRating)
@@ -200,6 +203,7 @@ dev.off()
 mergedQAP.step.two <- mergedQAP[which(mergedQAP$averageRating!=0),]
 isolatedVars <- isolatedVars[which(isolatedVars$averageRating!=0),]
 manualQAData2 <- manualQAData2[which(manualQAData2$averageRating!=0),]
+mergedQAP.step.two$averageRating <- as.numeric(as.character(mergedQAP.step.two$averageRating))
 mergedQAP.step.two$averageRating[mergedQAP.step.two$averageRating<1.4] <- 0
 mergedQAP.step.two$averageRating[mergedQAP.step.two$averageRating>1.5] <- 1
 # Now decalre the folds 
@@ -273,7 +277,8 @@ barPlotToPrint <- ggplot(ctVals1vs2, aes(x=factor(flaggedList), y=mprage_fs_mean
                     width= .2, position=position_dodge(.9)) + 
                     ggtitle("Pred. Unusable Images CT vs Pred. Usable Images CT") + 
                     xlab("Prediced Class") +
-                    ylab("Mean FS Cortical Thickness")
+                    ylab("Mean FS Cortical Thickness") + 
+                    scale_y_continuous(limits=c(2.5, 2.8),oob=rescale_none)
 
 fit1 <- lm(mprage_fs_mean_thickness ~ ageAtGo1Scan + flaggedList, data=mergedQAP.step.two)
 visreg(fit1, "ageAtGo1Scan", by="flaggedList", overlay=TRUE)
@@ -285,7 +290,9 @@ barPlotToPrintTrue <- ggplot(ctVals1vs2True, aes(x=factor(averageRating), y=mpra
                     width= .2, position=position_dodge(.9)) + 
                     ggtitle("Actual Unusable Images CT vs Actual Usable Images CT") + 
                     xlab("Actual Class") +
-                    ylab("Mean FS Cortical Thickness")
+                    ylab("Mean FS Cortical Thickness")+ 
+                    scale_y_continuous(limits=c(2.5, 2.8),oob=rescale_none)
+
 fit2 <- lm(mprage_fs_mean_thickness ~ ageAtGo1Scan + averageRating, data=mergedQAP.step.two)
 visreg(fit2, "ageAtGo1Scan", by="averageRating", overlay=TRUE)
 pdf('1vs2Compare.pdf')
