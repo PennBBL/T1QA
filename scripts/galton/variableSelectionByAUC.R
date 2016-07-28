@@ -70,47 +70,59 @@ validationData <- raw.lme.data[-index,]
  
 
 # Now create a trainging-training data set
-folds.train <- createFolds(trainingData$averageRating.x, k=2, list=T, returnTrain=T)
-index.train <- unlist(folds.train[1])
-trainingData.train <- melt(trainingData[index.train,], id.vars=names(trainingData)[1:32], measure.vars=names(trainingData)[34:36])
-trainingData.valid <- trainingData[-index.train,]
-output <- (trainingData.train$value)
-trainingData.train$value[trainingData.train$value > 1] <- 1
+folds.train <- createFolds(trainingData$averageRating.x, k=5, list=T, returnTrain=T)
 
-# Now build a model in an incremental fashion
-aucTrainTrain <- NULL
-aucTrainValid <- NULL
-aucValidValid <- NULL
-#
-for(i in 1:length(aucNamesOrder)){
-  model <- as.formula(paste("value ~", paste(aucNamesOrder[1:i], collapse="+"), paste("+ (1|variable)")))
-  m1 <- glmer(model, data=trainingData.train, family="binomial",
-        control=glmerControl(optimizer="bobyqa", 
-               optCtrl = list(maxfun = 1000000000)))
-  # Now validate the model on the training training set
-  predictedValues <- predict(m1, type='response')
-  actualVals <- as.numeric(as.character(trainingData.train$value))
-  roc.tmp <- roc(actualVals ~ predictedValues)
-  aucTrainTrain <- append(aucTrainTrain, auc(roc.tmp))  
+# Now do this sucker in parallel
+cl <- makeCluster(length(folds.train))
+registerDoParallel(cl)
 
-  # Now validate on the training validate data 
-  trainingData.valid$variable <- rep('ratingNULL', nrow(trainingData.valid))
-  predictedValues <- as.vector(predict(m1, newdata=trainingData.valid, type='response', allow.new.levels=TRUE))
-  actualVals <- as.numeric(as.character(trainingData.valid$averageRating.x))
-  roc.tmp <- roc(actualVals ~ predictedValues)
-  aucTrainValid <- append(aucTrainValid, auc(roc.tmp))
+outputAucVals <- foreach(i=seq(1,length(folds.train))) %dopar%{
 
-  # Now validate on the validation data set
-  validationData$variable <- rep('ratingNULL', nrow(validationData))
-  predictedValues <- as.vector(predict(m1, newdata=validationData, type='response', allow.new.levels=TRUE))
-  actualVals <- as.numeric(as.character(validationData$averageRating.x))
-  roc.tmp <- roc(actualVals ~ predictedValues)
-  aucValidValid <- append(aucValidValid, auc(roc.tmp)) 
+  # First load all of the library(s)
+  source("/home/adrose/R/x86_64-redhat-linux-gnu-library/helperFunctions/afgrHelpFunc.R")
+  install_load('lme4', 'pROC', 'reshape2')
+  set.seed(16)
 
-  # Now give some feedback
-  print(i)                  
+  index.train <- unlist(folds.train[i])
+  trainingData.train <- melt(trainingData[index.train,], id.vars=names(trainingData)[1:32], measure.vars=names(trainingData)[34:36])
+  trainingData.valid <- trainingData[-index.train,]
+  output <- (trainingData.train$value)
+  trainingData.train$value[trainingData.train$value > 1] <- 1
+
+  # Now build a model in an incremental fashion
+  aucTrainTrain <- NULL
+  aucTrainValid <- NULL
+  aucValidValid <- NULL
+  #
+  for(i in 1:length(aucNamesOrder)){
+    model <- as.formula(paste("value ~", paste(aucNamesOrder[1:i], collapse="+"), paste("+ (1|variable)")))
+    m1 <- glmer(model, data=trainingData.train, family="binomial",
+          control=glmerControl(optimizer="bobyqa", 
+                 optCtrl = list(maxfun = 1000000000)))
+    # Now validate the model on the training training set
+    predictedValues <- predict(m1, type='response')
+    actualVals <- as.numeric(as.character(trainingData.train$value))
+    roc.tmp <- roc(actualVals ~ predictedValues)
+    aucTrainTrain <- append(aucTrainTrain, auc(roc.tmp))  
+
+    # Now validate on the training validate data 
+    trainingData.valid$variable <- rep('ratingNULL', nrow(trainingData.valid))
+    predictedValues <- as.vector(predict(m1, newdata=trainingData.valid, type='response', allow.new.levels=TRUE))
+    actualVals <- as.numeric(as.character(trainingData.valid$averageRating.x))
+    roc.tmp <- roc(actualVals ~ predictedValues)
+    aucTrainValid <- append(aucTrainValid, auc(roc.tmp))
+
+    # Now validate on the validation data set
+    validationData$variable <- rep('ratingNULL', nrow(validationData))
+    predictedValues <- as.vector(predict(m1, newdata=validationData, type='response', allow.new.levels=TRUE))
+    actualVals <- as.numeric(as.character(validationData$averageRating.x))
+    roc.tmp <- roc(actualVals ~ predictedValues)
+    aucValidValid <- append(aucValidValid, auc(roc.tmp)) 
+  }
+  output <- rbind(aucTrainTrain, aucTrainValid, aucValidValid)
+  output
 }
-
+stopCluster(cl)
 # Now graph each of the three AUC data points
 foo <- seq(1, length(qapValNames))
 aucTrainTrain <- as.data.frame(cbind(foo, aucTrainTrain))
