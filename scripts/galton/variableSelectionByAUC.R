@@ -76,14 +76,14 @@ folds.train <- createFolds(trainingData$averageRating.x, k=5, list=T, returnTrai
 cl <- makeCluster(length(folds.train))
 registerDoParallel(cl)
 
-outputAucVals <- foreach(i=seq(1,length(folds.train))) %dopar%{
+outputAucVals <- foreach(k=seq(1,length(folds.train))) %dopar%{
 
   # First load all of the library(s)
   source("/home/adrose/R/x86_64-redhat-linux-gnu-library/helperFunctions/afgrHelpFunc.R")
-  install_load('lme4', 'pROC', 'reshape2')
+  install_load('lme4', 'pROC', 'reshape2', 'foreach', 'doParallel', 'plyr')
   set.seed(16)
 
-  index.train <- unlist(folds.train[i])
+  index.train <- unlist(folds.train[k])
   trainingData.train <- melt(trainingData[index.train,], id.vars=names(trainingData)[1:32], measure.vars=names(trainingData)[34:36])
   trainingData.valid <- trainingData[-index.train,]
   output <- (trainingData.train$value)
@@ -93,12 +93,22 @@ outputAucVals <- foreach(i=seq(1,length(folds.train))) %dopar%{
   aucTrainTrain <- NULL
   aucTrainValid <- NULL
   aucValidValid <- NULL
-  #
+  valsToUseTest <- NULL
+  valsToUse <- NULL
   for(i in 1:length(aucNamesOrder)){
-    model <- as.formula(paste("value ~", paste(aucNamesOrder[1:i], collapse="+"), paste("+ (1|variable)")))
+    if(i == 1){
+      valsToUse <- i
+      valsToUseTest <- i
+    }
+    if(i != 1){
+      valsToUseTest <- append(valsToUse, i)
+    }
+    model <- as.formula(paste("value ~", paste(aucNamesOrder[valsToUseTest], collapse="+"), paste("+ (1|variable)")))
+    print(model)
     m1 <- glmer(model, data=trainingData.train, family="binomial",
           control=glmerControl(optimizer="bobyqa", 
                  optCtrl = list(maxfun = 1000000000)))
+
     # Now validate the model on the training training set
     predictedValues <- predict(m1, type='response')
     actualVals <- as.numeric(as.character(trainingData.train$value))
@@ -112,17 +122,36 @@ outputAucVals <- foreach(i=seq(1,length(folds.train))) %dopar%{
     roc.tmp <- roc(actualVals ~ predictedValues)
     aucTrainValid <- append(aucTrainValid, auc(roc.tmp))
 
-    # Now validate on the validation data set
-    validationData$variable <- rep('ratingNULL', nrow(validationData))
-    predictedValues <- as.vector(predict(m1, newdata=validationData, type='response', allow.new.levels=TRUE))
-    actualVals <- as.numeric(as.character(validationData$averageRating.x))
-    roc.tmp <- roc(actualVals ~ predictedValues)
-    aucValidValid <- append(aucValidValid, auc(roc.tmp)) 
+    # Now test to see if we have a significant improvment in ROC
+    if(i == 1){
+      roc.best <- roc.tmp
+    }else{
+    registerDoParallel(cl.1 <- makeCluster(getOption("mc.cores", 2)))
+    roc.p.value <- roc.test(roc.best, roc.tmp, alternative="less", method="bootstrap", parallel=T)$p.value
+    print(roc.p.value)
+    stopCluster(cl.1)
+    # Now Lets check to see if the improvment is any greater!
+      if(roc.p.value < .05){
+        valsToUse <- append(valsToUse, i)
+      }
+    }
   }
-  output <- rbind(aucTrainTrain, aucTrainValid, aucValidValid)
+  output <- rbind(aucTrainTrain, aucTrainValid)
   output
 }
 stopCluster(cl)
+
+# Use this code when output of the foreach for loop is the model selected
+#as.formula(paste("value ~", paste(aucNamesOrder[unlist(outputAucVals[1])], collapse="+"), paste("+ (1|variable)")))
+#as.formula(paste("value ~", paste(aucNamesOrder[unlist(outputAucVals[2])], collapse="+"), paste("+ (1|variable)")))
+#as.formula(paste("value ~", paste(aucNamesOrder[unlist(outputAucVals[3])], collapse="+"), paste("+ (1|variable)")))
+#as.formula(paste("value ~", paste(aucNamesOrder[unlist(outputAucVals[4])], collapse="+"), paste("+ (1|variable)")))
+#as.formula(paste("value ~", paste(aucNamesOrder[unlist(outputAucVals[5])], collapse="+"), paste("+ (1|variable)")))
+
+
+# Now put each iteration through a for loop and graph the parameters 
+for( i in 1:length(outputAucVals)){
+
 # Now graph each of the three AUC data points
 foo <- seq(1, length(qapValNames))
 aucTrainTrain <- as.data.frame(cbind(foo, aucTrainTrain))
@@ -167,3 +196,5 @@ dev.off()
 pdf("validValidAucs.pdf")
 print(aucValidValidPlot)
 dev.off()
+
+}
