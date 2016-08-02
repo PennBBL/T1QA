@@ -85,7 +85,7 @@ res[,i] <- as.numeric(mod$beta)
 
 
 y <- train$averageRating.x
-Xm <- rmFat(as.matrix(train[,1:32]), res, 25)
+Xm <- rmFat(as.matrix(train[,1:32]), res, 33)
 Xm <- Xm[,-1]
 
 foo <- as.data.frame(cbind(y, Xm))
