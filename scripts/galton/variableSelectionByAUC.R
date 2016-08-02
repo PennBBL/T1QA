@@ -25,12 +25,18 @@ mergedQAP$zeroVsNotZero[mergedQAP$zeroVsNOtZero >=1] <- 1
 
 # Now run through each variable of interest and build an ROC curve for it
 outcome <- mergedQAP$zeroVsNotZero
+outcome[outcome >= 1] <- 1
 qapValNames <- qapValNames[-grep('size', qapValNames)]
 qapValNames <- qapValNames[-grep('mean', qapValNames)]
 qapValNames <- qapValNames[-grep('std', qapValNames)]
+qapValNames <- qapValNames[-grep('fwhm_', qapValNames)]
+qapValNames <- qapValNames[-grep('hm.', qapValNames)]
+qapValNames <- qapValNames[-grep('all.', qapValNames)]
 aucVals <- NULL
 for(qapVal in qapValNames){
+  #predictor <- lm(unname(unlist(mergedQAP[qapVal])) ~ mergedQAP$ageAtGo1Scan, data=mergedQAP)$residuals 
   roc.tmp <- roc(outcome ~ unname(unlist(mergedQAP[qapVal])))
+  #roc.tmp <- roc(outcome ~ predictor)
   output <- cbind(qapVal, auc(roc.tmp))
   aucVals <- rbind(aucVals, output)
 }
@@ -68,97 +74,73 @@ index <- unlist(folds[1])
 trainingData <- raw.lme.data[index,]
 validationData <- raw.lme.data[-index,] 
  
+# Now train across the entire traning sample and validate across
+# the entire train valid sample
+trainingData.train <- melt(trainingData, id.vars=names(trainingData)[1:32], measure.vars=names(trainingData)[34:36])
+trainingData.train$value[trainingData.train$value > 1] <- 1
+trainingData.valid <- validationData
 
-# Now create a trainging-training data set
-folds.train <- createFolds(trainingData$averageRating.x, k=5, list=T, returnTrain=T)
+# Now build a model in an incremental fashion
+aucTrainTrain <- NULL
+aucTrainValid <- NULL
+aucValidValid <- NULL
+valsToUseTest <- NULL
+valsToUse <- NULL
+for(i in 1:length(aucNamesOrder)){
+  if(i == 1){
+    valsToUse <- i
+    valsToUseTest <- i
+  }
+  if(i != 1){
+    valsToUseTest <- append(valsToUse, i)
+  }
+  model <- as.formula(paste("value ~", paste(aucNamesOrder[valsToUseTest], collapse="+"), paste("+ (1|variable)")))
+  print(model)
+  m1 <- glmer(model, data=trainingData.train, family="binomial",
+        control=glmerControl(optimizer="bobyqa", 
+               optCtrl = list(maxfun = 1000000000)))
 
-# Now do this sucker in parallel
-cl <- makeCluster(length(folds.train))
-registerDoParallel(cl)
+  # Now validate the model on the training training set
+  predictedValues <- predict(m1, type='response')
+  actualVals <- as.numeric(as.character(trainingData.train$value))
+  roc.tmp <- roc(actualVals ~ predictedValues)
+  aucTrainTrain <- append(aucTrainTrain, auc(roc.tmp))  
 
-outputAucVals <- foreach(k=seq(1,length(folds.train))) %dopar%{
-
-  # First load all of the library(s)
-  source("/home/adrose/R/x86_64-redhat-linux-gnu-library/helperFunctions/afgrHelpFunc.R")
-  install_load('lme4', 'pROC', 'reshape2', 'foreach', 'doParallel', 'plyr')
-  set.seed(16)
-
-  index.train <- unlist(folds.train[k])
-  trainingData.train <- melt(trainingData[index.train,], id.vars=names(trainingData)[1:32], measure.vars=names(trainingData)[34:36])
-  trainingData.valid <- trainingData[-index.train,]
-  output <- (trainingData.train$value)
-  trainingData.train$value[trainingData.train$value > 1] <- 1
-
-  # Now build a model in an incremental fashion
-  aucTrainTrain <- NULL
-  aucTrainValid <- NULL
-  aucValidValid <- NULL
-  valsToUseTest <- NULL
-  valsToUse <- NULL
-  for(i in 1:length(aucNamesOrder)){
-    if(i == 1){
-      valsToUse <- i
-      valsToUseTest <- i
-    }
-    if(i != 1){
-      valsToUseTest <- append(valsToUse, i)
-    }
-    model <- as.formula(paste("value ~", paste(aucNamesOrder[valsToUseTest], collapse="+"), paste("+ (1|variable)")))
-    print(model)
-    m1 <- glmer(model, data=trainingData.train, family="binomial",
-          control=glmerControl(optimizer="bobyqa", 
-                 optCtrl = list(maxfun = 1000000000)))
-
-    # Now validate the model on the training training set
-    predictedValues <- predict(m1, type='response')
-    actualVals <- as.numeric(as.character(trainingData.train$value))
-    roc.tmp <- roc(actualVals ~ predictedValues)
-    aucTrainTrain <- append(aucTrainTrain, auc(roc.tmp))  
-
-    # Now validate on the training validate data 
-    trainingData.valid$variable <- rep('ratingNULL', nrow(trainingData.valid))
-    predictedValues <- as.vector(predict(m1, newdata=trainingData.valid, type='response', allow.new.levels=TRUE))
-    actualVals <- as.numeric(as.character(trainingData.valid$averageRating.x))
-    roc.tmp <- roc(actualVals ~ predictedValues)
-    aucTrainValid <- append(aucTrainValid, auc(roc.tmp))
-
-    # Now test to see if we have a significant improvment in ROC
-    if(i == 1){
+  # Now validate on the training validate data 
+  trainingData.valid$variable <- rep('ratingNULL', nrow(trainingData.valid))
+  predictedValues <- as.vector(predict(m1, newdata=trainingData.valid, type='response', allow.new.levels=TRUE))
+  actualVals <- as.numeric(as.character(trainingData.valid$averageRating.x))
+  roc.tmp <- roc(actualVals ~ predictedValues)
+  aucTrainValid <- append(aucTrainValid, auc(roc.tmp))
+ # Now test to see if we have a significant improvment in ROC
+  if(i == 1){
+    roc.best <- roc.tmp
+  }else{
+  #registerDoParallel(cl.1 <- makeCluster(getOption("mc.cores", 4)))
+  roc.p.value <- roc.test(roc.best, roc.tmp, alternative="less", method="delong")$p.value#, parallel=F, boot.stratified=T)$p.value
+  print(roc.p.value)
+  #stopCluster(cl.1)
+  # Now Lets check to see if the improvment is any greater!
+    if(roc.p.value < .05){
+      valsToUse <- append(valsToUse, i)
       roc.best <- roc.tmp
-    }else{
-    registerDoParallel(cl.1 <- makeCluster(getOption("mc.cores", 2)))
-    roc.p.value <- roc.test(roc.best, roc.tmp, alternative="less", method="bootstrap", parallel=T)$p.value
-    print(roc.p.value)
-    stopCluster(cl.1)
-    # Now Lets check to see if the improvment is any greater!
-      if(roc.p.value < .05){
-        valsToUse <- append(valsToUse, i)
-      }
     }
   }
-  output <- rbind(aucTrainTrain, aucTrainValid)
-  output
 }
-stopCluster(cl)
 
 # Use this code when output of the foreach for loop is the model selected
-#as.formula(paste("value ~", paste(aucNamesOrder[unlist(outputAucVals[1])], collapse="+"), paste("+ (1|variable)")))
-#as.formula(paste("value ~", paste(aucNamesOrder[unlist(outputAucVals[2])], collapse="+"), paste("+ (1|variable)")))
-#as.formula(paste("value ~", paste(aucNamesOrder[unlist(outputAucVals[3])], collapse="+"), paste("+ (1|variable)")))
-#as.formula(paste("value ~", paste(aucNamesOrder[unlist(outputAucVals[4])], collapse="+"), paste("+ (1|variable)")))
-#as.formula(paste("value ~", paste(aucNamesOrder[unlist(outputAucVals[5])], collapse="+"), paste("+ (1|variable)")))
+model <- as.formula(paste("value ~", paste(aucNamesOrder[valsToUse], collapse="+"), paste("+ (1|variable)")))
+m1 <- glmer(model, data=trainingData.train, family="binomial",
+      control=glmerControl(optimizer="bobyqa", 
+             optCtrl = list(maxfun = 1000000000)))
 
-
-# Now put each iteration through a for loop and graph the parameters 
-for( i in 1:length(outputAucVals)){
 
 # Now graph each of the three AUC data points
 foo <- seq(1, length(qapValNames))
 aucTrainTrain <- as.data.frame(cbind(foo, aucTrainTrain))
 aucTrainValid <- as.data.frame(cbind(foo, aucTrainValid))
-aucValidValid <- as.data.frame(cbind(foo, aucValidValid))
-
-# First start with train train
+#aucValidValid <- as.data.frame(cbind(foo, aucValidValid))
+ # First start with train train
 aucTrainTrainPlot <- ggplot(aucTrainTrain, aes(x=foo, y=aucTrainTrain, fill=aucTrainTrain)) +
   geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
   theme(axis.text.x = element_text(angle=45,hjust=1)) +
@@ -166,8 +148,7 @@ aucTrainTrainPlot <- ggplot(aucTrainTrain, aes(x=foo, y=aucTrainTrain, fill=aucT
   ggtitle("AUC of Training data") + 
   xlab("N of Variables") +
   ylab("AUC")
-
-# Now do train valid
+ # Now do train valid
 aucTrainValidPlot <- ggplot(aucTrainValid, aes(x=foo, y=aucTrainValid, fill=aucTrainValid)) +
   geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
   theme(axis.text.x = element_text(angle=45,hjust=1)) +
@@ -175,26 +156,25 @@ aucTrainValidPlot <- ggplot(aucTrainValid, aes(x=foo, y=aucTrainValid, fill=aucT
   ggtitle("AUC of Training Validation Set") + 
   xlab("N of Variables") +
   ylab("AUC")
-
-# Now do valid valid
-aucValidValidPlot <- ggplot(aucValidValid, aes(x=foo, y=aucValidValid, fill=aucValidValid)) +
-  geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
-  theme(axis.text.x = element_text(angle=45,hjust=1)) +
-  coord_cartesian(ylim=c(.8,1)) + 
-  ggtitle("AUC of Validation Set") + 
-  xlab("N of Variables") +
-  ylab("AUC")
-
-
+ # Now do valid valid
+#aucValidValidPlot <- ggplot(aucValidValid, aes(x=foo, y=aucValidValid, fill=aucValidValid)) +
+#  geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
+#  theme(axis.text.x = element_text(angle=45,hjust=1)) +
+#  coord_cartesian(ylim=c(.8,1)) + 
+#  ggtitle("AUC of Validation Set") + 
+#  xlab("N of Variables") +
+#  ylab("AUC")
 # Now print the plots
-pdf("trainTrainAucs.pdf")
+pdf(paste("trainTrainAucs.pdf", sep=''))
 print(aucTrainTrainPlot)
 dev.off()
-pdf("trainValidAucs.pdf")
+pdf(paste("trainValidAucs.pdf", sep=''))
 print(aucTrainValidPlot)
 dev.off()
-pdf("validValidAucs.pdf")
-print(aucValidValidPlot)
-dev.off()
+#pdf("validValidAucs.pdf")
+#print(aucValidValidPlot)
+#dev.off()
 
-}
+
+
+
