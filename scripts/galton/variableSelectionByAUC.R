@@ -21,11 +21,17 @@ install_load('pROC', 'ggplot2', 'caret', 'lme4', 'foreach', 'doParallel')
 # In order to do this first thing I need is a data set of all all average rating images 0 vs !0
 # Now I need to create the training and validation sets 
 mergedQAP$zeroVsNotZero <- mergedQAP$averageRating
-mergedQAP$zeroVsNotZero[mergedQAP$zeroVsNOtZero >=1] <- 1
+mergedQAP$zeroVsNotZero[mergedQAP$zeroVsNotZero >=1] <- 1
+
+# Now melt the data so we have 4803 rows
+raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
+raw.lme.data <- melt(raw.lme.data, id.vars=names(raw.lme.data)[1:32], measure.vars=names(raw.lme.data)[34:36])
+raw.lme.data$value[raw.lme.data$value > 1] <- 1
 
 # Now run through each variable of interest and build an ROC curve for it
-outcome <- mergedQAP$zeroVsNotZero
-outcome[outcome >= 1] <- 1
+#outcome <- mergedQAP$zeroVsNotZero
+#outcome[outcome >= 1] <- 1
+outcome <- raw.lme.data$value
 qapValNames <- qapValNames[-grep('size', qapValNames)]
 qapValNames <- qapValNames[-grep('mean', qapValNames)]
 qapValNames <- qapValNames[-grep('std', qapValNames)]
@@ -35,11 +41,16 @@ qapValNames <- qapValNames[-grep('all.', qapValNames)]
 aucVals <- NULL
 for(qapVal in qapValNames){
   #predictor <- lm(unname(unlist(mergedQAP[qapVal])) ~ mergedQAP$ageAtGo1Scan, data=mergedQAP)$residuals 
-  roc.tmp <- roc(outcome ~ unname(unlist(mergedQAP[qapVal])))
-  #roc.tmp <- roc(outcome ~ predictor)
+  model <- as.formula(paste("value ~", paste(qapVal), paste("+ (1|variable)")))
+  m1 <- glmer(model, data=raw.lme.data, family="binomial")
+  predictor <- predict(m1)
+  #roc.tmp <- roc(outcome ~ unname(unlist(mergedQAP[qapVal])))
+  roc.tmp <- roc(outcome ~ predictor)
   output <- cbind(qapVal, auc(roc.tmp))
   aucVals <- rbind(aucVals, output)
 }
+rm(raw.lme.data, outcome)
+
 
 # Now order and find the AUC heirarchy 
 aucVals <- as.data.frame(aucVals)
@@ -49,11 +60,41 @@ aucVals <- aucVals[order(aucVals[,2], decreasing =TRUE),]
 aucZerovsNotZero <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2, fill=V2)) +
   geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
   theme(axis.text.x = element_text(angle=45,hjust=1)) +
-  coord_cartesian(ylim=c(.45,.85))
+  coord_cartesian(ylim=c(.45,.95)) +
+  ggtitle("AUC Of GLMER Model with 1 QAP Variable") + 
+  xlab("QAP Variable") +
+  ylab("AUC")
 
-pdf('0vsNot0AllMonomialAUCValues.pdf')
+pdf('0vsNot0AllMonomialAUCValuesGLMER.pdf')
 print(aucZerovsNotZero)
 dev.off()
+
+# Now do the same without a glmer model
+aucVals <- NULL
+outcome <- mergedQAP$zeroVsNotZero
+for(qapVal in qapValNames){
+  #predictor <- lm(unname(unlist(mergedQAP[qapVal])) ~ mergedQAP$ageAtGo1Scan, data=mergedQAP)$residuals 
+  roc.tmp <- roc(outcome ~ unname(unlist(mergedQAP[qapVal])))
+  output <- cbind(qapVal, auc(roc.tmp))
+  aucVals <- rbind(aucVals, output)
+}
+# Now order and find the AUC heirarchy 
+aucVals <- as.data.frame(aucVals)
+aucVals$V2 <- as.numeric(as.character(aucVals$V2))
+aucVals <- aucVals[order(aucVals[,2], decreasing =TRUE),]
+# Now make a bar plot of all of the 0 vs !0 AUC's
+aucZerovsNotZero <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2, fill=V2)) +
+  geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
+  theme(axis.text.x = element_text(angle=45,hjust=1)) +
+  coord_cartesian(ylim=c(.45,.95)) +
+  ggtitle("AUC Of Monomial QAP Variable") + 
+  xlab("QAP Variable") +
+  ylab("AUC")
+
+pdf('0vsNot0AllMonomialAUCValuesMonomial.pdf')
+print(aucZerovsNotZero)
+dev.off()
+
 
 # Now create the variable with the names and order of the variables
 # I want to add sequentially
@@ -86,6 +127,7 @@ aucTrainValid <- NULL
 aucValidValid <- NULL
 valsToUseTest <- NULL
 valsToUse <- NULL
+modelOutput <- NULL
 for(i in 1:length(aucNamesOrder)){
   if(i == 1){
     valsToUse <- i
@@ -95,7 +137,10 @@ for(i in 1:length(aucNamesOrder)){
     valsToUseTest <- append(valsToUse, i)
   }
   model <- as.formula(paste("value ~", paste(aucNamesOrder[valsToUseTest], collapse="+"), paste("+ (1|variable)")))
+  modelBest <- as.formula(paste("value ~", paste(aucNamesOrder[valsToUse], collapse="+"), paste("+ (1|variable)")))
+  modelOutput <- append(modelOutput, model)
   print(model)
+  print(modelBest)
   m1 <- glmer(model, data=trainingData.train, family="binomial",
         control=glmerControl(optimizer="bobyqa", 
                optCtrl = list(maxfun = 1000000000)))
@@ -134,14 +179,32 @@ m1 <- glmer(model, data=trainingData.train, family="binomial",
       control=glmerControl(optimizer="bobyqa", 
              optCtrl = list(maxfun = 1000000000)))
 
+# Now find the delta between errything
+aucDeltaValues <- NULL
+bestIndex <- c(1,1,2,3,3,3,3,3,3,3,3,3,3,3)
+for(K in seq(2, length(qapValNames))){
+  # Now subtract the differences in AUC
+  diffVal <- aucTrainValid[K] - aucTrainValid[bestIndex[K]]
+  # Now append that value
+  aucDeltaValues <- append(aucDeltaValues, diffVal)
+}
+aucDeltaValues <- append('0', aucDeltaValues)
+aucDeltaValues <- as.data.frame(cbind(as.character(aucNamesOrder[1:length(aucNamesOrder)]), aucDeltaValues)) 
+modelOutput[2] <- paste(modelOutput[2], "**", sep='')
+modelOutput[3] <- paste(modelOutput[3], "**", sep='')
+aucDeltaValues <- cbind(as.character(modelOutput)[1:14], aucDeltaValues)
+
 
 # Now graph each of the three AUC data points
 foo <- seq(1, length(qapValNames))
-aucTrainTrain <- as.data.frame(cbind(foo, aucTrainTrain))
-aucTrainValid <- as.data.frame(cbind(foo, aucTrainValid))
+aucTrainTrain <- as.data.frame(cbind(foo, aucTrainTrain, as.character(modelOutput)[1:14]))
+names(aucTrainTrain)[3] <- "Models"
+aucTrainValid <- as.data.frame(cbind(foo, aucTrainValid, as.character(modelOutput)[1:14]))
+names(aucTrainValid)[3] <- "Models"
 #aucValidValid <- as.data.frame(cbind(foo, aucValidValid))
  # First start with train train
-aucTrainTrainPlot <- ggplot(aucTrainTrain, aes(x=foo, y=aucTrainTrain, fill=aucTrainTrain)) +
+aucTrainTrain$aucTrainTrain <- as.numeric(as.character(aucTrainTrain$aucTrainTrain))
+aucTrainTrainPlot <- ggplot(aucTrainTrain, aes(x=Models, y=aucTrainTrain, fill=aucTrainTrain)) +
   geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
   theme(axis.text.x = element_text(angle=45,hjust=1)) +
   coord_cartesian(ylim=c(.8,1)) +
@@ -149,13 +212,39 @@ aucTrainTrainPlot <- ggplot(aucTrainTrain, aes(x=foo, y=aucTrainTrain, fill=aucT
   xlab("N of Variables") +
   ylab("AUC")
  # Now do train valid
-aucTrainValidPlot <- ggplot(aucTrainValid, aes(x=foo, y=aucTrainValid, fill=aucTrainValid)) +
+aucTrainValid$aucTrainValid <- as.numeric(as.character(aucTrainValid$aucTrainValid))
+aucTrainValidPlot <- ggplot(aucTrainValid, aes(x=Models, y=aucTrainValid)) +
   geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
-  theme(axis.text.x = element_text(angle=45,hjust=1)) +
+  theme(axis.text.x = element_text(angle=90,hjust=1)) +
   coord_cartesian(ylim=c(.8,1)) +
   ggtitle("AUC of Training Validation Set") + 
-  xlab("N of Variables") +
+  xlab("Model") +
   ylab("AUC")
+# Now do delta values
+aucDeltaValues$aucDeltaValues <- as.numeric(as.character(aucDeltaValues$aucDeltaValues))
+#aucDeltaValues <- aucDeltaValues[order(aucDeltaValues[,2], decreasing =TRUE),]
+names(aucDeltaValues)[1] <- "Models"
+aucDeltaValuesPlot <- ggplot(aucDeltaValues, aes(x=Models, y=aucDeltaValues)) +
+  geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) + 
+  theme(axis.text.x = element_text(angle=90,hjust=1)) +
+  coord_cartesian(ylim=c(-.1,.1)) +
+  ggtitle("Delta AUC of Additional QAP Variable in Logistic Model") + 
+  xlab("Model") +
+  ylab("Delta AUC")  
+
+
+pdf('./aucDeltaValuesWithModels.pdf', width=16, height=12)
+multiplot(aucZerovsNotZero, aucTrainValidPlot, aucDeltaValuesPlot, cols=3)
+dev.off()
+
+pdf('./aucDeltaValuesWithModels.pdf', width=16, height=12)
+multiplot(aucTrainValidPlot, aucDeltaValuesPlot, cols=2)
+dev.off()
+
+
+
+
+
  # Now do valid valid
 #aucValidValidPlot <- ggplot(aucValidValid, aes(x=foo, y=aucValidValid, fill=aucValidValid)) +
 #  geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
