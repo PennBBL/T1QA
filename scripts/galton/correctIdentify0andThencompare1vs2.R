@@ -24,7 +24,7 @@ set.seed(18)
 # Now I need to create the training and validation sets 
 mergedQAP$tmp <- mergedQAP$averageRating
 mergedQAP$tmp[mergedQAP$tmp >=1] <- 1
-folds <- createFolds(mergedQAP$tmp, k=5, list=T, returnTrain=T)
+folds <- createFolds(mergedQAP$tmp, k=3, list=T, returnTrain=T)
 
 
 # Declare the model
@@ -173,6 +173,8 @@ model <- as.formula(value ~
                 snr  + 
                wm.skewness + bg.kurtosis +
                bg.skewness + (1|variable))
+model <- as.formula("value~qi1+wm.skewness+cnr+bg.kurtosis+efc+bg.skewness+fber+snr+(1|variable)")
+
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
 raw.lme.data <- melt(raw.lme.data, id.vars=names(raw.lme.data)[1:32], measure.vars=names(raw.lme.data)[34:36])
@@ -197,6 +199,12 @@ plot(tmp$outcome, tmp$mprage_fs_mean_thickness, ylab="Mean FS CT", xlab="LMER Mo
 legend(x='bottomright', legend=paste('Cor =' ,round(cor(tmp$mprage_fs_mean_thickness, tmp$outcome, use="complete"),2)))
 dev.off()
 
+pdf('lmerVsAgeRegressedCT.pdf')
+tmp <- tmp[complete.cases(tmp$mprage_fs_mean_thickness),]
+tmp$ageRegVals <- lm(mprage_fs_mean_thickness ~ageAtGo1Scan, data=tmp)$residuals
+plot(tmp$outcome, tmp$ageRegVals, ylab="Mean FS Age Reg CT", xlab="LMER Model Outcomes")
+legend(x='bottomright', legend=paste('Cor =' ,round(cor(tmp$ageRegVals, tmp$outcome, use="complete"),2)))
+dev.off()
 
 
 # Now find the AUC when we train on 1 vs 2 data
