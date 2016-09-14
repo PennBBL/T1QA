@@ -54,9 +54,9 @@ trainingData$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=trainingData,
 all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 
 ## Now create our age regressed variables 
-all.train.data$meanCT <- apply(all.train.data[,2794:2893], 1, mean)
-all.train.data$meanGMD <- apply(all.train.data[,2670:2789], 1, mean)
-all.train.data$meanVOL <- apply(all.train.data[,2529:2664], 1, mean)
+all.train.data$meanCT <- apply(all.train.data[,2796:2893], 1, mean)
+all.train.data$meanGMD <- apply(all.train.data[,2692:2789], 1, mean)
+all.train.data$meanVOL <- apply(all.train.data[,2567:2664], 1, mean)
 all.train.data$meanCTAgeReg <- lm(meanCT ~ ageAtGo1Scan, data=all.train.data)$residuals
 all.train.data$meanGMDAgeReg <- lm(meanGMD ~ ageAtGo1Scan, data=all.train.data)$residuals
 all.train.data$meanVOLAgeReg <- lm(meanVOL ~ ageAtGo1Scan, data=all.train.data)$residuals
@@ -141,6 +141,9 @@ model1 <- aov(standardMeanCT ~ standardAge + standardRating, data=all.train.data
 model2 <- aov(standardMeanCT ~ standardAge + standardZeroVsNotZero, data=all.train.data)
 model3 <- aov(standardMeanCT ~ standardAge + standardOneVsTwo, data=all.train.data)
 model4 <- aov(standardMeanCT ~ standardAge, data=all.train.data)
+ctEtas <- cbind(model1Eta, model2Eta, model3Eta, model4Eta)
+colnames(ctEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 'N/A')
+
 model1 <- aov(mprage_fs_mean_thickness ~ standardAge + standardRating, data=all.train.data)
 model2 <- aov(mprage_fs_mean_thickness ~ standardAge + standardZeroVsNotZero, data=all.train.data)
 model3 <- aov(mprage_fs_mean_thickness ~ standardAge + standardOneVsTwo, data=all.train.data)
@@ -149,8 +152,8 @@ model1Eta <- EtaSq(model1)[1,2]
 model2Eta <- EtaSq(model2)[1,2]
 model3Eta <- EtaSq(model3)[1,2]
 model4Eta <- EtaSq(model4)[1,2]
-ctEtas <- cbind(model1Eta, model2Eta, model3Eta, model4Eta)
-colnames(ctEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 'N/A')
+fsctEtas <- cbind(model1Eta, model2Eta, model3Eta, model4Eta)
+colnames(fsctEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 'N/A')
 
 model1 <- aov(standardMeanVOL ~ standardAge + standardRating, data=all.train.data)
 model2 <- aov(standardMeanVOL ~ standardAge + standardZeroVsNotZero, data=all.train.data)
@@ -163,9 +166,9 @@ model4Eta <- EtaSq(model4)[1,2]
 volEtas <- cbind(model1Eta, model2Eta, model3Eta, model4Eta)
 colnames(volEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 'N/A')
 
-ageStandBetas <- as.data.frame(rbind(gmdEtas, ctEtas, volEtas))
+ageStandBetas <- as.data.frame(rbind(gmdEtas, ctEtas, fsctEtas, volEtas))
 colnames(ageStandBetas) <- c('averageRating', '0 vs !0', '1 vs 2', 'No Regression')
-rownames(ageStandBetas) <- c('GMD', 'CT', 'VOL')
+rownames(ageStandBetas) <- c('GMD', 'CT', 'FSCT', 'VOL')
 
 # Now I need to compute the 'r' between age and our variable when we regress with our data quality metrics
 
@@ -197,8 +200,8 @@ model4 <- aov(mprage_fs_mean_thickness ~ standardAge, data=all.train.data)
 model1Eta <- EtaSq(model1)[2,2]
 model2Eta <- EtaSq(model2)[2,2]
 model3Eta <- EtaSq(model3)[2,2]
-ctEtas <- cbind(model1Eta, model2Eta, model3Eta)
-colnames(ctEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 'N/A')
+fsctEtas <- cbind(model1Eta, model2Eta, model3Eta)
+colnames(fsctEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 'N/A')
 
 
 model1 <- aov(standardMeanVOL ~ standardAge + standardRating, data=all.train.data)
@@ -211,7 +214,7 @@ model3Eta <- EtaSq(model3)[2,2]
 volEtas <- cbind(model1Eta, model2Eta, model3Eta)
 colnames(volEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 'N/A')
 
-ageStandBetas <- as.data.frame(rbind(gmdEtas, ctEtas, volEtas))
+ageStandBetas <- as.data.frame(rbind(gmdEtas, ctEtas, fsctEtas,volEtas))
 colnames(ageStandBetas) <- c('averageRating', '0 vs !0', '1 vs 2')
-rownames(ageStandBetas) <- c('GMD', 'CT', 'VOL')
+rownames(ageStandBetas) <- c('GMD', 'CT', 'FSCT', 'VOL')
 
