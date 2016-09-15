@@ -26,7 +26,7 @@ rm(mod8)
 
 # Now work with the data 
 ## Load Library(s)
-source("/home/adrose/R/x86_64-redhat-linux-gnu-library/helperFunctions/afgrHelpFunc.R")
+source("/home/adrose/adroseHelperScripts/R/afgrHelpFunc.R")
 install_load('pROC', 'ggplot2', 'caret', 'lme4', 'foreach', 'doParallel','BaylorEdPsych')
 
 
@@ -63,6 +63,8 @@ all.train.data$meanVOLAgeReg <- lm(meanVOL ~ ageAtGo1Scan, data=all.train.data)$
 all.train.data$meanFSCtAgeReg <- rep('NA', nrow(all.train.data))
 index <- as.numeric(names(lm(all.train.data$mprage_fs_mean_thickness ~ all.train.data$ageAtGo1Scan)$residuals))
 all.train.data$meanFSCtAgeReg[index] <- as.numeric(unname(lm(all.train.data$mprage_fs_mean_thickness ~ all.train.data$ageAtGo1Scan)$residuals))
+all.train.data$modeRating <- apply(all.train.data[,2927:2929], 1, Mode)
+
 
 
 ## Okay we have all of our data points
@@ -77,6 +79,30 @@ meanValsNoAgeRegAverageRating <- cbind(cor(meanCT, rawAverageRating.y),
                                        cor(mprage_fs_mean_thickness,
                                            rawAverageRating.y, use='complete'))
 
+meanValsNoAgeRegModeRating <- cbind(cor(meanCT, modeRating),
+                                       cor(meanGMD, modeRating),
+                                       cor(meanVOL, modeRating),
+                                       cor(mprage_fs_mean_thickness,
+                                           modeRating, use='complete'))
+
+meanValsNoAgeRegRatingJB <- cbind(cor(meanCT, ratingJB.y),
+                                       cor(meanGMD, ratingJB.y),
+                                       cor(meanVOL, ratingJB.y),
+                                       cor(mprage_fs_mean_thickness,
+                                           ratingJB.y, use='complete'))
+
+meanValsNoAgeRegRatingLV <- cbind(cor(meanCT, ratingLV.y),
+                                       cor(meanGMD, ratingLV.y),
+                                       cor(meanVOL, ratingLV.y),
+                                       cor(mprage_fs_mean_thickness,
+                                           ratingLV.y, use='complete'))
+
+meanValsNoAgeRegRatingKS <- cbind(cor(meanCT, ratingKS.y),
+                                       cor(meanGMD, ratingKS.y),
+                                       cor(meanVOL, ratingKS.y),
+                                       cor(mprage_fs_mean_thickness,
+                                           ratingKS.y, use='complete'))
+
 meanValsNoAgeRegZeroVsNotZero <- cbind(cor(meanCT, zeroVsNotZeroOutcome),
                                        cor(meanGMD, zeroVsNotZeroOutcome),
                                        cor(meanVOL, zeroVsNotZeroOutcome),
@@ -89,10 +115,14 @@ meanValsNoAgeRegOneVsTwo <- cbind(cor(meanCT, oneVsTwoOutcome),
                                        cor(mprage_fs_mean_thickness,
                                            oneVsTwoOutcome, use='complete'))
 
-tableNoAgeReg <- rbind(meanValsNoAgeRegAverageRating, 
+tableNoAgeReg <- rbind(meanValsNoAgeRegAverageRating, meanValsNoAgeRegModeRating, 
+                 meanValsNoAgeRegRatingJB, meanValsNoAgeRegRatingLV, meanValsNoAgeRegRatingKS,
                  meanValsNoAgeRegZeroVsNotZero, meanValsNoAgeRegOneVsTwo)
 colnames(tableNoAgeReg) <- c('Ants Mean CT', 'Ants Mean GMD', 'Ants Mean Vol', 'FS Mean CT')
-rownames(tableNoAgeReg) <- c('Average Rating', '0 vs !0', '1 vs 2')
+rownames(tableNoAgeReg) <- c('Average Rating', 'Mode Rating', 
+                             'ratingJB', 'ratingLV', 'ratingKS',
+                             '0 vs !0', '1 vs 2')
+write.csv(tableNoAgeReg, 'corBtnRawImagingMetricsAndQUalityMetrics.csv', quote=F)
 
 # Now do age regressed data
 meanValsAgeRegAverageRating <- cbind(cor(meanCTAgeReg, rawAverageRating.y),
@@ -113,11 +143,39 @@ meanValsAgeRegOneVsTwo <- cbind(cor(meanCTAgeReg, oneVsTwoOutcome),
                                        cor(as.numeric(meanFSCtAgeReg),
                                            oneVsTwoOutcome, use='complete'))
 
-tableAgeReg <- rbind(meanValsAgeRegAverageRating, 
-               meanValsAgeRegZeroVsNotZero, meanValsAgeRegOneVsTwo)
-colnames(tableAgeReg) <- c('Ants Mean CT', 'Ants Mean GMD', 'Ants Mean Vol', 'FS Mean CT')
-rownames(tableAgeReg) <- c('Average Rating', '0 vs !0', '1 vs 2')
 
+meanValsNoAgeRegModeRating <- cbind(cor(meanCTAgeReg, modeRating),
+                                       cor(meanGMDAgeReg, modeRating),
+                                       cor(meanVOLAgeReg, modeRating),
+                                       cor(as.numeric(meanFSCtAgeReg),
+                                           modeRating, use='complete'))
+
+meanValsNoAgeRegRatingJB <- cbind(cor(meanCTAgeReg, ratingJB.y),
+                                       cor(meanGMDAgeReg, ratingJB.y),
+                                       cor(meanVOLAgeReg, ratingJB.y),
+                                       cor(as.numeric(meanFSCtAgeReg),
+                                           ratingJB.y, use='complete'))
+
+meanValsNoAgeRegRatingLV <- cbind(cor(meanCTAgeReg, ratingLV.y),
+                                       cor(meanGMDAgeReg, ratingLV.y),
+                                       cor(meanVOLAgeReg, ratingLV.y),
+                                       cor(as.numeric(meanFSCtAgeReg),
+                                           ratingLV.y, use='complete'))
+
+meanValsNoAgeRegRatingKS <- cbind(cor(meanCTAgeReg, ratingKS.y),
+                                       cor(meanGMDAgeReg, ratingKS.y),
+                                       cor(meanVOLAgeReg, ratingKS.y),
+                                       cor(as.numeric(meanFSCtAgeReg),
+                                           ratingKS.y, use='complete'))
+
+tableAgeReg <- rbind(meanValsNoAgeRegAverageRating, meanValsNoAgeRegModeRating, 
+                 meanValsNoAgeRegRatingJB, meanValsNoAgeRegRatingLV, meanValsNoAgeRegRatingKS,
+                 meanValsNoAgeRegZeroVsNotZero, meanValsNoAgeRegOneVsTwo)
+colnames(tableAgeReg) <- c('Ants Mean CT', 'Ants Mean GMD', 'Ants Mean Vol', 'FS Mean CT')
+rownames(tableAgeReg) <- c('Average Rating', 'Mode Rating', 
+                             'ratingJB', 'ratingLV', 'ratingKS',
+                             '0 vs !0', '1 vs 2')
+write.csv(tableAgeReg, 'corBtnAgeRegImagingDataAndQualityMetrics.csv', quote=F)
 ## Now lets get some standardized betas 
 all.train.data$standardAge <- scale(ageAtGo1Scan)
 all.train.data$standardRating <- scale(rawAverageRating.y)
@@ -126,95 +184,188 @@ all.train.data$standardOneVsTwo <- scale(oneVsTwoOutcome)
 all.train.data$standardMeanGMD <- scale(meanGMD)
 all.train.data$standardMeanVOL <- scale(meanVOL)
 all.train.data$standardMeanCT <- scale(meanCT)
+all.train.data$standardMode <- scale(modeRating)
+all.train.data$standardRatingJB <- scale(ratingJB.y)
+all.train.data$standardRatingKS <- scale(ratingKS.y)
+all.train.data$standardRatingLV <- scale(ratingLV.y)
 
 model1 <- aov(standardMeanGMD ~ standardAge + standardRating, data=all.train.data)
 model2 <- aov(standardMeanGMD ~ standardAge + standardZeroVsNotZero, data=all.train.data)
 model3 <- aov(standardMeanGMD ~ standardAge + standardOneVsTwo, data=all.train.data)
-model4 <- aov(standardMeanGMD ~ standardAge, data=all.train.data)
+model4 <- aov(standardMeanGMD ~ standardAge + standardMode, data=all.train.data)
+model5 <- aov(standardMeanGMD ~ standardAge + standardRatingJB, data=all.train.data)
+model6 <- aov(standardMeanGMD ~ standardAge + standardRatingKS, data=all.train.data)
+model7 <- aov(standardMeanGMD ~ standardAge + standardRatingLV, data=all.train.data)
+model8 <- aov(standardMeanGMD ~ standardAge, data=all.train.data)
 model1Eta <- EtaSq(model1)[1,2]
 model2Eta <- EtaSq(model2)[1,2]
 model3Eta <- EtaSq(model3)[1,2]
 model4Eta <- EtaSq(model4)[1,2]
-gmdEtas <- cbind(model1Eta, model2Eta, model3Eta, model4Eta)
-colnames(gmdEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 'N/A')
+model5Eta <- EtaSq(model5)[1,2]
+model6Eta <- EtaSq(model6)[1,2]
+model7Eta <- EtaSq(model7)[1,2]
+model8Eta <- EtaSq(model8)[1,2]
+gmdEtas <- cbind(model1Eta,model2Eta,model3Eta,model4Eta,model5Eta,model6Eta,model7Eta,model8Eta)
+colnames(gmdEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 
+                      'Mode Rating','JB','KS', 'LV','N/A')
+
 model1 <- aov(standardMeanCT ~ standardAge + standardRating, data=all.train.data)
 model2 <- aov(standardMeanCT ~ standardAge + standardZeroVsNotZero, data=all.train.data)
 model3 <- aov(standardMeanCT ~ standardAge + standardOneVsTwo, data=all.train.data)
-model4 <- aov(standardMeanCT ~ standardAge, data=all.train.data)
-ctEtas <- cbind(model1Eta, model2Eta, model3Eta, model4Eta)
-colnames(ctEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 'N/A')
+model4 <- aov(standardMeanCT ~ standardAge + standardMode, data=all.train.data)
+model5 <- aov(standardMeanCT ~ standardAge + standardRatingJB, data=all.train.data)
+model6 <- aov(standardMeanCT ~ standardAge + standardRatingKS, data=all.train.data)
+model7 <- aov(standardMeanCT ~ standardAge + standardRatingLV, data=all.train.data)
+model8 <- aov(standardMeanCT ~ standardAge, data=all.train.data)
+model1Eta <- EtaSq(model1)[1,2]
+model2Eta <- EtaSq(model2)[1,2]
+model3Eta <- EtaSq(model3)[1,2]
+model4Eta <- EtaSq(model4)[1,2]
+model5Eta <- EtaSq(model5)[1,2]
+model6Eta <- EtaSq(model6)[1,2]
+model7Eta <- EtaSq(model7)[1,2]
+model8Eta <- EtaSq(model8)[1,2]
+ctEtas <- cbind(model1Eta,model2Eta,model3Eta,model4Eta,model5Eta,model6Eta,model7Eta,model8Eta)
+colnames(ctEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 
+                      'Mode Rating','JB','KS', 'LV','N/A')
+
 
 model1 <- aov(mprage_fs_mean_thickness ~ standardAge + standardRating, data=all.train.data)
 model2 <- aov(mprage_fs_mean_thickness ~ standardAge + standardZeroVsNotZero, data=all.train.data)
 model3 <- aov(mprage_fs_mean_thickness ~ standardAge + standardOneVsTwo, data=all.train.data)
-model4 <- aov(mprage_fs_mean_thickness ~ standardAge, data=all.train.data)
+model4 <- aov(mprage_fs_mean_thickness ~ standardAge + standardMode, data=all.train.data)
+model5 <- aov(mprage_fs_mean_thickness ~ standardAge + standardRatingJB, data=all.train.data)
+model6 <- aov(mprage_fs_mean_thickness ~ standardAge + standardRatingKS, data=all.train.data)
+model7 <- aov(mprage_fs_mean_thickness ~ standardAge + standardRatingLV, data=all.train.data)
+model8 <- aov(mprage_fs_mean_thickness ~ standardAge, data=all.train.data)
 model1Eta <- EtaSq(model1)[1,2]
 model2Eta <- EtaSq(model2)[1,2]
 model3Eta <- EtaSq(model3)[1,2]
 model4Eta <- EtaSq(model4)[1,2]
-fsctEtas <- cbind(model1Eta, model2Eta, model3Eta, model4Eta)
-colnames(fsctEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 'N/A')
+model5Eta <- EtaSq(model5)[1,2]
+model6Eta <- EtaSq(model6)[1,2]
+model7Eta <- EtaSq(model7)[1,2]
+model8Eta <- EtaSq(model8)[1,2]
+fsctEtas <- cbind(model1Eta,model2Eta,model3Eta,model4Eta,model5Eta,model6Eta,model7Eta,model8Eta)
+colnames(fsctEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 
+                      'Mode Rating','JB','KS', 'LV','N/A')
+
 
 model1 <- aov(standardMeanVOL ~ standardAge + standardRating, data=all.train.data)
 model2 <- aov(standardMeanVOL ~ standardAge + standardZeroVsNotZero, data=all.train.data)
 model3 <- aov(standardMeanVOL ~ standardAge + standardOneVsTwo, data=all.train.data)
-model4 <- aov(standardMeanVOL ~ standardAge, data=all.train.data)
+model4 <- aov(standardMeanVOL ~ standardAge + standardMode, data=all.train.data)
+model5 <- aov(standardMeanVOL ~ standardAge + standardRatingJB, data=all.train.data)
+model6 <- aov(standardMeanVOL ~ standardAge + standardRatingKS, data=all.train.data)
+model7 <- aov(standardMeanVOL ~ standardAge + standardRatingLV, data=all.train.data)
+model8 <- aov(standardMeanVOL ~ standardAge, data=all.train.data)
 model1Eta <- EtaSq(model1)[1,2]
 model2Eta <- EtaSq(model2)[1,2]
 model3Eta <- EtaSq(model3)[1,2]
 model4Eta <- EtaSq(model4)[1,2]
-volEtas <- cbind(model1Eta, model2Eta, model3Eta, model4Eta)
-colnames(volEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 'N/A')
+model5Eta <- EtaSq(model5)[1,2]
+model6Eta <- EtaSq(model6)[1,2]
+model7Eta <- EtaSq(model7)[1,2]
+model8Eta <- EtaSq(model8)[1,2]
+volEtas <- cbind(model1Eta,model2Eta,model3Eta,model4Eta,model5Eta,model6Eta,model7Eta,model8Eta)
+colnames(volEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 
+                      'Mode Rating','JB','KS', 'LV','N/A')
 
 ageStandBetas <- as.data.frame(rbind(gmdEtas, ctEtas, fsctEtas, volEtas))
-colnames(ageStandBetas) <- c('averageRating', '0 vs !0', '1 vs 2', 'No Regression')
+colnames(ageStandBetas) <- c('averageRating', '0 vs !0', '1 vs 2', 
+                      'Mode Rating','JB','KS', 'LV','N/A')
 rownames(ageStandBetas) <- c('GMD', 'CT', 'FSCT', 'VOL')
+
+write.csv(ageStandBetas, 'ageEtas.csv', quote=F)
 
 # Now I need to compute the 'r' between age and our variable when we regress with our data quality metrics
 
-
 model1 <- aov(standardMeanGMD ~ standardAge + standardRating, data=all.train.data)
 model2 <- aov(standardMeanGMD ~ standardAge + standardZeroVsNotZero, data=all.train.data)
 model3 <- aov(standardMeanGMD ~ standardAge + standardOneVsTwo, data=all.train.data)
-model4 <- aov(standardMeanGMD ~ standardAge, data=all.train.data)
+model4 <- aov(standardMeanGMD ~ standardAge + standardMode, data=all.train.data)
+model5 <- aov(standardMeanGMD ~ standardAge + standardRatingJB, data=all.train.data)
+model6 <- aov(standardMeanGMD ~ standardAge + standardRatingKS, data=all.train.data)
+model7 <- aov(standardMeanGMD ~ standardAge + standardRatingLV, data=all.train.data)
+model8 <- aov(standardMeanGMD ~ standardAge, data=all.train.data)
 model1Eta <- EtaSq(model1)[2,2]
 model2Eta <- EtaSq(model2)[2,2]
 model3Eta <- EtaSq(model3)[2,2]
-gmdEtas <- cbind(model1Eta, model2Eta, model3Eta)
+model4Eta <- EtaSq(model4)[2,2]
+model5Eta <- EtaSq(model5)[2,2]
+model6Eta <- EtaSq(model6)[2,2]
+model7Eta <- EtaSq(model7)[2,2]
+#model8Eta <- EtaSq(model8)[2,2]
+gmdEtas <- cbind(model1Eta,model2Eta,model3Eta,model4Eta,model5Eta,model6Eta,model7Eta)
+colnames(gmdEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 
+                      'Mode Rating','JB','KS', 'LV')
 
-colnames(gmdEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 'N/A')
 model1 <- aov(standardMeanCT ~ standardAge + standardRating, data=all.train.data)
 model2 <- aov(standardMeanCT ~ standardAge + standardZeroVsNotZero, data=all.train.data)
 model3 <- aov(standardMeanCT ~ standardAge + standardOneVsTwo, data=all.train.data)
-model4 <- aov(standardMeanCT ~ standardAge, data=all.train.data)
+model4 <- aov(standardMeanCT ~ standardAge + standardMode, data=all.train.data)
+model5 <- aov(standardMeanCT ~ standardAge + standardRatingJB, data=all.train.data)
+model6 <- aov(standardMeanCT ~ standardAge + standardRatingKS, data=all.train.data)
+model7 <- aov(standardMeanCT ~ standardAge + standardRatingLV, data=all.train.data)
+model8 <- aov(standardMeanCT ~ standardAge, data=all.train.data)
 model1Eta <- EtaSq(model1)[2,2]
 model2Eta <- EtaSq(model2)[2,2]
 model3Eta <- EtaSq(model3)[2,2]
-ctEtas <- cbind(model1Eta, model2Eta, model3Eta)
-colnames(ctEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 'N/A')
+model4Eta <- EtaSq(model4)[2,2]
+model5Eta <- EtaSq(model5)[2,2]
+model6Eta <- EtaSq(model6)[2,2]
+model7Eta <- EtaSq(model7)[2,2]
+#model8Eta <- EtaSq(model8)[2,2]
+ctEtas <- cbind(model1Eta,model2Eta,model3Eta,model4Eta,model5Eta,model6Eta,model7Eta)
+colnames(ctEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 
+                      'Mode Rating','JB','KS', 'LV')
+
 
 model1 <- aov(mprage_fs_mean_thickness ~ standardAge + standardRating, data=all.train.data)
 model2 <- aov(mprage_fs_mean_thickness ~ standardAge + standardZeroVsNotZero, data=all.train.data)
 model3 <- aov(mprage_fs_mean_thickness ~ standardAge + standardOneVsTwo, data=all.train.data)
-model4 <- aov(mprage_fs_mean_thickness ~ standardAge, data=all.train.data)
+model4 <- aov(mprage_fs_mean_thickness ~ standardAge + standardMode, data=all.train.data)
+model5 <- aov(mprage_fs_mean_thickness ~ standardAge + standardRatingJB, data=all.train.data)
+model6 <- aov(mprage_fs_mean_thickness ~ standardAge + standardRatingKS, data=all.train.data)
+model7 <- aov(mprage_fs_mean_thickness ~ standardAge + standardRatingLV, data=all.train.data)
+model8 <- aov(mprage_fs_mean_thickness ~ standardAge, data=all.train.data)
 model1Eta <- EtaSq(model1)[2,2]
 model2Eta <- EtaSq(model2)[2,2]
 model3Eta <- EtaSq(model3)[2,2]
-fsctEtas <- cbind(model1Eta, model2Eta, model3Eta)
-colnames(fsctEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 'N/A')
+model4Eta <- EtaSq(model4)[2,2]
+model5Eta <- EtaSq(model5)[2,2]
+model6Eta <- EtaSq(model6)[2,2]
+model7Eta <- EtaSq(model7)[2,2]
+#model8Eta <- EtaSq(model8)[2,2]
+fsctEtas <- cbind(model1Eta,model2Eta,model3Eta,model4Eta,model5Eta,model6Eta,model7Eta)
+colnames(fsctEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 
+                      'Mode Rating','JB','KS', 'LV')
 
 
 model1 <- aov(standardMeanVOL ~ standardAge + standardRating, data=all.train.data)
 model2 <- aov(standardMeanVOL ~ standardAge + standardZeroVsNotZero, data=all.train.data)
 model3 <- aov(standardMeanVOL ~ standardAge + standardOneVsTwo, data=all.train.data)
-model4 <- aov(standardMeanVOL ~ standardAge, data=all.train.data)
+model4 <- aov(standardMeanVOL ~ standardAge + standardMode, data=all.train.data)
+model5 <- aov(standardMeanVOL ~ standardAge + standardRatingJB, data=all.train.data)
+model6 <- aov(standardMeanVOL ~ standardAge + standardRatingKS, data=all.train.data)
+model7 <- aov(standardMeanVOL ~ standardAge + standardRatingLV, data=all.train.data)
+model8 <- aov(standardMeanVOL ~ standardAge, data=all.train.data)
 model1Eta <- EtaSq(model1)[2,2]
 model2Eta <- EtaSq(model2)[2,2]
 model3Eta <- EtaSq(model3)[2,2]
-volEtas <- cbind(model1Eta, model2Eta, model3Eta)
-colnames(volEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 'N/A')
+model4Eta <- EtaSq(model4)[2,2]
+model5Eta <- EtaSq(model5)[2,2]
+model6Eta <- EtaSq(model6)[2,2]
+model7Eta <- EtaSq(model7)[2,2]
+#model8Eta <- EtaSq(model8)[2,2]
+volEtas <- cbind(model1Eta,model2Eta,model3Eta,model4Eta,model5Eta,model6Eta,model7Eta)
+colnames(volEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 
+                      'Mode Rating','JB','KS', 'LV')
 
-ageStandBetas <- as.data.frame(rbind(gmdEtas, ctEtas, fsctEtas,volEtas))
-colnames(ageStandBetas) <- c('averageRating', '0 vs !0', '1 vs 2')
+ageStandBetas <- as.data.frame(rbind(gmdEtas, ctEtas, fsctEtas, volEtas))
+colnames(ageStandBetas) <- c('averageRating', '0 vs !0', '1 vs 2', 
+                      'Mode Rating','JB','KS', 'LV')
 rownames(ageStandBetas) <- c('GMD', 'CT', 'FSCT', 'VOL')
+
+write.csv(ageStandBetas, 'qualityMetricsEtas.csv', quote=F)
 
