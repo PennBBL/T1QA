@@ -235,6 +235,8 @@ all.train.data$standardMode <- scale(modeRating)
 all.train.data$standardRatingJB <- scale(ratingJB.y)
 all.train.data$standardRatingKS <- scale(ratingKS.y)
 all.train.data$standardRatingLV <- scale(ratingLV.y)
+all.train.data$zeroVsNotZeroLMER <- scale(zeroVsNotZeroOutcomeLMER)
+all.train.data$oneVsTwoLMER <- scale(oneVsTwoOutcomeLMER)
 
 model1 <- aov(standardMeanGMD ~ standardAge + standardRating, data=all.train.data)
 model2 <- aov(standardMeanGMD ~ standardAge + standardZeroVsNotZero, data=all.train.data)
@@ -326,93 +328,78 @@ rownames(ageStandBetas) <- c('GMD', 'CT', 'FSCT', 'VOL')
 write.csv(ageStandBetas, 'ageEtas.csv', quote=F)
 
 # Now I need to compute the 'r' between age and our variable when we regress with our data quality metrics
-
-model1 <- aov(standardMeanGMD ~ standardAge + standardRating, data=all.train.data)
-model2 <- aov(standardMeanGMD ~ standardAge + standardZeroVsNotZero, data=all.train.data)
-model3 <- aov(standardMeanGMD ~ standardAge + standardOneVsTwo, data=all.train.data)
-model4 <- aov(standardMeanGMD ~ standardAge + standardMode, data=all.train.data)
-model5 <- aov(standardMeanGMD ~ standardAge + standardRatingJB, data=all.train.data)
-model6 <- aov(standardMeanGMD ~ standardAge + standardRatingKS, data=all.train.data)
-model7 <- aov(standardMeanGMD ~ standardAge + standardRatingLV, data=all.train.data)
-model8 <- aov(standardMeanGMD ~ standardAge, data=all.train.data)
-model1Eta <- EtaSq(model1)[2,2]
-model2Eta <- EtaSq(model2)[2,2]
-model3Eta <- EtaSq(model3)[2,2]
-model4Eta <- EtaSq(model4)[2,2]
-model5Eta <- EtaSq(model5)[2,2]
-model6Eta <- EtaSq(model6)[2,2]
-model7Eta <- EtaSq(model7)[2,2]
-#model8Eta <- EtaSq(model8)[2,2]
-gmdEtas <- cbind(model1Eta,model2Eta,model3Eta,model4Eta,model5Eta,model6Eta,model7Eta)
+model1 <- lm(standardMeanGMD ~ standardAge + standardRating, data=all.train.data)$fitted.values
+model2 <- lm(standardMeanGMD ~ standardAge + standardZeroVsNotZero, data=all.train.data)$fitted.values
+model3 <- lm(standardMeanGMD ~ standardAge + standardOneVsTwo, data=all.train.data)$fitted.values
+model4 <- lm(standardMeanGMD ~ standardAge + standardMode, data=all.train.data)$fitted.values
+model5 <- lm(standardMeanGMD ~ standardAge + standardRatingJB, data=all.train.data)$fitted.values
+model6 <- lm(standardMeanGMD ~ standardAge + standardRatingKS, data=all.train.data)$fitted.values
+model7 <- lm(standardMeanGMD ~ standardAge + standardRatingLV, data=all.train.data)$fitted.values
+model8 <- lm(standardMeanGMD ~ standardAge, data=all.train.data)$fitted.values
+model9 <- lm(standardMeanGMD ~ standardAge + zeroVsNotZeroOutcomeLMER, data=all.train.data)$fitted.values
+model10 <- lm(standardMeanGMD ~ standardAge + oneVsTwoLMER, data=all.train.data)$fitted.values
+model1Eta <- cor(model1, all.train.data$standardMeanGMD)
+model2Eta <- cor(model2, all.train.data$standardMeanGMD)
+model3Eta <- cor(model3, all.train.data$standardMeanGMD)
+model4Eta <- cor(model4, all.train.data$standardMeanGMD)
+model5Eta <- cor(model5, all.train.data$standardMeanGMD)
+model6Eta <- cor(model6, all.train.data$standardMeanGMD)
+model7Eta <- cor(model7, all.train.data$standardMeanGMD)
+model8Eta <- cor(model8, all.train.data$standardMeanGMD)
+model9Eta <- cor(model9, all.train.data$standardMeanGMD)
+model10Eta <- cor(model10, all.train.data$standardMeanGMD)
+gmdEtas <- cbind(model1Eta,model2Eta,model3Eta,model4Eta,model5Eta,model6Eta,model7Eta, model8Eta, model9Eta, model10Eta)
 colnames(gmdEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 
-                      'Mode Rating','JB','KS', 'LV')
-
-model1 <- aov(standardMeanCT ~ standardAge + standardRating, data=all.train.data)
-model2 <- aov(standardMeanCT ~ standardAge + standardZeroVsNotZero, data=all.train.data)
-model3 <- aov(standardMeanCT ~ standardAge + standardOneVsTwo, data=all.train.data)
-model4 <- aov(standardMeanCT ~ standardAge + standardMode, data=all.train.data)
-model5 <- aov(standardMeanCT ~ standardAge + standardRatingJB, data=all.train.data)
-model6 <- aov(standardMeanCT ~ standardAge + standardRatingKS, data=all.train.data)
-model7 <- aov(standardMeanCT ~ standardAge + standardRatingLV, data=all.train.data)
-model8 <- aov(standardMeanCT ~ standardAge, data=all.train.data)
-model1Eta <- EtaSq(model1)[2,2]
-model2Eta <- EtaSq(model2)[2,2]
-model3Eta <- EtaSq(model3)[2,2]
-model4Eta <- EtaSq(model4)[2,2]
-model5Eta <- EtaSq(model5)[2,2]
-model6Eta <- EtaSq(model6)[2,2]
-model7Eta <- EtaSq(model7)[2,2]
-#model8Eta <- EtaSq(model8)[2,2]
-ctEtas <- cbind(model1Eta,model2Eta,model3Eta,model4Eta,model5Eta,model6Eta,model7Eta)
-colnames(ctEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 
-                      'Mode Rating','JB','KS', 'LV')
+                      'Mode Rating','JB','KS', 'LV', 'Age', '0 vs !0 LMER', '1 vs 2 LMER')
 
 
-model1 <- aov(mprage_fs_mean_thickness ~ standardAge + standardRating, data=all.train.data)
-model2 <- aov(mprage_fs_mean_thickness ~ standardAge + standardZeroVsNotZero, data=all.train.data)
-model3 <- aov(mprage_fs_mean_thickness ~ standardAge + standardOneVsTwo, data=all.train.data)
-model4 <- aov(mprage_fs_mean_thickness ~ standardAge + standardMode, data=all.train.data)
-model5 <- aov(mprage_fs_mean_thickness ~ standardAge + standardRatingJB, data=all.train.data)
-model6 <- aov(mprage_fs_mean_thickness ~ standardAge + standardRatingKS, data=all.train.data)
-model7 <- aov(mprage_fs_mean_thickness ~ standardAge + standardRatingLV, data=all.train.data)
-model8 <- aov(mprage_fs_mean_thickness ~ standardAge, data=all.train.data)
-model1Eta <- EtaSq(model1)[2,2]
-model2Eta <- EtaSq(model2)[2,2]
-model3Eta <- EtaSq(model3)[2,2]
-model4Eta <- EtaSq(model4)[2,2]
-model5Eta <- EtaSq(model5)[2,2]
-model6Eta <- EtaSq(model6)[2,2]
-model7Eta <- EtaSq(model7)[2,2]
-#model8Eta <- EtaSq(model8)[2,2]
-fsctEtas <- cbind(model1Eta,model2Eta,model3Eta,model4Eta,model5Eta,model6Eta,model7Eta)
-colnames(fsctEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 
-                      'Mode Rating','JB','KS', 'LV')
-
-
-model1 <- aov(standardMeanVOL ~ standardAge + standardRating, data=all.train.data)
-model2 <- aov(standardMeanVOL ~ standardAge + standardZeroVsNotZero, data=all.train.data)
-model3 <- aov(standardMeanVOL ~ standardAge + standardOneVsTwo, data=all.train.data)
-model4 <- aov(standardMeanVOL ~ standardAge + standardMode, data=all.train.data)
-model5 <- aov(standardMeanVOL ~ standardAge + standardRatingJB, data=all.train.data)
-model6 <- aov(standardMeanVOL ~ standardAge + standardRatingKS, data=all.train.data)
-model7 <- aov(standardMeanVOL ~ standardAge + standardRatingLV, data=all.train.data)
-model8 <- aov(standardMeanVOL ~ standardAge, data=all.train.data)
-model1Eta <- EtaSq(model1)[2,2]
-model2Eta <- EtaSq(model2)[2,2]
-model3Eta <- EtaSq(model3)[2,2]
-model4Eta <- EtaSq(model4)[2,2]
-model5Eta <- EtaSq(model5)[2,2]
-model6Eta <- EtaSq(model6)[2,2]
-model7Eta <- EtaSq(model7)[2,2]
-#model8Eta <- EtaSq(model8)[2,2]
-volEtas <- cbind(model1Eta,model2Eta,model3Eta,model4Eta,model5Eta,model6Eta,model7Eta)
+model1 <- lm(standardMeanVOL ~ standardAge + standardRating, data=all.train.data)$fitted.values
+model2 <- lm(standardMeanVOL ~ standardAge + standardZeroVsNotZero, data=all.train.data)$fitted.values
+model3 <- lm(standardMeanVOL ~ standardAge + standardOneVsTwo, data=all.train.data)$fitted.values
+model4 <- lm(standardMeanVOL ~ standardAge + standardMode, data=all.train.data)$fitted.values
+model5 <- lm(standardMeanVOL ~ standardAge + standardRatingJB, data=all.train.data)$fitted.values
+model6 <- lm(standardMeanVOL ~ standardAge + standardRatingKS, data=all.train.data)$fitted.values
+model7 <- lm(standardMeanVOL ~ standardAge + standardRatingLV, data=all.train.data)$fitted.values
+model8 <- lm(standardMeanVOL ~ standardAge, data=all.train.data)$fitted.values
+model9 <- lm(standardMeanVOL ~ standardAge + zeroVsNotZeroOutcomeLMER, data=all.train.data)$fitted.values
+model10 <- lm(standardMeanVOL ~ standardAge + oneVsTwoLMER, data=all.train.data)$fitted.values
+model1Eta <- cor(model1, all.train.data$standardMeanVOL)
+model2Eta <- cor(model2, all.train.data$standardMeanVOL)
+model3Eta <- cor(model3, all.train.data$standardMeanVOL)
+model4Eta <- cor(model4, all.train.data$standardMeanVOL)
+model5Eta <- cor(model5, all.train.data$standardMeanVOL)
+model6Eta <- cor(model6, all.train.data$standardMeanVOL)
+model7Eta <- cor(model7, all.train.data$standardMeanVOL)
+model8Eta <- cor(model8, all.train.data$standardMeanVOL)
+model9Eta <- cor(model9, all.train.data$standardMeanVOL)
+model10Eta <- cor(model10, all.train.data$standardMeanVOL)
+volEtas <- cbind(model1Eta,model2Eta,model3Eta,model4Eta,model5Eta,model6Eta,model7Eta, model8Eta, model9Eta, model10Eta)
 colnames(volEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 
-                      'Mode Rating','JB','KS', 'LV')
+                      'Mode Rating','JB','KS', 'LV', 'Age', '0 vs !0 LMER', '1 vs 2 LMER')
 
-ageStandBetas <- as.data.frame(rbind(gmdEtas, ctEtas, fsctEtas, volEtas))
-colnames(ageStandBetas) <- c('averageRating', '0 vs !0', '1 vs 2', 
-                      'Mode Rating','JB','KS', 'LV')
-rownames(ageStandBetas) <- c('GMD', 'CT', 'FSCT', 'VOL')
+model1 <- lm(standardMeanCT ~ standardAge + standardRating, data=all.train.data)$fitted.values
+model2 <- lm(standardMeanCT ~ standardAge + standardZeroVsNotZero, data=all.train.data)$fitted.values
+model3 <- lm(standardMeanCT ~ standardAge + standardOneVsTwo, data=all.train.data)$fitted.values
+model4 <- lm(standardMeanCT ~ standardAge + standardMode, data=all.train.data)$fitted.values
+model5 <- lm(standardMeanCT ~ standardAge + standardRatingJB, data=all.train.data)$fitted.values
+model6 <- lm(standardMeanCT ~ standardAge + standardRatingKS, data=all.train.data)$fitted.values
+model7 <- lm(standardMeanCT ~ standardAge + standardRatingLV, data=all.train.data)$fitted.values
+model8 <- lm(standardMeanCT ~ standardAge, data=all.train.data)$fitted.values
+model9 <- lm(standardMeanCT ~ standardAge + zeroVsNotZeroOutcomeLMER, data=all.train.data)$fitted.values
+model10 <- lm(standardMeanCT ~ standardAge + oneVsTwoLMER, data=all.train.data)$fitted.values
+model1Eta <- cor(model1, all.train.data$standardMeanCT)
+model2Eta <- cor(model2, all.train.data$standardMeanCT)
+model3Eta <- cor(model3, all.train.data$standardMeanCT)
+model4Eta <- cor(model4, all.train.data$standardMeanCT)
+model5Eta <- cor(model5, all.train.data$standardMeanCT)
+model6Eta <- cor(model6, all.train.data$standardMeanCT)
+model7Eta <- cor(model7, all.train.data$standardMeanCT)
+model8Eta <- cor(model8, all.train.data$standardMeanCT)
+model9Eta <- cor(model9, all.train.data$standardMeanCT)
+model10Eta <- cor(model10, all.train.data$standardMeanCT)
+ctEtas <- cbind(model1Eta,model2Eta,model3Eta,model4Eta,model5Eta,model6Eta,model7Eta, model8Eta, model9Eta, model10Eta)
+colnames(ctEtas) <- c('averageRating', '0 vs !0', '1 vs 2', 
+                      'Mode Rating','JB','KS', 'LV', 'Age', '0 vs !0 LMER', '1 vs 2 LMER')
 
-write.csv(ageStandBetas, 'qualityMetricsEtas.csv', quote=F)
-
+output <- rbind(gmdEtas, volEtas, ctEtas)
+write.csv(output, 'agesAbilityToPredictImageModalityWithDiffRegressors.csv', quote=F, row.names=F)
