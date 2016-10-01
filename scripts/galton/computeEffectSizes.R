@@ -30,6 +30,13 @@ load('/home/adrose/qapQA/data/1vs28variableModelLMER.RData')
 oneVsTwoModelLMER <- mod8
 rm(mod8)
 
+# pCor function
+pCorFunction <- function(imageVals, regVals, ageVals){
+  newVals <- lm(imageVals ~ regVals)$residuals
+  cor(newVals, ageVals)
+}
+
+
 
 # Now work with the data 
 ## Load Library(s)
@@ -238,6 +245,8 @@ all.train.data$standardRatingLV <- scale(ratingLV.y)
 all.train.data$zeroVsNotZeroLMER <- scale(zeroVsNotZeroOutcomeLMER)
 all.train.data$oneVsTwoLMER <- scale(oneVsTwoOutcomeLMER)
 
+
+
 model1 <- aov(standardMeanGMD ~ standardAge + standardRating, data=all.train.data)
 model2 <- aov(standardMeanGMD ~ standardAge + standardZeroVsNotZero, data=all.train.data)
 model3 <- aov(standardMeanGMD ~ standardAge + standardOneVsTwo, data=all.train.data)
@@ -403,3 +412,21 @@ colnames(ctEtas) <- c('averageRating', '0 vs !0', '1 vs 2',
 
 output <- rbind(gmdEtas, volEtas, ctEtas)
 write.csv(output, 'agesAbilityToPredictImageModalityWithDiffRegressors.csv', quote=F, row.names=F)
+
+regVals <- c('standardMode',
+'standardRatingJB',
+'standardRatingKS',
+'standardRatingLV',
+'zeroVsNotZeroLMER',
+'oneVsTwoLMER',
+'standardRating',
+'standardZeroVsNotZero',
+'standardOneVsTwo')
+
+gmdPCorVals <- NULL
+for(i in regVals){
+  tmp <- all.train.data[i]
+  corVal <- pCorFunction(all.train.data$standardMeanGMD, tmp, all.train.data$ageAtGo1Scan)
+  gmdPCorVals <- 
+}
+
