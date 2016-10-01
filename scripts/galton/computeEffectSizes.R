@@ -75,6 +75,14 @@ all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 ## Now create our age regressed variables 
 all.train.data$meanCT <- apply(all.train.data[,2796:2893], 1, mean)
 all.train.data$meanGMD <- apply(all.train.data[,2692:2789], 1, mean)
+meanGMDWeighted <- NULL
+for(i in 1:nrow(all.train.data)){
+  meanGMDVal <- weighted.mean(all.train.data[i,2692:2789], all.train.data[i,2567:2664])
+  meanGMDWeighted <- append(meanGMDWeighted, meanGMDVal)
+}
+all.train.data$meanGMDWeighted <- meanGMDWeighted
+all.train.data$meanGMDWeightedAgeReg <- lm(meanGMDWeighted ~ ageAtGo1Scan, data=all.train.data)$residuals
+rm(meanGMDWeighted)
 all.train.data$meanVOL <- apply(all.train.data[,2567:2664], 1, mean)
 all.train.data$meanCTAgeReg <- lm(meanCT ~ ageAtGo1Scan, data=all.train.data)$residuals
 all.train.data$meanGMDAgeReg <- lm(meanGMD ~ ageAtGo1Scan, data=all.train.data)$residuals
@@ -154,7 +162,8 @@ meanValsAgeRegAverageRating <- cbind(cor(meanCTAgeReg, rawAverageRating.y),
                                        cor(as.numeric(meanFSCtAgeReg),
                                            rawAverageRating.y, use='complete'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
-                                           rawAverageRating.y, use='complete'))
+                                           rawAverageRating.y, use='complete'),
+                                       cor(meanGMDWeightedAgeReg,rawAverageRating.y))
 
 meanValsAgeRegZeroVsNotZero <- cbind(cor(meanCTAgeReg, zeroVsNotZeroOutcome),
                                        cor(meanGMDAgeReg, zeroVsNotZeroOutcome),
@@ -162,7 +171,8 @@ meanValsAgeRegZeroVsNotZero <- cbind(cor(meanCTAgeReg, zeroVsNotZeroOutcome),
                                        cor(as.numeric(meanFSCtAgeReg),
                                            zeroVsNotZeroOutcome, use='complete'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
-                                           zeroVsNotZeroOutcome, use='complete'))
+                                           zeroVsNotZeroOutcome, use='complete'),
+                                       cor(meanGMDWeightedAgeReg, zeroVsNotZeroOutcome))
 
 meanValsAgeRegZeroVsNotZeroLMER <- cbind(cor(meanCTAgeReg, zeroVsNotZeroOutcomeLMER),
                                        cor(meanGMDAgeReg, zeroVsNotZeroOutcomeLMER),
@@ -170,8 +180,8 @@ meanValsAgeRegZeroVsNotZeroLMER <- cbind(cor(meanCTAgeReg, zeroVsNotZeroOutcomeL
                                        cor(as.numeric(meanFSCtAgeReg),
                                            zeroVsNotZeroOutcomeLMER, use='complete'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
-                                           zeroVsNotZeroOutcomeLMER, use='complete'))
-
+                                           zeroVsNotZeroOutcomeLMER, use='complete'),
+                                        cor(meanGMDWeightedAgeReg, zeroVsNotZeroLMER))
 
 meanValsAgeRegOneVsTwo <- cbind(cor(meanCTAgeReg, oneVsTwoOutcome),
                                        cor(meanGMDAgeReg, oneVsTwoOutcome),
@@ -179,7 +189,8 @@ meanValsAgeRegOneVsTwo <- cbind(cor(meanCTAgeReg, oneVsTwoOutcome),
                                        cor(as.numeric(meanFSCtAgeReg),
                                            oneVsTwoOutcome, use='complete'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
-                                           oneVsTwoOutcome, use='complete'))
+                                           oneVsTwoOutcome, use='complete'),
+                                       cor(meanGMDWeightedAgeReg, oneVsTwoOutcome))
 
 meanValsAgeRegOneVsTwoLMER <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeLMER ),
                                        cor(meanGMDAgeReg, oneVsTwoOutcomeLMER ),
@@ -187,7 +198,8 @@ meanValsAgeRegOneVsTwoLMER <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeLMER ),
                                        cor(as.numeric(meanFSCtAgeReg),
                                            oneVsTwoOutcomeLMER , use='complete'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
-                                           oneVsTwoOutcomeLMER , use='complete'))
+                                           oneVsTwoOutcomeLMER , use='complete'),
+                                       cor(meanGMDWeightedAgeReg,oneVsTwoOutcomeLMER))
 
 meanValsAgeRegModeRating <- cbind(cor(meanCTAgeReg, modeRating),
                                        cor(meanGMDAgeReg, modeRating),
@@ -195,7 +207,8 @@ meanValsAgeRegModeRating <- cbind(cor(meanCTAgeReg, modeRating),
                                        cor(as.numeric(meanFSCtAgeReg),
                                            modeRating, use='complete'),
                                        cor(as.numeric(meanFSAreaAgeReg),
-                                           modeRating, use='complete'))
+                                           modeRating, use='complete'),
+                                       cor(meanGMDWeightedAgeReg, modeRating))
 
 meanValsAgeRegRatingJB <- cbind(cor(meanCTAgeReg, ratingJB.y),
                                        cor(meanGMDAgeReg, ratingJB.y),
@@ -203,7 +216,8 @@ meanValsAgeRegRatingJB <- cbind(cor(meanCTAgeReg, ratingJB.y),
                                        cor(as.numeric(meanFSCtAgeReg),
                                            ratingJB.y, use='complete'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
-                                           ratingJB.y, use='complete'))
+                                           ratingJB.y, use='complete'),
+                                       cor(meanGMDWeightedAgeReg, ratingJB.y))
 
 meanValsAgeRegRatingLV <- cbind(cor(meanCTAgeReg, ratingLV.y),
                                        cor(meanGMDAgeReg, ratingLV.y),
@@ -211,7 +225,8 @@ meanValsAgeRegRatingLV <- cbind(cor(meanCTAgeReg, ratingLV.y),
                                        cor(as.numeric(meanFSCtAgeReg),
                                            ratingLV.y, use='complete'),
                                        cor(as.numeric(meanFSAreaAgeReg),
-                                           ratingLV.y, use='complete'))
+                                           ratingLV.y, use='complete'),
+                                       cor(meanGMDWeightedAgeReg, ratingLV.y))
 
 meanValsAgeRegRatingKS <- cbind(cor(meanCTAgeReg, ratingKS.y),
                                        cor(meanGMDAgeReg, ratingKS.y),
@@ -219,12 +234,13 @@ meanValsAgeRegRatingKS <- cbind(cor(meanCTAgeReg, ratingKS.y),
                                        cor(as.numeric(meanFSCtAgeReg),
                                            ratingKS.y, use='complete'),
                                        cor(as.numeric(meanFSAreaAgeReg),
-                                           ratingKS.y, use='complete'))
+                                           ratingKS.y, use='complete'),
+                                       cor(meanGMDWeightedAgeReg, ratingKS.y))
 
 tableAgeReg <- rbind(meanValsAgeRegAverageRating, meanValsAgeRegModeRating, 
                  meanValsAgeRegRatingJB, meanValsAgeRegRatingLV, meanValsAgeRegRatingKS,
                  meanValsAgeRegZeroVsNotZero, meanValsAgeRegOneVsTwoLMER, meanValsAgeRegOneVsTwo, meanValsAgeRegOneVsTwoLMER)
-colnames(tableAgeReg) <- c('Ants Mean CT', 'Ants Mean GMD', 'Ants Mean Vol', 'FS Mean CT', 'FS Mean Area')
+colnames(tableAgeReg) <- c('Ants Mean CT', 'Ants Mean GMD', 'Ants Mean Vol', 'FS Mean CT', 'FS Mean Area', 'Ants Mean Weighted GMD')
 rownames(tableAgeReg) <- c('Average Rating', 'Mode Rating', 
                              'rating JB', 'rating LV', 'rating KS',
                              '0 vs !0 GLMER', '1 vs 2 GLMER', '0 vs !0 LMER', '1 vs 2 LMER')
@@ -244,7 +260,6 @@ all.train.data$standardRatingKS <- scale(ratingKS.y)
 all.train.data$standardRatingLV <- scale(ratingLV.y)
 all.train.data$zeroVsNotZeroLMER <- scale(zeroVsNotZeroOutcomeLMER)
 all.train.data$oneVsTwoLMER <- scale(oneVsTwoOutcomeLMER)
-
 
 
 model1 <- aov(standardMeanGMD ~ standardAge + standardRating, data=all.train.data)
@@ -423,10 +438,64 @@ regVals <- c('standardMode',
 'standardZeroVsNotZero',
 'standardOneVsTwo')
 
-gmdPCorVals <- NULL
+# First lets find the relationship between our values and age
+valsToAgeCor <- NULL
 for(i in regVals){
-  tmp <- all.train.data[i]
-  corVal <- pCorFunction(all.train.data$standardMeanGMD, tmp, all.train.data$ageAtGo1Scan)
-  gmdPCorVals <- 
+    tmp <- as.numeric(unlist(all.train.data[i]))
+    corVal <- cor(tmp, all.train.data$ageAtGo1Scan)
+    valsToAgeCor <- append(valsToAgeCor, corVal)
 }
 
+colnames(valsToAgeCor) <- regVals
+write.csv(valsToAgeCor, 'corBtwnDataQualityAndAge.csv', quote=F, row.names=F)
+imageVals <- c('standardMeanCT',
+'standardMeanVol',
+'mprage_fs_mean_thickness',
+'standardMeanGMD')
+
+gmdPCorVals <- NULL
+for(i in regVals){
+  tmp <- as.numeric(unlist(all.train.data[i]))
+  corVal <- pCorFunction(all.train.data$standardMeanGMD[,1], tmp, all.train.data$ageAtGo1Scan)
+  gmdPCorVals <- append(gmdPCorVals, corVal)
+}
+gmdPCorVals <- append(gmdPCorVals, cor(all.train.data$standardMeanGMD, all.train.data$ageAtGo1Scan))
+
+gmdWPCorVals <- NULL
+for(i in regVals){
+    tmp <- as.numeric(unlist(all.train.data[i]))
+    corVal <- pCorFunction(all.train.data$meanGMDWeighted, tmp, all.train.data$ageAtGo1Scan)
+    gmdWPCorVals <- append(gmdWPCorVals, corVal)
+}
+gmdWPCorVals <- append(gmdWPCorVals, cor(all.train.data$meanGMDWeighted, all.train.data$ageAtGo1Scan))
+
+ctPCorVals <- NULL
+for(i in regVals){
+    tmp <- as.numeric(unlist(all.train.data[i]))
+    corVal <- pCorFunction(all.train.data$meanCT, tmp, all.train.data$ageAtGo1Scan)
+    ctPCorVals <- append(ctPCorVals, corVal)
+}
+ctPCorVals <- append(ctPCorVals, cor(all.train.data$meanCT, all.train.data$ageAtGo1Scan))
+
+volPCorVals <- NULL
+for(i in regVals){
+    tmp <- as.numeric(unlist(all.train.data[i]))
+    corVal <- pCorFunction(all.train.data$meanVOL, tmp, all.train.data$ageAtGo1Scan)
+    volPCorVals <- append(volPCorVals, corVal)
+}
+volPCorVals <- append(volPCorVals, cor(all.train.data$meanVOL, all.train.data$ageAtGo1Scan))
+
+fsctPCorVals <- NULL
+tmp.df <- all.train.data[complete.cases(all.train.data$mprage_fs_mean_thickness),]
+for(i in regVals){
+    tmp <- as.numeric(unlist(tmp.df[i]))
+    corVal <- pCorFunction(tmp.df$mprage_fs_mean_thickness, tmp, tmp.df$ageAtGo1Scan)
+    fsctPCorVals <- append(fsctPCorVals, corVal)
+}
+fsctPCorVals <- append(fsctPCorVals, cor(tmp.df$mprage_fs_mean_thickness, tmp.df$ageAtGo1Scan))
+rm(tmp.df)
+regVals <- append(regVals, c('No Regressor'))
+
+p.cor.vals <- rbind(gmdPCorVals, gmdWPCorVals, ctPCorVals, volPCorVals, fsctPCorVals)
+colnames(p.cor.vals) <- regVals
+write.csv(p.cor.vals, 'pCorBtnAgeAndMeanImagingValues.csv', quote=F, row.names=T)
