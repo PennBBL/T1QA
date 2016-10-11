@@ -1,5 +1,5 @@
 ## Load Library(s)
-source("/home/adrose/R/x86_64-redhat-linux-gnu-library/helperFunctions/afgrHelpFunc.R")
+source("/home/adrose/adroseHelperScripts/R/afgrHelpFunc.R")
 install_load('corrplot', 'ggplot2', 'psych', 'e1071', 'pROC', 'ggm', 'plyr', 'visreg', 'scales', 'stats', 'lme4','reshape2')
 
 ## Declare some functions
@@ -11,6 +11,7 @@ qapRawOutput <- read.csv("/home/adrose/qapQA/data/n1601_qap_output.csv")
 kurtVals <- read.csv("/home/adrose/qapQA/data/n1601_skew_kurt_values.csv")
 manualQAData <- read.csv("/home/analysis/redcap_data/201507/n1601_go1_datarel_073015.csv")
 manualQAData2 <- read.csv("/home/adrose/qapQA/data/n1601_manual_ratings.csv")
+allFSData <- read.csv("/home/adrose/qapQA/data/bilateral.meanthickness.totalarea.csv")
 
 # Here we will collapse the bins into 4 distinct groups based on average rating
 # We want 4 distinct rating bins 0 - bad, 1-1.33 - decent, 1.667 - good, 2 - stellar
@@ -27,25 +28,28 @@ qapRawOutput <- merge(qapRawOutput,kurtVals ,by.x="subject", by.y="bblid")
 
 # add bblid and scan id columns to qapRawOutput variable 
 # prime a NA value bblid column
-naCol <- rep(NA, length(qapRawOutput$subject))
-qapRawOutput$bblid <- naCol
-qapRawOutput$scanid <- naCol
+
+qapRawOutput$bblid <- strSplitMatrixReturn(qapRawOutput$subject, '_')[,1]
+qapRawOutput$scanid <- strSplitMatrixReturn(qapRawOutput$subject, '_')[,2]
+allFSData$scanid <- strSplitMatrixReturn(allFSData$scanid, 'x')[,2]
 
 # Now go through each subject id and split the string and reutnr just the first value of that strsplit
-for (subjectIndex in 1:length(qapRawOutput$subject)){
-  stringSplitOutput <- strsplit(as.character(qapRawOutput$subject[subjectIndex]), split="_")[[1]][1]
-  qapRawOutput$bblid[subjectIndex] <- stringSplitOutput
-  stringSplitOutput <- strsplit(as.character(qapRawOutput$subject[subjectIndex]), split="_")[[1]][2]
-  qapRawOutput$scanid[subjectIndex] <- stringSplitOutput
-}
+#for (subjectIndex in 1:length(qapRawOutput$subject)){
+#  stringSplitOutput <- strsplit(as.character(qapRawOutput$subject[subjectIndex]), split="_")[[1]][1]
+#  qapRawOutput$bblid[subjectIndex] <- stringSplitOutput
+#  stringSplitOutput <- strsplit(as.character(qapRawOutput$subject[subjectIndex]), split="_")[[1]][2]
+#  qapRawOutput$scanid[subjectIndex] <- stringSplitOutput
+#}
 
 # Now turn them back into factors 
 qapRawOutput$bblid <- as.factor(qapRawOutput$bblid)
 qapRawOutput$scanid <- as.factor(qapRawOutput$scanid)
 
 # Now merge the data 
-mergedQAP <- merge(qapRawOutput, manualQAData, by="scanid")
-mergedQAP <- mergedQAP[!duplicated(mergedQAP),]
+mergedQAP <- merge(qapRawOutput, manualQAData, by=c('bblid', 'scanid'))
+mergedQAP <- merge(mergedQAP, allFSData, by=c('bblid', 'scanid'))
+mergedQAP$bh.meanthickness <- apply(mergedQAP[,c(2520, 2522)], 1, function(x) mean(x, na.rm=T))
+mergedQAP$bh.totalarea <- apply(mergedQAP[,c(2521, 2523)], 1, function(x) sum(x, na.rm=T))
 
 ## Declare some variables
 manualQAValue <- "averageRating"
@@ -56,7 +60,7 @@ qapValNames <- names(mergedQAP)[5:40]
 
 ## Now prep some derivative data sets
 isolatedVars <- mergedQAP[qapValNames]
-isolatedVars <- cbind(mergedQAP$bblid.x, isolatedVars)
+isolatedVars <- cbind(mergedQAP$bblid, isolatedVars)
 isolatedVars <- cbind(isolatedVars, mergedQAP[manualQAValue])
 colnames(isolatedVars)[1] <- 'bblid'
 isolatedVars[manualQAValue] <- as.factor(isolatedVars$averageRating)
