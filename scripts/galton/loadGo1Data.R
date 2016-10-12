@@ -12,6 +12,11 @@ kurtVals <- read.csv("/home/adrose/qapQA/data/n1601_skew_kurt_values.csv")
 manualQAData <- read.csv("/home/analysis/redcap_data/201507/n1601_go1_datarel_073015.csv")
 manualQAData2 <- read.csv("/home/adrose/qapQA/data/n1601_manual_ratings.csv")
 allFSData <- read.csv("/home/adrose/qapQA/data/bilateral.meanthickness.totalarea.csv")
+allJLFData <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/n1601_jlfVol.csv')
+allJLFDataGMD <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/n1601_jlfGMD.csv')
+allJLFDataCT <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/n1601_jlfCt.csv')
+allJLFData <- merge(allJLFData, allJLFDataGMD, by=c('bblid', 'scanid'))
+allJLFData <- merge(allJLFData, allJLFDataCT, by=c('bblid', 'scanid'))
 
 # Here we will collapse the bins into 4 distinct groups based on average rating
 # We want 4 distinct rating bins 0 - bad, 1-1.33 - decent, 1.667 - good, 2 - stellar
@@ -50,13 +55,14 @@ mergedQAP <- merge(qapRawOutput, manualQAData, by=c('bblid', 'scanid'))
 mergedQAP <- merge(mergedQAP, allFSData, by=c('bblid', 'scanid'))
 mergedQAP$bh.meanthickness <- apply(mergedQAP[,c(2520, 2522)], 1, function(x) mean(x, na.rm=T))
 mergedQAP$bh.totalarea <- apply(mergedQAP[,c(2521, 2523)], 1, function(x) sum(x, na.rm=T))
+mergedQAP <- merge(mergedQAP, allJLFData, by=c('bblid', 'scanid'))
 
 ## Declare some variables
 manualQAValue <- "averageRating"
 
 manualQAColVal <- grep(manualQAValue, names(mergedQAP))
 
-qapValNames <- names(mergedQAP)[5:40]
+qapValNames <- names(mergedQAP)[6:41]
 
 ## Now prep some derivative data sets
 isolatedVars <- mergedQAP[qapValNames]
