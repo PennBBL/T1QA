@@ -14,7 +14,7 @@
 
 
 ## Load the data
-source('/home/adrose/qapQA/scripts/loadGo1Data.R')
+source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 detachAllPackages()
 set.seed(16)
 load('/home/adrose/qapQA/data/0vsNot0FinalData.RData')
@@ -74,16 +74,16 @@ trainingData$oneVsTwoOutcomeLMER <- predict(oneVsTwoModelLMER, newdata=trainingD
 all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 
 ## Now create our age regressed variables 
-all.train.data$meanCT <- apply(all.train.data[,2782:2879], 1, mean)
-all.train.data$meanGMD <- apply(all.train.data[,2781:2662], 1, mean)
+all.train.data$meanCT <- apply(all.train.data[,grep('mprage_jlf_ct', names(all.train.data))], 1, mean)
+all.train.data$meanGMD <- apply(all.train.data[,grep('mprage_jlf_gmd', names(all.train.data))], 1, mean)
 meanGMDWeighted <- NULL
-for(i in 1:nrow(all.train.data)){
-  meanGMDVal <- weighted.mean(all.train.data[i,2692:2789], all.train.data[i,2564:2661])
-  meanGMDWeighted <- append(meanGMDWeighted, meanGMDVal)
-}
-all.train.data$meanGMDWeighted <- meanGMDWeighted
-all.train.data$meanVOL <- apply(all.train.data[,2564:2661], 1, mean)
-all.train.data$modeRating <- apply(all.train.data[,2912:2914], 1, Mode)
+#for(i in 1:nrow(all.train.data)){
+#  meanGMDVal <- weighted.mean(all.train.data[i,grep('mprage_jlf_gmd', names(all.train.data))], #all.train.data[i,grep('mprage_jlf_vol', names(all.train.data))])
+#  meanGMDWeighted <- append(meanGMDWeighted, meanGMDVal)
+#}
+#all.train.data$meanGMDWeighted <- meanGMDWeighted
+all.train.data$meanVOL <- apply(all.train.data[,2630:2727], 1, mean)
+all.train.data$modeRating <- apply(all.train.data[,2978:2980], 1, Mode)
 all.train.data$meanFSArea <- apply(all.train.data[,215:282], 1, function(x) mean(x, na.rm=T))
 
 ## Okay we have all of our data points
@@ -95,7 +95,7 @@ all.train.data.train <- all.train.data.train[which(all.train.data.train$averageR
 # Now lets loop through and calculate our p cors
 ratingVals <- c('rawAverageRating.y', 'modeRating', 'ratingJB.x',
                'ratingKS.x', 'ratingLV.x', 'zeroVsNotZeroOutcome', 'oneVsTwoOutcome', 'restEpi10qaMeanrelrms')
-imagingVals <- c('meanCT', 'meanGMD', 'meanVOL', 'mprage_fs_mean_thickness')
+imagingVals <- c('meanCT', 'meanGMD', 'meanVOL', 'mprage_fs_mean_thickness', 'TotalGrayVol')
 outputMatrix <- matrix('NA', nrow=length(imagingVals), ncol=length(ratingVals))
 for(colVal in seq(1, length(ratingVals))){
     for(rowVal in seq(1, length(imagingVals))){
