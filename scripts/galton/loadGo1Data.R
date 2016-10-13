@@ -1,7 +1,5 @@
 ## Load Library(s)
 source("/home/adrose/adroseHelperScripts/R/afgrHelpFunc.R")
-install_load('corrplot', 'ggplot2', 'psych', 'e1071', 'pROC', 'ggm', 'plyr', 'visreg', 'scales', 'stats', 'lme4','reshape2')
-
 ## Declare some functions
 
 
@@ -12,6 +10,13 @@ kurtVals <- read.csv("/home/adrose/qapQA/data/n1601_skew_kurt_values.csv")
 manualQAData <- read.csv("/home/analysis/redcap_data/201507/n1601_go1_datarel_073015.csv")
 manualQAData2 <- read.csv("/home/adrose/qapQA/data/n1601_manual_ratings.csv")
 allFSData <- read.csv("/home/adrose/qapQA/data/bilateral.meanthickness.totalarea.csv")
+allFSData$scanid <- strSplitMatrixReturn(allFSData$scanid, 'x')[,2]
+allFSDataVol <- read.table('/home/adrose/qapQA/data/aseg.stats.volume.csv', header=T)
+allFSDataVol$bblid <- strSplitMatrixReturn(allFSDataVol$Measure.volume, '/')[,1]
+allFSDataVol$scanid <- strSplitMatrixReturn( strSplitMatrixReturn(allFSDataVol$Measure.volume, '/')[,2], 'x')[,2]
+allFSDataVol <- allFSDataVol[,-1]
+allFSData <- merge(allFSData, allFSDataVol, by=c('bblid', 'scanid'))
+allFSData <- allFSData[! duplicated(allFSData),]
 allJLFData <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/n1601_jlfVol.csv')
 allJLFDataGMD <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/n1601_jlfGMD.csv')
 allJLFDataCT <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/n1601_jlfCt.csv')
@@ -36,7 +41,6 @@ qapRawOutput <- merge(qapRawOutput,kurtVals ,by.x="subject", by.y="bblid")
 
 qapRawOutput$bblid <- strSplitMatrixReturn(qapRawOutput$subject, '_')[,1]
 qapRawOutput$scanid <- strSplitMatrixReturn(qapRawOutput$subject, '_')[,2]
-allFSData$scanid <- strSplitMatrixReturn(allFSData$scanid, 'x')[,2]
 
 # Now go through each subject id and split the string and reutnr just the first value of that strsplit
 #for (subjectIndex in 1:length(qapRawOutput$subject)){
