@@ -143,3 +143,40 @@ outputData <- rbind(meanValsAgeRegAverageRating, meanValsAgeRegZeroVsNotZero, me
                     meanValsAgeRegModeRating, meanValsAgeRegRatingJB, meanValsAgeRegRatingLV, meanValsAgeRegRatingKS)
 colnames(outputData) <- c('Ants CT', 'Ants GMD', 'Ants Cerebral Vol', 'FS CT', 'FS Area') 
 rownames(outputData) <- c('Avg Rating', '0 vs !0', '1 vs 2', 'Mode Rating', 'JB', 'LV', 'KS')
+write.csv(outputData, 'manualRegressSpearmanPCor.csv', quote=F)
+
+
+# Now graph our cors btn the 0 vs !0 model and our average rating
+toPlot <- cbind(append(outputData[1,],outputData[2,]), append(rep('AverageRating', length(outputData[1,])), rep('0 vs !0 Model', length(outputData[1,]))), append(colnames(outputData), colnames(outputData)))
+rownames(toPlot) <- NULL
+toPlot <- as.data.frame(toPlot)
+toPlot$V1 <- as.numeric(as.character(toPlot$V1))
+toPlot <- toPlot[-c(3, 5, 8, 10),]
+pdf('0vsNot0CorValues.pdf', width=18, height=12)
+thing1 <- ggplot(toPlot, aes(x=V3, y=V1, color=V2, fill=V2)) + 
+  geom_bar(stat='identity', position=position_dodge(), size=.1) +
+  theme(legend.position="none") +
+  labs(title='', x='Structural Imaging Metric', y='Partial Cor Value') +
+  theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
+        axis.title.x = element_text(size=36),
+        axis.title.y = element_text(size=36),
+        text = element_text(size=30))
+thing1
+dev.off()
+
+toPlot <- cbind(append(outputData[1,],outputData[3,]), append(rep('AverageRating', length(outputData[1,])), rep('0 vs !0 Model', length(outputData[1,]))), append(colnames(outputData), colnames(outputData)))
+rownames(toPlot) <- NULL
+toPlot <- as.data.frame(toPlot)
+toPlot$V1 <- as.numeric(as.character(toPlot$V1))
+toPlot <- toPlot[-c(3, 5, 8, 10),]
+pdf('1vs2CorValues.pdf', width=18, height=12)
+thing1 <- ggplot(toPlot, aes(x=V3, y=V1, color=V2, fill=V2)) + 
+  geom_bar(stat='identity', position=position_dodge(), size=.1) +
+  theme(legend.position="none") +
+  labs(title='', x='Structural Imaging Metric', y='Partial Cor Value') +
+  theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
+        axis.title.x = element_text(size=36),
+        axis.title.y = element_text(size=36),
+        text = element_text(size=30))
+thing1
+dev.off()

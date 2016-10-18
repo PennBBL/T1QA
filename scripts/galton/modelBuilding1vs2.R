@@ -135,7 +135,7 @@ aucVals <- NULL
 for(qapVal in qapValNames){
   model <- as.formula(paste("value ~", paste(qapVal), paste("+ (1|variable)")))
   m1 <- glmer(model, data=raw.lme.data, family="binomial")
-  predictor <- predict(m1)
+  predictor <- predict(m1, type='response')
   roc.tmp <- roc(outcome ~ predictor)
   output <- cbind(qapVal, auc(roc.tmp))
   aucVals <- rbind(aucVals, output)
@@ -150,10 +150,14 @@ aucValsMono <- aucVals
 aucZerovsNotZeroMonovariate <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2)) +
   geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
   theme(axis.text.x = element_text(angle=90,hjust=1)) +
-  coord_cartesian(ylim=c(.65,.85)) +
-  ggtitle("AUC Of Monovariate QAP Model") + 
+  coord_cartesian(ylim=c(.60,.75)) +
+  ggtitle("") + 
   xlab("QAP Variables") +
-  ylab("AUC")
+  ylab("AUC") +
+  theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
+        axis.title.x = element_text(size=36),
+        axis.title.y = element_text(size=36),
+        text = element_text(size=30))
 # Now order the varaibles based on AUC
 reorderedVals <- reorder(aucVals$qapVal, aucVals$V2)
 aucNamesOrder <- reorderedVals[1:length(reorderedVals)]
@@ -164,7 +168,7 @@ aucVals <- NULL
 for(qapVal in aucNamesOrder[1:length(aucNamesOrder)]){
   model <- as.formula(paste("value ~", paste("qi1", qapVal, sep='+'), paste("+ (1|variable)")))
   m1 <- glmer(model, data=raw.lme.data, family="binomial")
-  predictor <- predict(m1)
+  predictor <- predict(m1, type='response')
   roc.tmp <- roc(outcome ~ predictor)
   output <- cbind(qapVal, paste("qi1", qapVal, sep='+'), auc(roc.tmp))
   aucVals <- rbind(aucVals, output)
@@ -196,7 +200,7 @@ aucVals <- NULL
 for(qapVal in aucNamesOrder[1:length(aucNamesOrder)]){
   model <- as.formula(paste("value ~", paste(modelToBuildOn, qapVal, sep='+'), paste("+ (1|variable)")))
   m1 <- glmer(model, data=raw.lme.data, family="binomial")
-  predictor <- predict(m1)
+  predictor <- predict(m1, type='response')
   roc.tmp <- roc(outcome ~ predictor)
   output <- cbind(qapVal,  paste(modelToBuildOn, qapVal, sep='+'), auc(roc.tmp))
   aucVals <- rbind(aucVals, output)
@@ -242,7 +246,7 @@ aucVals <- NULL
 for(qapVal in aucNamesOrder[1:length(aucNamesOrder)]){
   model <- as.formula(paste("value ~", paste(modelToBuildOn, qapVal, sep='+'), paste("+ (1|variable)")))
   m1 <- glmer(model, data=raw.lme.data, family="binomial")
-  predictor <- predict(m1)
+  predictor <- predict(m1, type='response')
   roc.tmp <- roc(outcome ~ predictor)
   output <- cbind(qapVal,  paste(modelToBuildOn, qapVal, sep='+'), auc(roc.tmp))
   aucVals <- rbind(aucVals, output)
@@ -271,7 +275,7 @@ aucVals <- NULL
 for(qapVal in aucNamesOrder[1:length(aucNamesOrder)]){
   model <- as.formula(paste("value ~", paste(modelToBuildOn, qapVal, sep='+'), paste("+ (1|variable)")))
   m1 <- glmer(model, data=raw.lme.data, family="binomial")
-  predictor <- predict(m1)
+  predictor <- predict(m1, type='response')
   roc.tmp <- roc(outcome ~ predictor)
   output <- cbind(qapVal,  paste(modelToBuildOn, qapVal, sep='+'), auc(roc.tmp))
   aucVals <- rbind(aucVals, output)
@@ -297,7 +301,7 @@ aucVals <- NULL
 for(qapVal in aucNamesOrder[1:length(aucNamesOrder)]){
   model <- as.formula(paste("value ~", paste(modelToBuildOn, qapVal, sep='+'), paste("+ (1|variable)")))
   m1 <- glmer(model, data=raw.lme.data, family="binomial",control=glmerControl(optimizer="bobyqa",optCtrl = list(maxfun = 1000000000)))
-  predictor <- predict(m1)
+  predictor <- predict(m1, type='response')
   roc.tmp <- roc(outcome ~ predictor)
   output <- cbind(qapVal,  paste(modelToBuildOn, qapVal, sep='+'), auc(roc.tmp))
   aucVals <- rbind(aucVals, output)
@@ -323,7 +327,7 @@ aucVals <- NULL
 for(qapVal in aucNamesOrder[1:length(aucNamesOrder)]){
   model <- as.formula(paste("value ~", paste(modelToBuildOn, qapVal, sep='+'), paste("+ (1|variable)")))
   m1 <- glmer(model, data=raw.lme.data, family="binomial",control=glmerControl(optimizer="bobyqa",optCtrl = list(maxfun = 1000000000)))
-  predictor <- predict(m1)
+  predictor <- predict(m1, type='response')
   roc.tmp <- roc(outcome ~ predictor)
   output <- cbind(qapVal,  paste(modelToBuildOn, qapVal, sep='+'), auc(roc.tmp))
   aucVals <- rbind(aucVals, output)
@@ -349,7 +353,7 @@ aucVals <- NULL
 for(qapVal in aucNamesOrder[1:length(aucNamesOrder)]){
   model <- as.formula(paste("value ~", paste(modelToBuildOn, qapVal, sep='+'), paste("+ (1|variable)")))
   m1 <- glmer(model, data=raw.lme.data, family="binomial",control=glmerControl(optimizer="bobyqa",optCtrl = list(maxfun = 1000000000)))
-  predictor <- predict(m1)
+  predictor <- predict(m1, type='response')
   roc.tmp <- roc(outcome ~ predictor)
   output <- cbind(qapVal,  paste(modelToBuildOn, qapVal, sep='+'), auc(roc.tmp))
   aucVals <- rbind(aucVals, output)
@@ -375,7 +379,7 @@ aucVals <- NULL
 for(qapVal in aucNamesOrder[1:length(aucNamesOrder)]){
   model <- as.formula(paste("value ~", paste(modelToBuildOn, qapVal, sep='+'), paste("+ (1|variable)")))
   m1 <- glmer(model, data=raw.lme.data, family="binomial",control=glmerControl(optimizer="bobyqa",optCtrl = list(maxfun = 1000000000)))
-  predictor <- predict(m1)
+  predictor <- predict(m1, type='response')
   roc.tmp <- roc(outcome ~ predictor)
   output <- cbind(qapVal,  paste(modelToBuildOn, qapVal, sep='+'), auc(roc.tmp))
   aucVals <- rbind(aucVals, output)
@@ -401,7 +405,7 @@ aucVals <- NULL
 for(qapVal in aucNamesOrder[1:length(aucNamesOrder)]){
   model <- as.formula(paste("value ~", paste(modelToBuildOn, qapVal, sep='+'), paste("+ (1|variable)")))
   m1 <- glmer(model, data=raw.lme.data, family="binomial",control=glmerControl(optimizer="bobyqa",optCtrl = list(maxfun = 1000000000)))
-  predictor <- predict(m1)
+  predictor <- predict(m1, type='response')
   roc.tmp <- roc(outcome ~ predictor)
   output <- cbind(qapVal,  paste(modelToBuildOn, qapVal, sep='+'), auc(roc.tmp))
   aucVals <- rbind(aucVals, output)
@@ -471,7 +475,7 @@ predictor7 <- predict(mod7)
 roc.7 <- roc(outcome ~ predictor7)
 model8 <- as.formula(paste("value ~", paste(aucValsOcta$V2[1]), paste("+ (1|variable)")))
 mod8 <- glmer(model8, data=raw.lme.data, family="binomial",control=glmerControl(optimizer="bobyqa",optCtrl = list(maxfun = 1000000000)))
-predictor8 <- predict(mod8)
+predictor8 <- predict(mod8, type='response')
 roc.8 <- roc(outcome ~ predictor8)
 model9 <- as.formula(paste("value ~", paste(aucValsNona$V2[1]), paste("+ (1|variable)")))
 mod9 <- glmer(model9, data=raw.lme.data, family="binomial",control=glmerControl(optimizer="bobyqa",optCtrl = list(maxfun = 1000000000)))
@@ -502,15 +506,20 @@ pVals$V1 <- as.factor(levels(pVals$V1))
 levels(pVals$V1) <- pVals$V1
 pVals$Z <- as.numeric(as.character(pVals$Z))
 pVals$Y <- c(p4, p1, p9, p8, p7, p3, p2, p6, p5)
+pVals <- pVals[-c(7,2),]
 pValsBarGraph <- ggplot(pVals, aes(x=V1, y=Y)) +
   geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
   theme(axis.text.x = element_text(angle=90,hjust=1)) +
   coord_cartesian(ylim=c(0,.3)) +
-  ggtitle("PVal of DeLong Test on Each Additional Variable") + 
-  xlab("Variate Model") +
+  ggtitle("") + 
+  xlab("Model") +
   ylab("P Value") + 
-  geom_hline(yintercept=.05)
+  geom_hline(yintercept=.05) + 
+  theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
+        axis.title.x = element_text(size=36),
+        axis.title.y = element_text(size=36),
+        text = element_text(size=30))
 
-pdf("pValsBarGraph.pdf")
+pdf("pValsBarGraph.pdf", width=12, height=12)
 print(pValsBarGraph)
 dev.off()
