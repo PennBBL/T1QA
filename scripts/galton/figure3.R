@@ -1,77 +1,71 @@
 # AFGR June 6 2016
-# This script is going to be used to produce a pretty 
-# Corellation matrix to be used in the QAP paper
-# its going to produce one corellation matrix
-# which will include all QAP values across
-# all data sets
+# This script is going to be used
+# to showcase the differences of age amongst our 
+# rating metrics for the qap paper
+# across the training and testing data sets
 
 ## Load data
 # Start with Go1
-source('/home/adrose/qapQA/scripts/loadGo1Data.R')
-detachAllPackages()
-go1.data <- isolatedVars
-go1.data <- go1.data[,order(colnames(go1.data))]
-study <- rep('Go1', nrow(go1.data))
-go1.data <- cbind(go1.data, study)
+source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
+set.seed(16)
 
-# Now do MGI
-source('/home/adrose/qapQA/scripts/loadMgiData.R')
-detachAllPackages()
-mgi.data <- isolatedVars
-mgi.data <- mgi.data[,order(colnames(mgi.data))]
-study <- rep('MGI', nrow(mgi.data))
-mgi.data <- cbind(mgi.data, study)
+# load library(s)
+install_load('caret', 'ggplot2')
 
-# Now do Go2
-mergedQAP <- mergedQAP.go2
-colnames(mergedQAP) <- gsub(pattern='.x', replacement = '', x = colnames(mergedQAP), fixed = TRUE)
-isolatedVars <- mergedQAP[qapValNames]
-isolatedVars <- cbind(mergedQAP$bblid, isolatedVars)
-isolatedVars <- cbind(isolatedVars, mergedQAP[manualQAValue])
-colnames(isolatedVars)[1] <- 'bblid'
-isolatedVars[manualQAValue] <- as.factor(isolatedVars$averageRating)
-size.vars <- grep('size', names(isolatedVars))
-isolatedVars <- isolatedVars[, -size.vars]
-go2.data <- isolatedVars
-go2.data <- go2.data[,order(colnames(go2.data))]
-study <- rep('Go2', nrow(go2.data))
-go2.data <- cbind(go2.data, study)
+# Now lets create our train and validation sets
+raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
+raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
+raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
+folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+index <- unlist(folds[1])
+trainingData <- raw.lme.data[index,]
+validationData <- raw.lme.data[-index,] 
+manualQAData$age <- (manualQAData$ageAtGo1Scan / 12)
 
-# Now combine all of the data
-all.cor.data <- rbind(go1.data, mgi.data, go2.data)
+# Now prep our individual data sets
+all.train.data <- merge(trainingData, manualQAData, by='bblid')
+all.valid.data <- merge(validationData, manualQAData, by='bblid')
 
-## Now load any necasary libraries 
-detachAllPackages()
-install_load('corrplot')
+# Now prepare our values
+bg1.vals.train <- summarySE(data=all.train.data, groupvars='averageRating', measurevar='age')
+bg1.vals.train$Dataset <- rep('Train', nrow(bg1.vals.train))
+bg1.vals.valid <- summarySE(data=all.valid.data, groupvars='averageRating', measurevar='age')
+bg1.vals.valid$Dataset <- rep('Validation', nrow(bg1.vals.valid))
+bg1.vals <- rbind(bg1.vals.train, bg1.vals.valid)
+bg1.vals$Dataset <- factor(bg1.vals$Dataset)
 
-## Now grab only the desired qap values
-valueIndex <- c(4,8,9,13,20,21,27,28,29,30,31,32,35,36)
-qapValNames <- qapValNames[valueIndex]
+bg2.vals.train <- summarySE(data=all.train.data, measurevar='averageRating', groupvars='sex')
+bg2.vals.train$Dataset <- rep('Train', nrow(bg2.vals.train))
+bg2.vals.valid <- summarySE(data=all.valid.data, measurevar='averageRating', groupvars='sex')
+bg2.vals.valid$Dataset <- rep('Validation', nrow(bg2.vals.valid))
+bg2.vals <- rbind(bg2.vals.train, bg2.vals.valid)
+bg2.vals$Dataset <- factor(bg2.vals$Dataset)
+bg2.vals$sex <- c('Male', 'Female', 'Male', 'Female')
 
-## Now reduce the data to what we want
-all.cor.data <- all.cor.data[,qapValNames]
-go1.data <- go1.data[,qapValNames]
-mgi.data <- mgi.data[,qapValNames]
-colnames(all.cor.data) <- c('CNR', 'EFC', 'FBER', 'FWHM',
-                            'QI1', 'SNR', 'BG Kurtosis', 
-                            'BG Skewness', 'CSF Kurtosis',
-                            'CSF Skewness', 'GM Kurtosis',
-                            'GM Skewness', 'WM Kurtosis',
-                            'WM Skewness') 
-qapValNames <- colnames(all.cor.data)
-colnames(mgi.data) <- qapValNames
-colnames(go1.data) <- qapValNames
+# Now lets plot our values
+bg1 <- ggplot(bg1.vals, aes(x=factor(averageRating), y=as.numeric(as.character(age)), fill=Dataset, group=Dataset)) + 
+                geom_bar(stat='identity', position=position_dodge(), size=.1, aes(fill=Dataset)) + 
+                labs(title='Mean Age vs Mean Quality Rating', x='Mean Quality Rating', y='Mean Age') + 
+                theme_bw() + 
+                coord_cartesian(ylim=c(10,16)) + 
+                geom_bar(stat="identity", position=position_dodge(), size=.1) + 
+                       geom_errorbar(aes(ymin=as.numeric(as.character(age))-se, ymax=as.numeric(as.character(age))+se), 
+                       width = .2, position=position_dodge(.9)) + 
+                theme(legend.position="none") 
 
+bg2 <- ggplot(bg2.vals, aes(x=factor(sex), y=as.numeric(as.character(averageRating)), fill=Dataset, group=Dataset)) + 
+                geom_bar(stat='identity', position=position_dodge(), size=.1, aes(fill=Dataset)) + 
+                labs(title='Sex vs Average Quality Rating', x='Sex', y='Mean Age') + 
+                theme_bw() + 
+                coord_cartesian(ylim=c(1.5,2)) + 
+                geom_bar(stat="identity", position=position_dodge(), size=.1) + 
+                       geom_errorbar(aes(ymin=as.numeric(as.character(averageRating))-se, 
+                                         ymax=as.numeric(as.character(averageRating))+se), 
+                       width = .2, position=position_dodge(.9))
 
-# Now produce the correllation matrix
-corVals <- cor(all.cor.data[,qapValNames])
-corVals.go1 <- cor(go1.data[,qapValNames])
-corVals.mgi <- cor(mgi.data[,qapValNames])
-
-# Now produce a pretty plot
-pdf('figure3QAPPaper.pdf', height=10, width=20)
-par(mfrow=c(1,2))
-#corrplot(corVals, 'color', order='alphabet',tl.pos='lt', tl.cex=2, tl.col='black', tl.srt=45, cl.cex=2)
-corrplot(corVals.go1, 'color', order='alphabet',tl.pos='lt', tl.cex=2, tl.col='black', tl.srt=45, cl.cex=2, main="PNC")
-corrplot(corVals.mgi, 'color', order='alphabet',tl.pos='lt', tl.cex=2, tl.col='black', tl.srt=45, cl.cex=2, main="MGI")
+pdf('demographicsvsRatingQAPPaperFigure3.pdf', width=16, height=10)
+multiplot(bg1, bg2, cols=2)
 dev.off()
+
+
+
