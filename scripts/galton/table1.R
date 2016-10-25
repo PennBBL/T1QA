@@ -5,35 +5,52 @@
 # Go2
 # MGI
 
-# The first thing I need to do is prepare the Go1 Row
+# The first thing I need to do is prepare the Go1 data
 source('/home/adrose/qapQA/scripts/loadGo1Data.R')
+set.seed(16)
+
+# load library(s)
+install_load('caret')
+
+# Now lets create our train and validation sets
+raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
+raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
+raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
+folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+index <- unlist(folds[1])
+trainingData <- raw.lme.data[index,]
+validationData <- raw.lme.data[-index,] 
+
+# Now prep our individual data sets
+all.train.data <- merge(trainingData, manualQAData, by='bblid')
+all.valid.data <- merge(validationData, manualQAData, by='bblid')
+
+# Now gather the training data values
+train.n <- nrow(all.train.data)
+train.female <- length(which(all.train.data$sex==2))/train.n
+train.mean.age <- mean(all.train.data$ageAtGo1Scan/12)
+train.sd.age <- sd(all.train.data$ageAtGo1Scan/12)
+train.output <- cbind(c('Train'), train.n, train.female, train.mean.age, train.sd.age)
+
+# Now valid data
+valid.n <- nrow(all.valid.data)
+valid.female <- length(which(all.valid.data$sex==2))/valid.n
+valid.mean.age <- mean(all.valid.data$ageAtGo1Scan/12)
+valid.sd.age <- sd(all.valid.data$ageAtGo1Scan/12)
+valid.output <- cbind(c('valid'), valid.n, valid.female, valid.mean.age, valid.sd.age)
+
+
+#output <- as.data.frame(rbind(go1.output, mgi.output, go2.output))
+output <- as.data.frame(rbind(train.output, valid.output))
+colnames(output) <- c('Study', 'N', '% Female', 'Age Mean', 'Age SD')
+write.csv(output, './demographicsQAPPaperTable1.csv', quote=F, row.names=F)
+
+
+
+
+
 go1.n <- nrow(mergedQAP)
 go1.female <- length(which(mergedQAP$sex==2))/go1.n
 go1.mean.age <- mean(mergedQAP$ageAtGo1Scan/12)
 go1.sd.age <- sd(mergedQAP$ageAtGo1Scan/12)
 go1.output <- cbind(c('PNC'), go1.n, go1.female, go1.mean.age, go1.sd.age)
-
-# Now do the validation data sets
-# start with MGI
-source('/home/adrose/qapQA/scripts/loadMgiData.R')
-mergedQAP <- rbind(mergedQAP.pitt, mergedQAP.penn)
-mgi.n <- nrow(mergedQAP)
-mgi.female <- length(which(mergedQAP$Gender==2))/mgi.n
-mgi.mean.age <- mean(mergedQAP$age)
-mgi.sd.age <- sd(mergedQAP$age)
-mgi.output <- cbind(c('MGI'), mgi.n, mgi.female, mgi.mean.age, mgi.sd.age)
-
-# Now do GO2
-mergedQAP <- mergedQAP.go2
-manualQAData <- read.csv("/home/analysis/redcap_data/201507/n1601_go1_datarel_073015.csv")
-mergedQAP <- merge(mergedQAP, manualQAData, by='bblid')
-go2.n <- nrow(mergedQAP)
-go2.female <- length(which(mergedQAP$sex==2))/go2.n
-go2.mean.age <- mean(mergedQAP$ageAtGo2Scan/12)
-go2.sd.age <- sd(mergedQAP$ageAtGo2Scan/12)
-go2.output <- cbind(c('Go2'), go2.n, go2.female, go2.mean.age, go2.sd.age)
-
-#output <- as.data.frame(rbind(go1.output, mgi.output, go2.output))
-output <- as.data.frame(rbind(go1.output, mgi.output))
-colnames(output) <- c('Study', 'N', '% Female', 'Age Mean', 'Age SD')
-write.csv(output, './table1QAPPaper.csv', quote=F, row.names=F)
