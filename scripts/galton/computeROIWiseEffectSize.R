@@ -53,16 +53,35 @@ regressSex <- function(dataFrame, valsToRegress){
 
 # Now cretae a function which will reutnr the p val for the prediction of the imaging value 
 # based on the quality index with age and sex regressed values
-returnPVal <- function(imagingVal, qualityVal, regressAge=TRUE, regressSEX=TRUE){
-  if(regressAge){
+returnPVal <- function(imagingVal, qualityVal, df, regressAgeBOO=TRUE, regressSexBOO=TRUE){
+  if(regressAgeBOO == 'TRUE'){
+    imagingVal <- regressAge(df, imagingVal)
+    qualityVal <- regressAge(df, qualityVal)
   }
-
-
+  if(regressSexBOO == 'TRUE'){
+    imagingVal <- regressSex(df, imagingVal)
+    qualityVal <- regressSex(df, qualityVal)
+  }
+  outputPVal <- summary(lm(imagingVal ~ qualityVal))$coefficients[2,4]
+  return(outputPVal)
 }
 
+# Now create a function which will return all of the pVals for a specific grep pattern
+# which will be the prefix for an imaging value
+pvalLoop <- function(grepPattern, dataFrame){
+  # First lets find the values that we need to loop through
+  colVals <- grep(grepPattern, names(dataFrame))
 
+  # Now lets compute our p vals 
+  outputPVals <- apply(dataFrame[,colVals], 2, function(x) returnPVal(x ,dataFrame$oneVsTwoOutcome, all.train.data))
+
+  # Now fdr correct these suckers
+  outputPVals.fdr <- p.adjust(outputPVals, method='fdr')
+  output <- cbind(names(outputPVals.fdr), unname(outputPVals.fdr))
+  return(output)
+}
 ## Load library(s) we will need
-install_load('caret')
+install_load('caret', 'lme4')
 
 ## Now lets prep the data
 ## Now create the training data set and create the outcomes for all of the training data sets
@@ -83,4 +102,15 @@ trainingData$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=trainingData,
 ## Now merge our scaled data values with the original data values 
 all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 
-## Ok now the first thing we need to do is to 
+## Now produce all of our p vals
+fsCTVals <- pvalLoop('mprage_fs_ct', all.train.data)
+jlfCTVals <- pvalLoop('mprage_jlf_ct', all.train.data)
+jlfGMDVals <- pvalLoop('mprage_jlf_gmd', all.train.data)
+fsVolVals <- pvalLoop('mprage_fs_vol', all.train.data)
+
+## Now I need to export these in a manner that will make it easy to create a brain picture =D 
+write.csv(fsCTVals, 'fsSigQAPROIct.csv', quote=F)
+write.csv(jlfCTVals, 'jlfSigQAPROIct.csv', quote=F)
+write.csv(jlfGMDVals, 'jlfSigQAPROIgmd.csv', quote=F)
+write.csv(fsVolVals, 'fsSigQAPROIvol.csv', quote=F)
+
