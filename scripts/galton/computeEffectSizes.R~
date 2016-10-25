@@ -108,19 +108,6 @@ colnames(outputMatrix) <- ratingVals
 rownames(outputMatrix) <- imagingVals
 write.csv(outputMatrix, 'pCorQualityRegAndImagingMetric-Train.csv', quote=F)
 
-vals1 <- append(outputMatrix[,1], outputMatrix[,6])
-vals2 <- append(rownames(outputMatrix), rownames(outputMatrix))
-vals3 <- append(rep('Average Rating', length(rownames(outputMatrix))), rep('0 vs !0 Outcome', length(rownames(outputMatrix))))
-toPlot <- as.data.frame(cbind(unname(vals1), vals2, vals3))
-pdf('diffBetweenAverageAnd0Model.pdf', width=12, height=12)
-tmp <- ggplot(toPlot, aes(x=as.factor(vals2), y=as.numeric(as.character(V1)), group=factor(vals3))) + 
-  geom_bar(stat='identity', position=position_dodge(), size=.1, aes(fill=factor(vals3))) +
-  theme(legend.position="none") + 
-  theme_bw() +
-  labs(title='', x='Imaging Metric', y='Partial Correllation')
-tmp
-dev.off()
-
 # Now do the CV data
 all.train.data.cv <- all.train.data[-index,]
 all.train.data.cv <- all.train.data.cv[which(all.train.data.cv$averageRating!=0),]

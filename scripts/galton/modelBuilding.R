@@ -103,7 +103,6 @@ rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
 
 
 ## Load Library(s)
-source("/home/adrose/R/x86_64-redhat-linux-gnu-library/helperFunctions/afgrHelpFunc.R")
 install_load('pROC', 'ggplot2', 'caret', 'lme4', 'foreach', 'doParallel')
 
 # Now split data into raw and traning 
@@ -131,7 +130,7 @@ aucVals <- NULL
 for(qapVal in qapValNames){
   model <- as.formula(paste("value ~", paste(qapVal), paste("+ (1|variable)")))
   m1 <- glmer(model, data=raw.lme.data, family="binomial")
-  predictor <- predict(m1)
+  predictor <- predict(m1, type='response')
   roc.tmp <- roc(outcome ~ predictor)
   output <- cbind(qapVal, auc(roc.tmp))
   aucVals <- rbind(aucVals, output)
@@ -145,9 +144,12 @@ aucValsMono <- aucVals
 # Now make a bar plot of all of the 0 vs !0 AUC's
 aucZerovsNotZeroMonovariate <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2)) +
   geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
-  theme(axis.text.x = element_text(angle=90,hjust=1)) +
-  coord_cartesian(ylim=c(.45,.95)) +
-  ggtitle("AUC Of Monovariate QAP Model") + 
+  theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
+        axis.title.x = element_text(size=36),
+        axis.title.y = element_text(size=36),
+        text = element_text(size=30)) +
+  coord_cartesian(ylim=c(.6,.95)) +
+  ggtitle("") + 
   xlab("QAP Variables") +
   ylab("AUC")
 
@@ -175,9 +177,12 @@ aucValsBi <- aucVals
 # Now make a bar plot of all of the 0 vs !0 AUC's
 aucZerovsNotZeroBivariate <- ggplot(aucVals, aes(x=reorder(V2, -V3), y=V3)) +
   geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
-  theme(axis.text.x = element_text(angle=90,hjust=1)) +
+  theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
+        axis.title.x = element_text(size=36),
+        axis.title.y = element_text(size=36),
+        text = element_text(size=30)) +
   coord_cartesian(ylim=c(.8,1)) +
-  ggtitle("AUC Of Bivariate GLMER QAP Model") + 
+  ggtitle("") + 
   xlab("QAP Variables") +
   ylab("AUC")
 
@@ -234,7 +239,7 @@ model1 <- as.formula("value ~ bg.kurtosis+bg.skewness+ (1|variable)")
 model2 <- finalModel
 m1 <- glmer(model1, data=raw.lme.data, family="binomial")
 m2 <- glmer(model2, data=raw.lme.data, family="binomial")
-predictor1 <- predict(m1, newdata=raw.lme.data, allow.new.levels=T)
+predictor1 <- predict(m1, newdata=raw.lme.data, allow.new.levels=T, type='response')
 predictor2 <- predict(m2, newdata=raw.lme.data, allow.new.levels=T)
 outcome <- raw.lme.data$value
 roc.1 <- roc(outcome ~ predictor1)
@@ -246,13 +251,13 @@ roc.test(roc.1, roc.2)
 # Now do everything in the Go1 
 # Now build an roc curve
 validationData$variable <- rep('ratingNULL', nrow(validationData))
-predictor <- predict(m1, newdata=validationData, allow.new.levels=T)
+predictor <- predict(m1, newdata=validationData, allow.new.levels=T, type='response')
 outcome <- validationData$averageRating.x
 roc.go1.valid <- rocplot.single(outcome, predictor, title="bg.kurtosis + bg.skewness ROC Curve Go1 Valid")
 
 # Now do everything in the mgi data
 # First load the data
-source('/home/adrose/qapQA/scripts/loadMgiData.R')
+source('/home/adrose/T1QA/scripts/galton/loadMgiData.R')
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1

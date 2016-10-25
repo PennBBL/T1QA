@@ -2,7 +2,7 @@
 # This script is going to mirror the step wise model building script but perform the same process in the 1 vs 2 cohort
 
 ## Load the data
-source('/home/adrose/qapQA/scripts/loadGo1Data.R')
+source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 detachAllPackages()
 set.seed(16)
 
@@ -86,7 +86,6 @@ rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
 }
 
 ## Load Library(s)
-source("/home/adrose/R/x86_64-redhat-linux-gnu-library/helperFunctions/afgrHelpFunc.R")
 install_load('pROC', 'ggplot2', 'caret', 'lme4', 'foreach', 'doParallel')
 
 ## Now do the 1 vs 2 model's using the same 0 vs !0 model and then
@@ -523,3 +522,18 @@ pValsBarGraph <- ggplot(pVals, aes(x=V1, y=Y)) +
 pdf("pValsBarGraph.pdf", width=12, height=12)
 print(pValsBarGraph)
 dev.off()
+
+
+source('/home/adrose/T1QA/scripts/galton/loadMgiData.R')
+raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
+raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
+raw.lme.data <- raw.lme.data[which(raw.lme.data$averageRating.x!=0),]
+raw.lme.data$averageRating.x[raw.lme.data$averageRating.x<1.5] <- 1
+raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1.5] <- 2
+folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
+raw.lme.data$variable <- rep("ratingNULL", nrow(raw.lme.data))
+predictor <- predict(mod8, newdata=raw.lme.data, allow.new.levels=T, type='response')
+outcome <- raw.lme.data$averageRating.x
+roc.tmp <- roc(outcome ~ predictor)
+pdf(
