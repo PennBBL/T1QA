@@ -1,12 +1,11 @@
 # AFGR June 3 2016
 # I am going to prepare a csv with the information found below 
 #     (N)  (%Female) (mean(sd)-Age)
-# Go1
-# Go2
-# MGI
+# Train
+# Valid
 
 # The first thing I need to do is prepare the Go1 data
-source('/home/adrose/qapQA/scripts/loadGo1Data.R')
+source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 set.seed(16)
 
 # load library(s)
