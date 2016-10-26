@@ -62,7 +62,8 @@ returnPVal <- function(imagingVal, qualityVal, df, regressAgeBOO=TRUE, regressSe
     imagingVal <- regressSex(df, imagingVal)
     qualityVal <- regressSex(df, qualityVal)
   }
-  outputPVal <- summary(lm(imagingVal ~ qualityVal))$coefficients[2,4]
+  outputPVal <- cor.test(imagingVal, qualityVal, method='kendall')$p.value
+    
   return(outputPVal)
 }
 
@@ -77,7 +78,7 @@ pvalLoop <- function(grepPattern, dataFrame){
 
   # Now fdr correct these suckers
   outputPVals.fdr <- p.adjust(outputPVals, method='fdr')
-  output <- cbind(names(outputPVals.fdr), unname(outputPVals.fdr))
+  output <- cbind(names(outputPVals.fdr), as.numeric(unname(outputPVals.fdr)))
   return(output)
 }
 ## Load library(s) we will need
