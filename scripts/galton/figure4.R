@@ -50,8 +50,8 @@ validCor <- cor(validationData[,colsOfInterest])
 # Now create our plots
 pdf('corPlotsFigure4QAP.pdf', height=10, width=20)
 par(mfrow=c(1,2))
-corrplot(trainCor, 'color', order='alphabet',tl.pos='lt', tl.cex=2, tl.col='black', tl.srt=45, cl.cex=2, main="Train")
-corrplot(validCor, 'color', order='alphabet',tl.pos='lt', tl.cex=2, tl.col='black', tl.srt=45, cl.cex=2, main="Valid")
+corrplot(trainCor, 'color', order='alphabet',tl.pos='lt', tl.cex=2, tl.col='black', cl.cex=2, main="Train")
+corrplot(validCor, 'color', order='alphabet',tl.pos='lt', tl.cex=2, tl.col='black', cl.cex=2, main="Valid")
 dev.off()
 
 
