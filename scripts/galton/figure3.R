@@ -55,9 +55,9 @@ bg1 <- ggplot(bg1.vals, aes(x=factor(averageRating), y=as.numeric(as.character(a
 
 bg2 <- ggplot(bg2.vals, aes(x=factor(sex), y=as.numeric(as.character(averageRating)), fill=Dataset, group=Dataset)) + 
                 geom_bar(stat='identity', position=position_dodge(), size=.1, aes(fill=Dataset)) + 
-                labs(title='Sex vs Average Quality Rating', x='Sex', y='Mean Age') + 
+                labs(title='Sex vs Mean Quality Rating', x='Sex', y='Mean Quality Rating') + 
                 theme_bw() + 
-                coord_cartesian(ylim=c(1.5,2)) + 
+                coord_cartesian(ylim=c(1.7,2)) + 
                 geom_bar(stat="identity", position=position_dodge(), size=.1) + 
                        geom_errorbar(aes(ymin=as.numeric(as.character(averageRating))-se, 
                                          ymax=as.numeric(as.character(averageRating))+se), 
