@@ -15,6 +15,7 @@ set.seed(16)
 load('/home/adrose/qapQA/data/1vs28variableModel.RData')
 oneVsTwoModel <- mod8
 rm(mod8)
+tbvData <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/n1601_antsCtVol.csv')
 
 ## Declare any functions neccassary 
 # Create a function which will regress out age
@@ -51,9 +52,26 @@ regressSex <- function(dataFrame, valsToRegress){
   return(outputValues)
 }
 
+# Now create a function which will regress out TBV
+regressSex <- function(dataFrame, valsToRegress){
+  # First thing lets make sure we return values of the same length
+  outputValues <- rep(NA, nrow(dataFrame))
+
+  # Now we need to get an index of values to replace
+  index <- which(complete.cases(valsToRegress)=='TRUE')
+
+  # Now lets create our new values
+  tbvVals <- dataFrame$sex
+  outputVals <- lm( valsToRegress ~ sexVals)$residuals
+
+  # Now lets make our output values
+  outputValues[index] <- outputVals
+  return(outputValues)
+}
+
 # Now cretae a function which will reutnr the p val for the prediction of the imaging value 
 # based on the quality index with age and sex regressed values
-returnPVal <- function(imagingVal, qualityVal, df, regressAgeBOO=TRUE, regressSexBOO=TRUE){
+returnPVal <- function(imagingVal, qualityVal, regVals, df, regressAgeBOO=TRUE, regressSexBOO=TRUE, regressTBV=FALSE){
   if(regressAgeBOO == 'TRUE'){
     imagingVal <- regressAge(df, imagingVal)
     qualityVal <- regressAge(df, qualityVal)
@@ -62,20 +80,28 @@ returnPVal <- function(imagingVal, qualityVal, df, regressAgeBOO=TRUE, regressSe
     imagingVal <- regressSex(df, imagingVal)
     qualityVal <- regressSex(df, qualityVal)
   }
-  outputPVal <- cor.test(imagingVal, qualityVal, method='kendall')$p.value
-    
+  if(regressTBV == 'TRUE'){
+    regVals <- paste(regVals, 'df$mprage_antsCT_vol_TBV', sep='+')
+  }
+  form <- as.formula(paste('imagingVal~qualityVal', paste(regVals), sep=''))
+  outputPVal <- summary(lm(form))$coefficients[2,4]
+  #outputPVal <- cor.test(imagingVal, qualityVal, method='kendall')$p.value
+     
+ 
   return(outputPVal)
 }
 
 # Now create a function which will return all of the pVals for a specific grep pattern
 # which will be the prefix for an imaging value
-pvalLoop <- function(grepPattern, dataFrame){
+pvalLoop <- function(grepPattern, dataFrame, TBV=FALSE){
   # First lets find the values that we need to loop through
   colVals <- grep(grepPattern, names(dataFrame))
 
   # Now lets compute our p vals 
-  outputPVals <- apply(dataFrame[,colVals], 2, function(x) returnPVal(x ,dataFrame$oneVsTwoOutcome, all.train.data))
-
+  outputPVals <- apply(dataFrame[,colVals], 2, function(x) returnPVal(x ,dataFrame$averageRating, '+df$ageAtGo1Scan+df$sex', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE))
+  if(TBV=='TRUE'){
+    outputPVals <- apply(dataFrame[,colVals], 2, function(x) returnPVal(x ,dataFrame$averageRating, '+df$ageAtGo1Scan+df$sex', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE, regressTBV=TRUE))
+  }  
   # Now fdr correct these suckers
   outputPVals.fdr <- p.adjust(outputPVals, method='fdr')
   output <- cbind(names(outputPVals.fdr), as.numeric(unname(outputPVals.fdr)))
@@ -87,6 +113,7 @@ install_load('caret', 'lme4')
 ## Now lets prep the data
 ## Now create the training data set and create the outcomes for all of the training data sets
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
+raw.lme.data <- merge(raw.lme.data, tbvData, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
 folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
@@ -104,10 +131,11 @@ trainingData$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=trainingData,
 all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 
 ## Now produce all of our p vals
+all.train.data <- all.train.data[which(all.train.data$averageRating!=0),]
 fsCTVals <- pvalLoop('mprage_fs_ct', all.train.data)
 jlfCTVals <- pvalLoop('mprage_jlf_ct', all.train.data)
 jlfGMDVals <- pvalLoop('mprage_jlf_gmd', all.train.data)
-fsVolVals <- pvalLoop('mprage_fs_vol', all.train.data)
+fsVolVals <- pvalLoop('mprage_fs_vol', all.train.data, TBV=TRUE)
 
 ## Now I need to export these in a manner that will make it easy to create a brain picture =D 
 write.csv(fsCTVals, 'fsSigQAPROIct.csv', quote=F)
