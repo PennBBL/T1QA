@@ -1,203 +1,201 @@
 # AFGR June 13 2016
-# This script is going to be used to produce figure 6 for the qap paper.
-# Figure 6 will be one bar plot and some statistics for p cor between qap and average rating 
-# The formula will be qap ~ rating + age + sex 
-# Its going to be one bar plot of p cor values
-# One plot of signifiance betwen the value and qap 
-# I will be doing this across the whole cohort
-# I also need to include motion parameters in this... although I am not sure how that is going to work yet.
-# Also one last note I need the ggm package to compute pcor
+# This script is oging to be used to produce the bivariate AUC 
+# for the 0 vs !0 prediction models
 
 
-# First thing is first load the data
-source('/home/adrose/qapQA/scripts/loadMgiData.R')
-detachAllPackages()
-# Declare the mgi data to work with here
-mgi.data <- cbind(isolatedVars ,mergedQAP$Gender, mergedQAP$age)
-colnames(mgi.data)[34:35] <- c('sex', 'age')
-
-mergedQAP <- mergedQAP.go2
-colnames(mergedQAP) <- gsub(pattern='.x', replacement = '', x = colnames(mergedQAP), fixed = TRUE)
-isolatedVars <- mergedQAP[qapValNames]
-isolatedVars <- cbind(mergedQAP$bblid, isolatedVars)
-isolatedVars <- cbind(isolatedVars, mergedQAP[manualQAValue])
-colnames(isolatedVars)[1] <- 'bblid'
-isolatedVars[manualQAValue] <- as.factor(isolatedVars$averageRating)
-size.vars <- grep('size', names(isolatedVars))
-isolatedVars <- isolatedVars[, -size.vars]
-manualQAData <- read.csv("/home/analysis/redcap_data/201507/n1601_go1_datarel_073015.csv")
-go2.data <- merge(mergedQAP, manualQAData, by='bblid')
-
-# Declare the go2 data to work with here
-go2.data <- cbind(go2.data$bblid, go2.data[qapValNames],go2.data$averageRating,go2.data$sex, go2.data$ageAtGo2Scan)
-size.vars <- grep('size', names(go2.data))
-go2.data <- go2.data[,-size.vars]
-colnames(go2.data)[c(1,33,34,35)] <- c('bblid', 'averageRating', 'sex', 'age')
-
-# Now do Go1
+## Load the data
 source('/home/adrose/qapQA/scripts/loadGo1Data.R')
 detachAllPackages()
-go1.data <- cbind(mergedQAP$bblid.x, mergedQAP[qapValNames], mergedQAP$averageRating, mergedQAP$sex, mergedQAP$ageAtGo1Scan)
-size.vars <- grep('size', names(go1.data))
-go1.data <- go1.data[,-size.vars]
-colnames(go1.data)[c(1,33,34,35)] <- c('bblid', 'averageRating', 'sex', 'age')
+set.seed(16)
 
-# Now source library(s)
-install_load('ggplot2', 'ggm', 'scales')
-
-# Now combine all of the data sets
-# first reorder the columns so all data sets match each other
-go1.data <- go1.data[order(names(go1.data))]
-mgi.data <- mgi.data[order(names(mgi.data))]
-go2.data <- go2.data[order(names(go2.data))]
-all.data <- rbind(go1.data, mgi.data, go2.data)
-
-# Now declare the columns of interest to compute p cor for
-cols <- names(all.data)[c(8,9,10,13,14,15,16,19,25,26,29,31,34,35)]
-
-
-
-# Now attach the combined qap measure
-load('/home/adrose/qapQA/data/tmp6-15/go1Weights.RData')
-# First do all
-reg.vals.go <- apply(all.data[cols], 1, function(x) weighted.mean(x, w))
-#all.data <- cbind(all.data, reg.vals.go)
-# Now do go1
-reg.vals.go <- apply(go1.data[cols], 1, function(x) weighted.mean(x, w))
-#go1.data <- cbind(go1.data, reg.vals.go)
-# Now mgi
-reg.vals.go <- apply(mgi.data[cols], 1, function(x) weighted.mean(x, w))
-#mgi.data <- cbind(mgi.data, reg.vals.go)
-# Now do go2
-reg.vals.go <- apply(go2.data[cols], 1, function(x) weighted.mean(x, w))
-#go2.data <- cbind(go2.data, reg.vals.go)
-
-
-# Now attach the combined qap measure with the mgi data
-load('/home/adrose/qapQA/data/tmp6-15/mgiWeights.RData')
-# First do all
-reg.vals.mg <- apply(all.data[cols], 1, function(x) weighted.mean(x, w))
-#all.data <- cbind(all.data, reg.vals.mg)
-# Now do go1
-reg.vals.mg <- apply(go1.data[cols], 1, function(x) weighted.mean(x, w))
-#go1.data <- cbind(go1.data, reg.vals.mg)
-# Now mgi
-reg.vals.mg <- apply(mgi.data[cols], 1, function(x) weighted.mean(x, w))
-#mgi.data <- cbind(mgi.data, reg.vals.mg)
-# Now do go2
-reg.vals.mg <- apply(go2.data[cols], 1, function(x) weighted.mean(x, w))
-#go2.data <- cbind(go2.data, reg.vals.mg)
-
-#cols <- append(cols, 'reg.vals.go')
-#cols <- append(cols, 'reg.vals.mg')
-
-# Now compute p cor for all data sets
-p.cor.vector <- NULL
-for(qapMetricVal in cols){
-  p.cor.string <- c('averageRating', qapMetricVal, 'age', 'sex')
-  p.cor.val<- pcor(p.cor.string, var(all.data[p.cor.string]))
-  p.cor.vector <- append(p.cor.vector, p.cor.val)
+## Declare any functions
+rocdata <- function(grp, pred){
+  # Produces x and y co-ordinates for ROC curve plot
+  # Arguments: grp - labels classifying subject status
+  #            pred - values of each observation
+  # Output: List with 2 components:
+  #         roc = data.frame with x and y co-ordinates of plot
+  #         stats = data.frame containing: area under ROC curve, p value, upper and lower 95% confidence interval
+ 
+  grp <- as.factor(grp)
+  if (length(pred) != length(grp)) {
+    stop("The number of classifiers must match the number of data points")
+  } 
+ 
+  if (length(levels(grp)) != 2) {
+    stop("There must only be 2 values for the classifier")
+  }
+ 
+  cut <- unique(pred)
+  tp <- sapply(cut, function(x) length(which(pred > x & grp == levels(grp)[2])))
+  fn <- sapply(cut, function(x) length(which(pred < x & grp == levels(grp)[2])))
+  fp <- sapply(cut, function(x) length(which(pred > x & grp == levels(grp)[1])))
+  tn <- sapply(cut, function(x) length(which(pred < x & grp == levels(grp)[1])))
+  tpr <- tp / (tp + fn)
+  fpr <- fp / (fp + tn)
+  roc = data.frame(x = fpr, y = tpr)
+  roc <- roc[order(roc$x, roc$y),]
+ 
+  i <- 2:nrow(roc)
+  auc <- (roc$x[i] - roc$x[i - 1]) %*% (roc$y[i] + roc$y[i - 1])/2
+ 
+  pos <- pred[grp == levels(grp)[2]]
+  neg <- pred[grp == levels(grp)[1]]
+  q1 <- auc/(2-auc)
+  q2 <- (2*auc^2)/(1+auc)
+  se.auc <- sqrt(((auc * (1 - auc)) + ((length(pos) -1)*(q1 - auc^2)) + ((length(neg) -1)*(q2 - auc^2)))/(length(pos)*length(neg)))
+  ci.upper <- auc + (se.auc * 0.96)
+  ci.lower <- auc - (se.auc * 0.96)
+ 
+  se.auc.null <- sqrt((1 + length(pos) + length(neg))/(12*length(pos)*length(neg)))
+  z <- (auc - 0.5)/se.auc.null
+  p <- 2*pnorm(-abs(z))
+ 
+  stats <- data.frame (auc = auc,
+                       p.value = p,
+                       ci.upper = ci.upper,
+                       ci.lower = ci.lower
+                       )
+ 
+  return (list(roc = roc, stats = stats))
 }
 
-p.cor.data.frame <- as.data.frame(cbind(cols, p.cor.vector))
-p.cor.data.frame$p.cor.vector <- as.numeric(as.character(p.cor.data.frame$p.cor.vector))
 
-all.data.bg <- ggplot(p.cor.data.frame, aes(x=cols, y=p.cor.vector, fill=p.cor.vector)) +
-  geom_bar(stat="identity") +
-  theme(axis.text.x = element_text(angle=45,hjust=1)) +
-  labs(title = "ALL", x = "QAP Measures", y = "Partial Correllation") + 
-  theme(legend.position = 'none')+ 
-  scale_y_continuous(limits=c(-.5,.5),oob=rescale_none)
+rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
+  require(ggplot2)
+  plotdata <- rocdata(grp, pred)
+ 
+  if (p.value == TRUE){
+    annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (P=", signif(p.value, 2), ")", sep=""))
+  } else {
+    annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (95%CI ", signif(ci.upper, 2), " - ", signif(ci.lower, 2), ")", sep=""))
+  }
+ 
+  p <- ggplot(plotdata$roc, aes(x = x, y = y)) +
+      geom_line(aes(colour = "")) +
+      geom_abline (intercept = 0, slope = 1) +
+      theme_bw() +
+      scale_x_continuous("False Positive Rate (1-Specificity)") +
+      scale_y_continuous("True Positive Rate (Sensitivity)") +
+      scale_colour_manual(labels = annotation, values = "#000000") +
+      ggtitle(title) +
+      theme_bw() + 
+      #theme(axis.title.x = theme_text(face="bold", size=12)) +
+      #theme(axis.title.y = theme_text(face="bold", size=12, angle=90)) +
+      theme(legend.position=c(1,0)) +
+      theme(legend.justification=c(1,0)) +
+      theme(legend.title=element_blank())
+      
 
-
-# Now do go1
-p.cor.vector <- NULL
-for(qapMetricVal in cols){
-  p.cor.string <- c('averageRating', qapMetricVal, 'age', 'sex')
-  p.cor.val<- pcor(p.cor.string, var(go1.data[p.cor.string]))
-  p.cor.vector <- append(p.cor.vector, p.cor.val)
+     #theme(title = title,
+           #plot.title = theme_text(face="bold", size=14), 
+           #axis.title.x = theme_text(face="bold", size=12),
+           #axis.title.y = theme_text(face="bold", size=12, angle=90),
+           #panel.grid.major = theme_blank(),
+           #panel.grid.minor = theme_blank(),
+           #legend.justification=c(1,0), 
+           #legend.position=c(1,0),
+           #legend.title=theme_blank(),
+           #legend.key = theme_blank()
+           #)
+  return(p)
 }
 
-p.cor.data.frame <- as.data.frame(cbind(cols, p.cor.vector))
-p.cor.data.frame$p.cor.vector <- as.numeric(as.character(p.cor.data.frame$p.cor.vector))
 
-# Now find outif the qap value is significant in this equation 
-# averageRating ~ qapValue + age + sex
-sig.vector <- NULL
-for(qapMetricVal in cols){
-  lm.formula <- as.formula(paste('averageRating ~age + sex + ', qapMetricVal))
-  lm.outcome<- lm(formula = lm.formula, data=go1.data)
-  p.value <- summary(lm.outcome)$coefficients[4,4]
-  sig.vector <- append(sig.vector, p.value)
+## Load Library(s)
+install_load('pROC', 'ggplot2', 'caret', 'lme4', 'foreach', 'doParallel')
+
+# Now split data into raw and traning 
+raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
+raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
+raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
+folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
+index <- unlist(folds[1])
+trainingData <- raw.lme.data[index,]
+validationData <- raw.lme.data[-index,] 
+
+raw.lme.data <- melt(trainingData, id.vars=names(raw.lme.data)[1:32], measure.vars=names(raw.lme.data)[34:36])
+raw.lme.data$value[raw.lme.data$value > 1] <- 1
+
+# Now run through each variable of interest and build an ROC curve for it
+outcome <- raw.lme.data$value
+qapValNames <- qapValNames[-grep('size', qapValNames)]
+qapValNames <- qapValNames[-grep('mean', qapValNames)]
+qapValNames <- qapValNames[-grep('std', qapValNames)]
+qapValNames <- qapValNames[-grep('fwhm_', qapValNames)]
+qapValNames <- qapValNames[-grep('hm.', qapValNames)]
+qapValNames <- qapValNames[-grep('all.', qapValNames)]
+aucVals <- NULL
+for(qapVal in qapValNames){
+  model <- as.formula(paste("value ~", paste(qapVal), paste("+ (1|variable)")))
+  m1 <- glmer(model, data=raw.lme.data, family="binomial")
+  predictor <- predict(m1, type='response')
+  roc.tmp <- roc(outcome ~ predictor)
+  output <- cbind(qapVal, auc(roc.tmp))
+  aucVals <- rbind(aucVals, output)
 }
 
-tmp <- p.cor.data.frame$cols[which(sig.vector < .05)]
-asterick.vals <- NULL
-for(i in tmp){asterick.vals <- append(asterick.vals,(paste(i, '*', sep='')))}
-p.cor.data.frame$cols <- as.character(p.cor.data.frame$cols)
-p.cor.data.frame$cols[which(sig.vector < .05)] <- asterick.vals 
+# Now order and find the AUC heirarchy 
+aucVals <- as.data.frame(aucVals)
+aucVals$V2 <- as.numeric(as.character(aucVals$V2))
+aucVals <- aucVals[order(aucVals[,2], decreasing =TRUE),]
+aucValsMono <- aucVals
+# Now make a bar plot of all of the 0 vs !0 AUC's
+aucZerovsNotZeroMonovariate <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2)) +
+  geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
+  theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
+        axis.title.x = element_text(size=36),
+        axis.title.y = element_text(size=36),
+        text = element_text(size=30)) +
+  coord_cartesian(ylim=c(.6,.95)) +
+  ggtitle("") + 
+  xlab("QAP Variables") +
+  ylab("AUC")
 
 
-go1.data.bg <- ggplot(p.cor.data.frame, aes(x=cols, y=p.cor.vector, fill=p.cor.vector)) +
-  geom_bar(stat="identity") +
-  theme(axis.text.x = element_text(angle=45,hjust=1)) +
-  labs(title = "PNC 1", x = "QAP Measures", y = "Partial Correllation") + 
-  theme(legend.position = 'none')+ 
-  scale_y_continuous(limits=c(-.5,.5),oob=rescale_none)
+# Now order the varaibles based on AUC
+reorderedVals <- reorder(aucVals$qapVal, aucVals$V2)
+aucNamesOrder <- reorderedVals[1:length(reorderedVals)]
 
-
-# Now do go2
-p.cor.vector <- NULL
-for(qapMetricVal in cols){
-  p.cor.string <- c('averageRating', qapMetricVal, 'age', 'sex')
-  p.cor.val<- pcor(p.cor.string, var(go2.data[p.cor.string]))
-  p.cor.vector <- append(p.cor.vector, p.cor.val)
+aucVals <- NULL
+# Now do the bivariate addition
+for(qapVal in aucNamesOrder[2:length(aucNamesOrder)]){
+  model <- as.formula(paste("value ~", paste(aucNamesOrder[1], qapVal, sep='+'), paste("+ (1|variable)")))
+  m1 <- glmer(model, data=raw.lme.data, family="binomial")
+  predictor <- predict(m1)
+  roc.tmp <- roc(outcome ~ predictor)
+  output <- cbind(qapVal, paste(aucNamesOrder[1], qapVal, sep='+'), auc(roc.tmp))
+  aucVals <- rbind(aucVals, output)
 }
 
-p.cor.data.frame <- as.data.frame(cbind(cols, p.cor.vector))
-p.cor.data.frame$p.cor.vector <- as.numeric(as.character(p.cor.data.frame$p.cor.vector))
+aucVals[, 2] <- c("BG Kurtosis + WM kurtosis", "BG Kurtosis + WM Skewness", 
+ "BG Kurtosis + GM Skewness", "BG Kurtosis + BG Skewness", 
+ "BG Kurtosis + QI1", "BG Kurtosis + CSF Kurtosis", "BG Kurtosis + CSF Skewness", 
+ "BG Kurtosis + FBER", "BG Kurtosis + CNR", "BG Kurtosis + FWHM", 
+ "BG Kurtosis + SNR", "BG Kurtosis + GM Kurtosis", "BG Kurtosis + EFC")
 
-go2.data.bg <- ggplot(p.cor.data.frame, aes(x=cols, y=p.cor.vector, fill=p.cor.vector)) +
-  geom_bar(stat="identity") +
-  theme(axis.text.x = element_text(angle=45,hjust=1)) +
-  labs(title = "PNC 2", x = "QAP Measures", y = "Partial Correllation") + 
-  theme(legend.position = 'none')+ 
-  scale_y_continuous(limits=c(-.5,.5),oob=rescale_none)
+# Now plot them based on order
+aucVals <- as.data.frame(aucVals)
+aucVals$V3 <- as.numeric(as.character(aucVals$V3))
+aucVals <- aucVals[order(aucVals[,3], decreasing =TRUE),]
+aucValsBi <- aucVals
 
-# Now do mgi
-p.cor.vector <- NULL
-for(qapMetricVal in cols){
-  p.cor.string <- c('averageRating', qapMetricVal, 'age', 'sex')
-  p.cor.val<- pcor(p.cor.string, var(mgi.data[p.cor.string]))
-  p.cor.vector <- append(p.cor.vector, p.cor.val)
+# Now find where we lose signifiacnt gains in our auc
+for(i in aucVals$qapVal){
+  tmp.form <- as.formula(paste()
+
 }
 
-p.cor.data.frame <- as.data.frame(cbind(cols, p.cor.vector))
-p.cor.data.frame$p.cor.vector <- as.numeric(as.character(p.cor.data.frame$p.cor.vector))
-# Now find outif the qap value is significant in this equation 
-# averageRating ~ qapValue + age + sex
-sig.vector <- NULL
-for(qapMetricVal in cols){
-  lm.formula <- as.formula(paste('averageRating ~age + sex + ', qapMetricVal))
-  lm.outcome<- lm(formula = lm.formula, data=go1.data)
-  p.value <- summary(lm.outcome)$coefficients[4,4]
-  sig.vector <- append(sig.vector, p.value)
-}
+# Now make a bar plot of all of the 0 vs !0 AUC's
+aucZerovsNotZeroBivariate <- ggplot(aucVals, aes(x=reorder(V2, -V3), y=V3)) +
+  geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
+  theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
+        axis.title.x = element_text(size=36),
+        axis.title.y = element_text(size=36),
+        text = element_text(size=30)) +
+  coord_cartesian(ylim=c(.8,1)) +
+  ggtitle("") + 
+  xlab("QAP Variables") +
+  ylab("AUC")
 
-tmp <- p.cor.data.frame$cols[which(sig.vector < .05)]
-asterick.vals <- NULL
-for(i in tmp){asterick.vals <- append(asterick.vals,(paste(i, '*', sep='')))}
-p.cor.data.frame$cols <- as.character(p.cor.data.frame$cols)
-p.cor.data.frame$cols[which(sig.vector < .05)] <- asterick.vals 
-
-mgi.data.bg <- ggplot(p.cor.data.frame, aes(x=cols, y=p.cor.vector, fill=p.cor.vector)) +
-  geom_bar(stat="identity") +
-  theme(axis.text.x = element_text(angle=45,hjust=1)) +
-  labs(title = "MGI", x = "QAP Measures", y = "Partial Correllation") + 
-  theme(legend.position = 'none')+ 
-  scale_y_continuous(limits=c(-.5,.5),oob=rescale_none)
-
-pdf('figure7QapPaper.pdf', height=20, width=20)
-#multiplot(go1.data.bg, go2.data.bg, mgi.data.bg, all.data.bg, cols=2)
-multiplot(go1.data.bg,mgi.data.bg, cols=2)
-dev.off()
