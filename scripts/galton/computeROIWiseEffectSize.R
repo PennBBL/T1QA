@@ -98,9 +98,9 @@ pvalLoop <- function(grepPattern, dataFrame, TBV=FALSE){
   colVals <- grep(grepPattern, names(dataFrame))
 
   # Now lets compute our p vals 
-  outputPVals <- apply(dataFrame[,colVals], 2, function(x) returnPVal(x ,dataFrame$averageRating, '+df$ageAtGo1Scan+df$sex', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE))
+  outputPVals <- apply(dataFrame[,colVals], 2, function(x) returnPVal(x ,dataFrame$averageRating, '+df$ageAtGo1Scan+df$sex+df$ageAtGo1Scan^2', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE))
   if(TBV=='TRUE'){
-    outputPVals <- apply(dataFrame[,colVals], 2, function(x) returnPVal(x ,dataFrame$averageRating, '+df$ageAtGo1Scan+df$sex', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE, regressTBV=TRUE))
+    outputPVals <- apply(dataFrame[,colVals], 2, function(x) returnPVal(x ,dataFrame$averageRating, '+df$ageAtGo1Scan+df$sex+df$ageAtGo1Scan^2', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE, regressTBV=TRUE))
   }  
   # Now fdr correct these suckers
   outputPVals.fdr <- p.adjust(outputPVals, method='fdr')
@@ -136,10 +136,11 @@ fsCTVals <- pvalLoop('mprage_fs_ct', all.train.data)
 jlfCTVals <- pvalLoop('mprage_jlf_ct', all.train.data)
 jlfGMDVals <- pvalLoop('mprage_jlf_gmd', all.train.data)
 fsVolVals <- pvalLoop('mprage_fs_vol', all.train.data, TBV=TRUE)
+jlfVOLVals <- pvalLoop('mprage_jlf_vol', all.train.data, TBV=TRUE)
 
 ## Now I need to export these in a manner that will make it easy to create a brain picture =D 
 write.csv(fsCTVals, 'fsSigQAPROIct.csv', quote=F)
 write.csv(jlfCTVals, 'jlfSigQAPROIct.csv', quote=F)
 write.csv(jlfGMDVals, 'jlfSigQAPROIgmd.csv', quote=F)
 write.csv(fsVolVals, 'fsSigQAPROIvol.csv', quote=F)
-
+write.csv(jlfVOLVals, 'jlfSigQAPROIvol.csv', quote=F)
