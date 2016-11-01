@@ -1,58 +1,123 @@
 ## Load the data
-# Now do Go1
-source('/home/adrose/qapQA/scripts/loadGo1Data.R')
-detachAllPackages()
+source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
+set.seed(16)
+load('/home/adrose/qapQA/data/0vsNot0FinalData.RData')
+zeroVsNotZeroModel <- m1
+rm(m1)
 
 # Now load any library(s)
-install_load('ggplot2','scales', 'ppcor', 'visreg')
+install_load('ggplot2', 'caret', 'pROC')
 
-# Now I need to attach the composite qap value to the mergedQAP df
-load('/home/adrose/qapQA/data/tmp6-15/go1Weights.RData')
-cols <- c('bg.kurtosis', 'bg.skewness', 'cnr',
-          'csf.kurtosis', 'csf.skewness', 'efc',
-          'fber', 'fwhm', 'gm.kurtosis',
-          'gm.skewness', 'qi1', 'snr', 'wm.kurtosis',
-          'wm.skewness')
-reg.vals.go <- apply(mergedQAP[cols], 1, function(x) weighted.mean(x, w))
-mergedQAP <- cbind(mergedQAP, reg.vals.go)
+# Declare any functions
+rocdata <- function(grp, pred){
+    # Produces x and y co-ordinates for ROC curve plot
+    # Arguments: grp - labels classifying subject status
+    #            pred - values of each observation
+    # Output: List with 2 components:
+    #         roc = data.frame with x and y co-ordinates of plot
+    #         stats = data.frame containing: area under ROC curve, p value, upper and lower 95% confidence interval
+    
+    grp <- as.factor(grp)
+    if (length(pred) != length(grp)) {
+        stop("The number of classifiers must match the number of data points")
+    }
+    
+    if (length(levels(grp)) != 2) {
+        stop("There must only be 2 values for the classifier")
+    }
+    
+    cut <- unique(pred)
+    tp <- sapply(cut, function(x) length(which(pred > x & grp == levels(grp)[2])))
+    fn <- sapply(cut, function(x) length(which(pred < x & grp == levels(grp)[2])))
+    fp <- sapply(cut, function(x) length(which(pred > x & grp == levels(grp)[1])))
+    tn <- sapply(cut, function(x) length(which(pred < x & grp == levels(grp)[1])))
+    tpr <- tp / (tp + fn)
+    fpr <- fp / (fp + tn)
+    roc = data.frame(x = fpr, y = tpr)
+    roc <- roc[order(roc$x, roc$y),]
+    
+    i <- 2:nrow(roc)
+    auc <- (roc$x[i] - roc$x[i - 1]) %*% (roc$y[i] + roc$y[i - 1])/2
+    
+    pos <- pred[grp == levels(grp)[2]]
+    neg <- pred[grp == levels(grp)[1]]
+    q1 <- auc/(2-auc)
+    q2 <- (2*auc^2)/(1+auc)
+    se.auc <- sqrt(((auc * (1 - auc)) + ((length(pos) -1)*(q1 - auc^2)) + ((length(neg) -1)*(q2 - auc^2)))/(length(pos)*length(neg)))
+    ci.upper <- auc + (se.auc * 0.96)
+    ci.lower <- auc - (se.auc * 0.96)
+    
+    se.auc.null <- sqrt((1 + length(pos) + length(neg))/(12*length(pos)*length(neg)))
+    z <- (auc - 0.5)/se.auc.null
+    p <- 2*pnorm(-abs(z))
+    
+    stats <- data.frame (auc = auc,
+    p.value = p,
+    ci.upper = ci.upper,
+    ci.lower = ci.lower
+    )
+    
+    return (list(roc = roc, stats = stats))
+}
 
-mergedQAP <- mergedQAP[complete.cases(mergedQAP$mprage_fs_mean_thickness),]
 
-# Now do the same thing although the mediation triangle is a bit different this time
-#Here is a brief of the mediation triangle 
-#   qap
-#age   ct
-# We are going to follow the same methodology 
-value.one.string <- c('ageAtGo1Scan', 'mprage_fs_mean_thickness')
-value.one.p.cor <- pcor(mergedQAP[value.one.string], method='spearman')$estimate[2,1]
+rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
+    require(ggplot2)
+    plotdata <- rocdata(grp, pred)
+    
+    if (p.value == TRUE){
+        annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (P=", signif(p.value, 2), ")", sep=""))
+    } else {
+        annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (95%CI ", signif(ci.upper, 2), " - ", signif(ci.lower, 2), ")", sep=""))
+    }
+    
+    p <- ggplot(plotdata$roc, aes(x = x, y = y)) +
+    geom_line(aes(colour = "")) +
+    geom_abline (intercept = 0, slope = 1) +
+    theme_bw() +
+    scale_x_continuous("False Positive Rate (1-Specificity)") +
+    scale_y_continuous("True Positive Rate (Sensitivity)") +
+    scale_colour_manual(labels = annotation, values = "#000000") +
+    ggtitle(title) +
+    theme_bw() +
+    theme(legend.position=c(1,0)) +
+    theme(legend.justification=c(1,0)) +
+    theme(legend.title=element_blank())
 
-# Now while controlling for qap value 
-value.two.string <- c('mprage_fs_mean_thickness', 'ageAtGo1Scan', 'reg.vals.go')
-value.two.p.cor <- pcor(mergedQAP[value.two.string], method='spearman')$estimate[2,1]
+    return(p)
+}
 
-# Now look at relationship between qap and age
-value.three.string <- c('ageAtGo1Scan', 'reg.vals.go')
-value.three.p.cor <- pcor(mergedQAP[value.three.string], method='spearman')$estimate[2,1]
+# Now load the models
+raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
+raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
+raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
+folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+raw.lme.data[,3:32] <- scale(raw.lme.data[,3:32], center=T, scale=T)
+index <- unlist(folds[1])
+trainingData <- raw.lme.data[index,]
+validationData <- raw.lme.data[-index,]
 
-# Now model the two interactions
-fit1 <- lm(mprage_fs_mean_thickness ~ ageAtGo1Scan + reg.vals.go, data = mergedQAP) 
-fit2 <- lm(mprage_fs_mean_thickness ~ ageAtGo1Scan , data = mergedQAP) 
+# Now prep our individual data sets
+all.train.data <- merge(trainingData, manualQAData, by='bblid')
+all.valid.data <- merge(validationData, manualQAData, by='bblid')
 
-# Now create a bar graph
-# First start by prepping the data
-thing1 <- rbind(value.one.p.cor, value.two.p.cor)
-thing2 <- rbind(c('meanCT ~ ageAtGo1Scan'),c('meanCT ~ ageAtGo1Scan + Comp QAP'))
-dataFrameToPlot <- as.data.frame(cbind(thing2, thing1))
-output.bg <- ggplot(dataFrameToPlot, aes(x=V1, y=as.numeric(as.character(V2)))) + 
-  geom_bar(stat="identity") +
-  theme(text=element_text(size=20), axis.text.x = element_text(angle = 45, hjust = 1, face="bold")) + 
-  labs(title = "Relationship of Age with CT w/ and w/o QAP", x = "Age and CT Relationship", y = "Partial Correllation")
+# Now create our train roc curve
+all.train.data$variable <- rep('ratingNULL', nrow(all.train.data))
+trainOutcome <- predict(zeroVsNotZeroModel, newdata=all.train.data,
+                        allow.new.levels=T, type='response')
+trainValues <- all.train.data$averageRating.x
+roc.train <- roc(trainValues ~ trainOutcome)
+trainPlot <- rocplot.single(trainValues, trainOutcome, title="Training Data")
 
+# Now do our validation data
+all.valid.data$variable <- rep('ratingNULL', nrow(all.valid.data))
+validOutcome <- predict(zeroVsNotZeroModel, newdata=all.valid.data,
+                        allow.new.levels=T, type='response')
+validValues <- all.valid.data$averageRating.x
+roc.valid <- roc(validValues ~ validOutcome)
+validPlot <- rocplot.single(validValues, validOutcome, title="Validation Data")
 
-# Now follow the steps from http://quantpsy.org/sobel/sobel.htm
-# For the mediation analysis
-fit3 <- lm( reg.vals.go ~ ageAtGo1Scan, data=mergedQAP)
-fit4 <- lm(mprage_fs_mean_thickness ~ reg.vals.go, data=mergedQAP)
-pdf('figure8QapPaper.pdf')
-visreg(fit4,"reg.vals.go", xlab="Composite QAP Value", ylab="Mean FS Cortical Thickness")
+# Now plot our values
+pdf('zeroVsNotZeroROCPlotsFigure8.pdf', width=18, height=10)
+multiplot(trainPlot, validPlot, cols=2)
 dev.off()
