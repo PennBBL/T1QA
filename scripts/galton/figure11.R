@@ -1,9 +1,9 @@
 ## Load the data
 source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 set.seed(16)
-load('/home/adrose/qapQA/data/0vsNot0FinalData.RData')
-zeroVsNotZeroModel <- m1
-rm(m1)
+load('/home/adrose/qapQA/data/1vs28variableModel.RData')
+oneVsTwoModel <- mod8
+rm(mod8)
 
 # Now load any library(s)
 install_load('ggplot2', 'caret', 'pROC')
@@ -90,12 +90,16 @@ rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
 # Now load the models
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
-raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
+raw.lme.data <- raw.lme.data[which(raw.lme.data$averageRating.x!=0),]
+raw.lme.data$averageRating.x[raw.lme.data$averageRating.x<1.5] <- 1
+raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1.5] <- 2
 folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
-raw.lme.data[,3:32] <- scale(raw.lme.data[,3:32], center=T, scale=T)
+raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
 index <- unlist(folds[1])
+raw.lme.data$value <- raw.lme.data$averageRating.x
 trainingData <- raw.lme.data[index,]
 validationData <- raw.lme.data[-index,]
+
 
 # Now prep our individual data sets
 all.train.data <- merge(trainingData, manualQAData, by='bblid')
@@ -103,7 +107,7 @@ all.valid.data <- merge(validationData, manualQAData, by='bblid')
 
 # Now create our train roc curve
 all.train.data$variable <- rep('ratingNULL', nrow(all.train.data))
-trainOutcome <- predict(zeroVsNotZeroModel, newdata=all.train.data,
+trainOutcome <- predict(oneVsTwoModel, newdata=all.train.data,
                         allow.new.levels=T, type='response')
 trainValues <- all.train.data$averageRating.x
 roc.train <- roc(trainValues ~ trainOutcome)
@@ -111,13 +115,13 @@ trainPlot <- rocplot.single(trainValues, trainOutcome, title="Training Data")
 
 # Now do our validation data
 all.valid.data$variable <- rep('ratingNULL', nrow(all.valid.data))
-validOutcome <- predict(zeroVsNotZeroModel, newdata=all.valid.data,
+validOutcome <- predict(oneVsTwoModel, newdata=all.valid.data,
                         allow.new.levels=T, type='response')
 validValues <- all.valid.data$averageRating.x
 roc.valid <- roc(validValues ~ validOutcome)
 validPlot <- rocplot.single(validValues, validOutcome, title="Validation Data")
 
 # Now plot our values
-pdf('zeroVsNotZeroROCPlotsFigure8.pdf', width=18, height=10)
+pdf('oneVsTwoROCPlotsFigure11.pdf', width=18, height=10)
 multiplot(trainPlot, validPlot, cols=2)
 dev.off()
