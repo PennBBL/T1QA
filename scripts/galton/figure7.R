@@ -182,9 +182,19 @@ aucVals <- aucVals[order(aucVals[,3], decreasing =TRUE),]
 aucValsBi <- aucVals
 
 # Now find where we lose signifiacnt gains in our auc
-for(i in aucVals$qapVal){
-  tmp.form <- as.formula(paste()
-
+static.formula <- as.formula("value ~ bg.kurtosis + (1|variable)")
+best.model <- glmer(static.formula, data = raw.lme.data, family = "binomial")
+predictor <- predict(best.model)
+roc.best <- roc(outcome ~ predictor)
+for (i in aucVals$qapVal) {
+  tmp.form <- as.formula(paste("value ~bg.kurtosis +", paste(i), 
+  paste("+ (1|variable)")))
+  tmp.model <- glmer(tmp.form, data = raw.lme.data, family = "binomial")
+  predictor <- predict(tmp.model)
+  roc.tmp <- roc(outcome ~ predictor)
+  roc.p.val <- roc.test(roc.best, roc.tmp, alternative = "less")$p.value 
+  print(tmp.form)
+  print(roc.p.val)
 }
 
 # Now make a bar plot of all of the 0 vs !0 AUC's
@@ -195,7 +205,12 @@ aucZerovsNotZeroBivariate <- ggplot(aucVals, aes(x=reorder(V2, -V3), y=V3)) +
         axis.title.y = element_text(size=36),
         text = element_text(size=30)) +
   coord_cartesian(ylim=c(.8,1)) +
+  geom_hline(aes(yintercept=.87),linetype="longdash", colour="black", size=0.5) + 
   ggtitle("") + 
   xlab("QAP Variables") +
   ylab("AUC")
 
+# Now print the bar graph
+pdf('bivariateAUC0vsNot0Figure7.pdf', height=16, width=12)
+aucZerovsNotZeroBivariate
+dev.off()
