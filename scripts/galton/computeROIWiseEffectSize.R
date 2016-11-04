@@ -86,10 +86,75 @@ returnPVal <- function(imagingVal, qualityVal, regVals, df, regressAgeBOO=TRUE, 
   form <- as.formula(paste('imagingVal~qualityVal', paste(regVals), sep=''))
   outputPVal <- summary(lm(form))$coefficients[2,4]
   #outputPVal <- cor.test(imagingVal, qualityVal, method='kendall')$p.value
-     
  
   return(outputPVal)
 }
+
+returnTVal <- function(imagingVal, qualityVal, regVals, df, regressAgeBOO=TRUE, regressSexBOO=TRUE, regressTBV=FALSE){
+  if(regressAgeBOO == 'TRUE'){
+    imagingVal <- regressAge(df, imagingVal)
+    qualityVal <- regressAge(df, qualityVal)
+  }
+  if(regressSexBOO == 'TRUE'){
+    imagingVal <- regressSex(df, imagingVal)
+    qualityVal <- regressSex(df, qualityVal)
+  }
+  if(regressTBV == 'TRUE'){
+    regVals <- paste(regVals, 'df$mprage_antsCT_vol_TBV', sep='+')
+  }
+  form <- as.formula(paste('imagingVal~qualityVal', paste(regVals), sep=''))
+  outputPVal <- summary(lm(form))$coefficients[2,3]
+  #outputPVal <- cor.test(imagingVal, qualityVal, method='kendall')$p.value
+ 
+  return(outputPVal)
+}
+
+
+
+# Now create some functions which will be used to create the output colored labels for itksnap
+# this is all super experimental and I am not even sure if it will work 
+# but lets start by trying =/
+returnHeatMapITKSnapVals <- function(inputZScores, lowColor='blue', hiColor='red'){
+  # Create some functions this function will call... yeesh
+  range01 <- function(x)(x-min(x))/diff(range(x))
+  colfunc <- colorRampPalette(c("blue", "red"))
+  cRamp <- function(x){
+    cols <- colorRamp(c(lowColor, hiColor))(range01(as.numeric(x)))
+  }   
+  # Output values
+  outputValues <- matrix(0, nrow=(length(inputZScores)+1), ncol=8)
+
+  # Now cretae our rgb values
+  redValues <- round(cRamp(inputZScores)[,1], digits=0)
+  greenValues <- round(cRamp(inputZScores)[,2], digits=0)
+  blueValues <- round(cRamp(inputZScores)[,3], digits=0)
+
+  # First lets create our index column
+  outputValues[,1] <- seq(0, length(inputZScores))
+
+  # Now put the proper values in the correct place 
+  outputValues[2:(length(inputZScores)+1),2] <- redValues
+  outputValues[2:(length(inputZScores)+1),3] <- greenValues
+  outputValues[2:(length(inputZScores)+1),4] <- blueValues
+
+  # Now we need to do the Transperancy column
+  outputValues[,5] <- c(0, rep(1, length(inputZScores)))
+
+  # Now the visibility column
+  outputValues[,6] <- c(0, rep(1, length(inputZScores)))
+
+  # Now the mesh visibility
+  outputValues[,7] <- c(0, rep(1, length(inputZScores)))
+
+  # Now the label indicies 
+  labelIndexNames <- c('Clear Label', paste('Label ', inputZScores, sep=''))
+  labelIndexNames <- paste('"', labelIndexNames, '"', sep='')
+  outputValues[,8] <- labelIndexNames
+  
+  # Now return our output
+  return(outputValues)
+}
+
 
 # Now create a function which will return all of the pVals for a specific grep pattern
 # which will be the prefix for an imaging value
@@ -105,6 +170,10 @@ pvalLoop <- function(grepPattern, dataFrame, TBV=FALSE){
   # Now fdr correct these suckers
   outputPVals.fdr <- p.adjust(outputPVals, method='fdr')
   output <- cbind(names(outputPVals.fdr), as.numeric(unname(outputPVals.fdr)))
+  # Now append the T values to the output
+  outputTVals <- apply(dataFrame[,colVals], 2, function(x) returnTVal(x ,dataFrame$averageRating, '+df$ageAtGo1Scan+df$sex+df$ageAtGo1Scan^2', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE))
+
+  output <- cbind(output, as.numeric(unname(outputTVals)))
   return(output)
 }
 ## Load library(s) we will need
@@ -144,3 +213,15 @@ write.csv(jlfCTVals, 'jlfSigQAPROIct.csv', quote=F)
 write.csv(jlfGMDVals, 'jlfSigQAPROIgmd.csv', quote=F)
 write.csv(fsVolVals, 'fsSigQAPROIvol.csv', quote=F)
 write.csv(jlfVOLVals, 'jlfSigQAPROIvol.csv', quote=F)
+
+# Now we need to create our itksnap color things 
+positiveValues <- jlfCTVals[which(as.numeric(jlfCTVals[,3])<0.05&as.numeric(jlfCTVals[,4])>0),]
+positiveValues <- cbind(positiveValues, rank(as.numeric(positiveValues[,4])))
+write.csv(positiveValues, 'jlfSigQAPROIctPos.csv', quote=F)
+negativeValues <- jlfCTVals[which(jlfCTVals[, 3] < 0.05 & jlfCTVals[,4] < 0 ), ]
+negativeValues <- cbind(negativeValues, rank(as.numeric(negativeValues[,4])))
+write.csv(negativeValues, 'jlfSigQAPROIctNeg.csv', quote=F)
+tmp <- returnHeatMapITKSnapVals(positiveValues[,4], hiColor='yellow', lowColor='red')
+write.table(x = tmp, file = "./testpos.txt", sep = "\t", quote = F, row.names = F, col.names = F)
+tmp <- returnHeatMapITKSnapVals(negativeValues[, 4], hiColor='blue', lowColor='light blue')
+write.table(x = tmp, file = "./testneg.txt", sep = "\t", quote = F, row.names = F, col.names = F)
