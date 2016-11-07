@@ -1,16 +1,19 @@
 # AFGR November 6th 2016
-# This script is going to be used to produce the qap paper table # 2
-# This table will consit of the sensitivity and specificity of the 0 vs !0 model
+# This script is going to be used to produce the qap paper table # 3
+# This table will consit of the sensitivity and specificity of the 1 vs 2 model
+
 
 ## Load the data
-source('/home/adrose/qapQA/scripts/loadGo1Data.R')
-detachAllPackages()
+source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 set.seed(16)
-load('/home/adrose/qapQA/data/0vsNot0FinalData.RData')
-zeroVsNotZeroModel <- m1
-rm(m1)
+load('/home/adrose/qapQA/data/1vs28variableModel.RData')
+oneVsTwoModel <- mod8
+rm(mod8)
 
-## Declare any functions
+# Now load any library(s)
+install_load('ggplot2', 'caret', 'pROC')
+
+# Declare any functions
 rocdata <- function(grp, pred){
     # Produces x and y co-ordinates for ROC curve plot
     # Arguments: grp - labels classifying subject status
@@ -82,28 +85,26 @@ rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
     scale_colour_manual(labels = annotation, values = "#000000") +
     ggtitle(title) +
     theme_bw() +
-    #theme(axis.title.x = theme_text(face="bold", size=12)) +
-    #theme(axis.title.y = theme_text(face="bold", size=12, angle=90)) +
     theme(legend.position=c(1,0)) +
     theme(legend.justification=c(1,0)) +
     theme(legend.title=element_blank())
-
+    
     return(p)
 }
 
-
-## Load Library(s)
-install_load('pROC', 'ggplot2', 'caret', 'lme4', 'foreach', 'doParallel')
-
-# Now split data into raw and traning
+# Now load the models
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
-raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
+raw.lme.data <- raw.lme.data[which(raw.lme.data$averageRating.x!=0),]
+raw.lme.data$averageRating.x[raw.lme.data$averageRating.x<1.5] <- 1
+raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1.5] <- 2
 folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
-raw.lme.data[,3:32] <- scale(raw.lme.data[,3:32], center=T, scale=T)
+raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
 index <- unlist(folds[1])
+raw.lme.data$value <- raw.lme.data$averageRating.x
 trainingData <- raw.lme.data[index,]
 validationData <- raw.lme.data[-index,]
+
 
 # Now prep our individual data sets
 all.train.data <- merge(trainingData, manualQAData, by='bblid')
@@ -111,17 +112,18 @@ all.valid.data <- merge(validationData, manualQAData, by='bblid')
 
 # Now create our train roc curve
 all.train.data$variable <- rep('ratingNULL', nrow(all.train.data))
-trainOutcome <- predict(zeroVsNotZeroModel, newdata=all.train.data,
+trainOutcome <- predict(oneVsTwoModel, newdata=all.train.data,
 allow.new.levels=T, type='response')
 trainValues <- all.train.data$averageRating.x
 roc.train <- roc(trainValues ~ trainOutcome, controls='1', cases='1')
 
 # Now do our validation data
 all.valid.data$variable <- rep('ratingNULL', nrow(all.valid.data))
-validOutcome <- predict(zeroVsNotZeroModel, newdata=all.valid.data,
+validOutcome <- predict(oneVsTwoModel, newdata=all.valid.data,
 allow.new.levels=T, type='response')
 validValues <- all.valid.data$averageRating.x
 roc.valid <- roc(validValues ~ validOutcome, controls='1', cases='1')
+
 
 # Now prepare our table's values
 output.train <- coords(roc.train, 'best')
@@ -132,4 +134,4 @@ output <- rbind(output.train, output.valid)
 rownames(output) <- c('Train', 'Valid')
 
 # Now write our csv
-write.csv(output, 'zeroVsNotZeroROCMetricsTable2.csv', quote=F)
+write.csv(output, 'oneVsTwoROCMetricsTable3.csv', quote=F)
