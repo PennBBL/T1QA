@@ -117,7 +117,6 @@ returnTVal <- function(imagingVal, qualityVal, regVals, df, regressAgeBOO=TRUE, 
 returnHeatMapITKSnapVals <- function(inputZScores, lowColor='blue', hiColor='red'){
   # Create some functions this function will call... yeesh
   range01 <- function(x)(x-min(x))/diff(range(x))
-  colfunc <- colorRampPalette(c("blue", "red"))
   cRamp <- function(x){
     cols <- colorRamp(c(lowColor, hiColor))(range01(as.numeric(x)))
   }   
@@ -129,7 +128,7 @@ returnHeatMapITKSnapVals <- function(inputZScores, lowColor='blue', hiColor='red
   greenValues <- round(cRamp(inputZScores)[,2], digits=0)
   blueValues <- round(cRamp(inputZScores)[,3], digits=0)
 
-  # First lets create our index column
+  # Now create our index column
   outputValues[,1] <- seq(0, length(inputZScores))
 
   # Now put the proper values in the correct place 
@@ -155,6 +154,61 @@ returnHeatMapITKSnapVals <- function(inputZScores, lowColor='blue', hiColor='red
   return(outputValues)
 }
 
+# Now I need to create a function which will combine my output colormaps 
+# The issues with this is that some of the color maps will have the same color values.
+# If this is the case I need to replicate the intensity value for this color 
+# Actually thinking about this I am going to write a function which will wrap the whole process 
+# of deciding which values and directions to apply cut off's to
+returnPosNegAndNeuColorScale <- function(outputZScores, colorScaleNeg=c('light blue', 'blue'), colorScalePos=c('yellow', 'red'), colorScaleNeu=c('gray'), sigThreshold=.05){
+  # MAKE SURE WE ARE DEALING WITH NUMERICS!!!!
+  outputZScores <- as.numeric(as.character(outputZScores))
+  
+  # First convert our sig threshold into a z score to find our cut off value
+  cutOff <- abs(qnorm(sigThreshold))
+
+  # Now we need to make our seperate our data into neutral, positive, and negative values
+  # We are going to order these just so it is easier to match the labesl to the output ROI
+  # when working with the ouput of this function
+  negativeValues <- outputZScores[which(outputZScores < 0 & abs(outputZScores) >= cutOff)]
+  negativeValues <- negativeValues[order(negativeValues)]
+  positiveValues <- outputZScores[which(outputZScores >= cutOff)]
+  positiveValues <- positiveValues[order(positiveValues)]
+  neutralValues <- outputZScores[which(abs(outputZScores) < cutOff )]
+  neutralValues <- neutralValues[order(neutralValues)]
+
+  # Create our blank label row first
+  values <- rep(0, 7)
+  blankRow <- append(values, paste('"', 'Clear Label' ,'"', sep=''))
+
+  # Now we need to create our individual color scales 
+  startPoint <- NULL
+  output <- blankRow
+  if(length(negativeValues > 0 )){
+    negativeColors <- returnHeatMapITKSnapVals(negativeValues, lowColor=colorScaleNeg[1], hiColor=colorScaleNeg[2])[2:(length(negativeValues)+1),]
+    negIndex <- max(as.numeric(as.character(negativeColors[,1])))
+    startPoint <- cbind(startPoint, negIndex)
+    output <- rbind(output, negativeColors)
+  } 
+  if(length(neutralValues > 0)){
+    neutralColors <- returnHeatMapITKSnapVals(neutralValues, lowColor=colorScaleNeu[1], hiColor=colorScaleNeu[1])[2:(length(neutralValues)+1),]
+    neuIndex <- max(as.numeric(as.character(neutralColors[,1])))
+    startPoint <- cbind(startPoint, neuIndex)
+    output <- rbind(output, neutralColors)
+  }
+  if(length(positiveValues > 0 )){
+    positiveColors <- returnHeatMapITKSnapVals(positiveValues, lowColor=colorScalePos[1], hiColor=colorScalePos[2])[2:(length(positiveValues)+1),]
+    posIndex <- max(as.numeric(as.character(positiveColors[,1])))
+    startPoint <- cbind(startPoint, posIndex)
+    output <- rbind(output, positiveColors)
+  } 
+  # Now I need to make sure that the index column doesn't have any repeats
+  # This will be done by running an an index thorugh the first column
+  output[,1] <- seq(0, length(outputZScores)) 
+  
+  # Now we are all set! just need to return our output
+  return(output)
+}
+
 
 # Now create a function which will return all of the pVals for a specific grep pattern
 # which will be the prefix for an imaging value
@@ -169,13 +223,21 @@ pvalLoop <- function(grepPattern, dataFrame, TBV=FALSE){
   }  
   # Now fdr correct these suckers
   outputPVals.fdr <- p.adjust(outputPVals, method='fdr')
-  output <- cbind(names(outputPVals.fdr),as.numeric(unname(outputPVals.fdr)),as.numeric(unname(outputPVals)))
+  
   # Now append the T values to the output
   outputTVals <- apply(dataFrame[,colVals], 2, function(x) returnTVal(x ,dataFrame$averageRating, '+df$ageAtGo1Scan+df$sex+df$ageAtGo1Scan^2', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE))
 
-  output <- cbind(output, as.numeric(unname(outputTVals)))
+  # I need to add some direction to my z scores
+  # These directions will come from the t values
+  outputZScores <- qnorm(outputPVals.fdr, lower.tail=F) * sign(outputTVals)
+  
+  # Now return the output
+  output <- cbind(names(outputZScores), outputZScores) 
+  output <- output[order(as.numeric(output[,2])),] 
+  rownames(output) <- NULL
   return(output)
 }
+
 ## Load library(s) we will need
 install_load('caret', 'lme4')
 
@@ -199,31 +261,36 @@ trainingData$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=trainingData,
 ## Now merge our scaled data values with the original data values 
 all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 
-## Now produce all of our p vals
+## Now remove the 0 values because they do weird things
+## to our ants values 
 all.train.data <- all.train.data[which(all.train.data$averageRating!=0),]
-fsCTVals <- pvalLoop('mprage_fs_ct', all.train.data)
+
+# Now create our z scores
 jlfCTVals <- pvalLoop('mprage_jlf_ct', all.train.data)
 jlfGMDVals <- pvalLoop('mprage_jlf_gmd', all.train.data)
-fsVolVals <- pvalLoop('mprage_fs_vol', all.train.data, TBV=TRUE)
 jlfVOLVals <- pvalLoop('mprage_jlf_vol', all.train.data, TBV=TRUE)
 
-## Now I need to export these in a manner that will make it easy to create a brain picture =D 
-write.csv(fsCTVals, 'fsSigQAPROIct.csv', quote=F)
+## Now create our color values to export to ITK snap
+ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2])
+gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2])
+volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2])
+
+# Now we need to create our label into our file which matches our ROI to our label
+jlfCTVals <- cbind(jlfCTVals, ctColors[2:(dim(jlfCTVals)[1]+1),1])
+jlfGMDVals <- cbind(jlfGMDVals, gmdColors[2:(dim(jlfGMDVals)[1]+1),1])
+jlfVOLVals <- cbind(jlfVOLVals, volColors[2:(dim(jlfVOLVals)[1]+1),1])
+
+# Now I need to save these color scales and the other thing
+write.table(ctColors, file='ctColorScale.txt', sep="\t", quote=F, row.names=F, col.names=F)
+write.table(gmdColors, file='gmdColorScale.txt', sep="\t", quote=F, row.names=F, col.names=F)
+write.table(volColors, file='volColorScale.txt', sep="\t", quote=F, row.names=F, col.names=F)
 write.csv(jlfCTVals, 'jlfSigQAPROIct.csv', quote=F)
 write.csv(jlfGMDVals, 'jlfSigQAPROIgmd.csv', quote=F)
-write.csv(fsVolVals, 'fsSigQAPROIvol.csv', quote=F)
 write.csv(jlfVOLVals, 'jlfSigQAPROIvol.csv', quote=F)
 
-# Now we need to create our itksnap color things 
-positiveValues <- jlfCTVals[which(as.numeric(jlfCTVals[,3])<0.05&as.numeric(jlfCTVals[,4])>0),]
-positiveValues <- cbind(positiveValues, rank(as.numeric(positiveValues[,4])))
-positiveValues <- cbind(positiveValues, qnorm(as.numeric(positiveValues[,2])))
-write.csv(positiveValues, 'jlfSigQAPROIctPos.csv', quote=F)
-negativeValues <- jlfCTVals[which(jlfCTVals[, 3] < 0.05 & jlfCTVals[,4] < 0 ), ]
-negativeValues <- cbind(negativeValues, rank(as.numeric(negativeValues[,4])))
-negativeValues <- cbind(negativeValues, qnorm(as.numeric(negativeValues[,2])))
-write.csv(negativeValues, 'jlfSigQAPROIctNeg.csv', quote=F)
-tmp <- returnHeatMapITKSnapVals(positiveValues[,6], hiColor='red', lowColor='yellow')
-write.table(x = tmp, file = "./testpos.txt", sep = "\t", quote = F, row.names = F, col.names = F)
-tmp <- returnHeatMapITKSnapVals(negativeValues[, 4], hiColor='light blue', lowColor='blue')
-write.table(x = tmp, file = "./testneg.txt", sep = "\t", quote = F, row.names = F, col.names = F)
+
+# Now do the FS jazz
+fsCTVals <- pvalLoop('mprage_fs_ct', all.train.data)
+fsVolVals <- pvalLoop('mprage_fs_vol', all.train.data, TBV=TRUE)
+write.csv(fsCTVals, 'fsSigQAPROIct.csv', quote=F)
+write.csv(fsVolVals, 'fsSigQAPROIvol.csv', quote=F)
