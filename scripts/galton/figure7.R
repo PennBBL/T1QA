@@ -207,7 +207,7 @@ aucZerovsNotZeroBivariate <- ggplot(aucVals, aes(x=reorder(V2, -V3), y=V3)) +
   coord_cartesian(ylim=c(.8,1)) +
   geom_hline(aes(yintercept=.87),linetype="longdash", colour="black", size=0.5) + 
   ggtitle("") + 
-  xlab("QAP Variables") +
+  xlab("Image Quality Metrics") +
   ylab("AUC")
 
 # Now print the bar graph

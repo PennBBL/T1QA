@@ -83,7 +83,12 @@ rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
     theme(legend.position="none") +
     theme(legend.justification=c(1,0)) +
     theme(legend.title=element_blank()) + 
-    scale_colour_manual(values="#000000")
+    scale_colour_manual(values="#000000") +
+    theme(
+    #axis.text.x = element_text(angle=90,hjust=1, size=30),
+      axis.title.x = element_text(size=20),
+      axis.title.y = element_text(size=20),
+      text = element_text(size=20))
 
     return(p)
 }
@@ -108,7 +113,7 @@ trainOutcome <- predict(zeroVsNotZeroModel, newdata=all.train.data,
                         allow.new.levels=T, type='response')
 trainValues <- all.train.data$averageRating.x
 roc.train <- roc(trainValues ~ trainOutcome)
-trainPlot <- rocplot.single(trainValues, trainOutcome, title="Training Data")
+trainPlot <- rocplot.single(trainValues, trainOutcome, title="Training")
 
 # Now we need to append the accuracy of the graph 
 trainPlot <- trainPlot + annotate("text", x=.775, y=.01, label=paste("AUC        = ", round(auc(roc.train), digits=2))) + theme(legend.position="none") +
@@ -128,7 +133,7 @@ validOutcome <- predict(zeroVsNotZeroModel, newdata=all.valid.data,
                         allow.new.levels=T, type='response')
 validValues <- all.valid.data$averageRating.x
 roc.valid <- roc(validValues ~ validOutcome)
-validPlot <- rocplot.single(validValues, validOutcome, title="Validation Data")
+validPlot <- rocplot.single(validValues, validOutcome, title="Validation")
 
 # Now append the AUC and accuracy as previously performed
 validPlot <- validPlot + annotate("text", x=.775, y=.01, label=paste("AUC        = ", round(auc(roc.valid), digits=2))) + theme(legend.position="none") +
