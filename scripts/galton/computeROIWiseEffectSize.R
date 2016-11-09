@@ -169,7 +169,7 @@ pvalLoop <- function(grepPattern, dataFrame, TBV=FALSE){
   }  
   # Now fdr correct these suckers
   outputPVals.fdr <- p.adjust(outputPVals, method='fdr')
-  output <- cbind(names(outputPVals.fdr), as.numeric(unname(outputPVals.fdr)))
+  output <- cbind(names(outputPVals.fdr),as.numeric(unname(outputPVals.fdr)),as.numeric(unname(outputPVals)))
   # Now append the T values to the output
   outputTVals <- apply(dataFrame[,colVals], 2, function(x) returnTVal(x ,dataFrame$averageRating, '+df$ageAtGo1Scan+df$sex+df$ageAtGo1Scan^2', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE))
 
@@ -217,11 +217,13 @@ write.csv(jlfVOLVals, 'jlfSigQAPROIvol.csv', quote=F)
 # Now we need to create our itksnap color things 
 positiveValues <- jlfCTVals[which(as.numeric(jlfCTVals[,3])<0.05&as.numeric(jlfCTVals[,4])>0),]
 positiveValues <- cbind(positiveValues, rank(as.numeric(positiveValues[,4])))
+positiveValues <- cbind(positiveValues, qnorm(as.numeric(positiveValues[,2])))
 write.csv(positiveValues, 'jlfSigQAPROIctPos.csv', quote=F)
 negativeValues <- jlfCTVals[which(jlfCTVals[, 3] < 0.05 & jlfCTVals[,4] < 0 ), ]
 negativeValues <- cbind(negativeValues, rank(as.numeric(negativeValues[,4])))
+negativeValues <- cbind(negativeValues, qnorm(as.numeric(negativeValues[,2])))
 write.csv(negativeValues, 'jlfSigQAPROIctNeg.csv', quote=F)
-tmp <- returnHeatMapITKSnapVals(positiveValues[,4], hiColor='yellow', lowColor='red')
+tmp <- returnHeatMapITKSnapVals(positiveValues[,6], hiColor='red', lowColor='yellow')
 write.table(x = tmp, file = "./testpos.txt", sep = "\t", quote = F, row.names = F, col.names = F)
-tmp <- returnHeatMapITKSnapVals(negativeValues[, 4], hiColor='blue', lowColor='light blue')
+tmp <- returnHeatMapITKSnapVals(negativeValues[, 4], hiColor='light blue', lowColor='blue')
 write.table(x = tmp, file = "./testneg.txt", sep = "\t", quote = F, row.names = F, col.names = F)
