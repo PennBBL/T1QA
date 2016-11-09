@@ -65,11 +65,11 @@ rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
     require(ggplot2)
     plotdata <- rocdata(grp, pred)
     
-    if (p.value == TRUE){
-        annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (P=", signif(p.value, 2), ")", sep=""))
-    } else {
-        annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (95%CI ", signif(ci.upper, 2), " - ", signif(ci.lower, 2), ")", sep=""))
-    }
+    #if (p.value == TRUE){
+    #    annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (P=", signif(p.value, 2), ")", sep=""))
+    #} else {
+    #    annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (95%CI ", signif(ci.upper, 2), " - ", signif(ci.lower, 2), ")", sep=""))
+    #}
     
     p <- ggplot(plotdata$roc, aes(x = x, y = y)) +
     geom_line(aes(colour = "")) +
@@ -77,12 +77,13 @@ rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
     theme_bw() +
     scale_x_continuous("False Positive Rate (1-Specificity)") +
     scale_y_continuous("True Positive Rate (Sensitivity)") +
-    scale_colour_manual(labels = annotation, values = "#000000") +
+    #scale_colour_manual(labels = annotation, values = "#000000") +
     ggtitle(title) +
     theme_bw() +
-    theme(legend.position=c(1,0)) +
+    theme(legend.position="none") +
     theme(legend.justification=c(1,0)) +
-    theme(legend.title=element_blank())
+    theme(legend.title=element_blank()) + 
+    scale_colour_manual(values="#000000")
 
     return(p)
 }
@@ -113,6 +114,18 @@ trainValues <- all.train.data$averageRating.x
 roc.train <- roc(trainValues ~ trainOutcome)
 trainPlot <- rocplot.single(trainValues, trainOutcome, title="Training Data")
 
+# Now we need to append the accuracy of the graph 
+trainPlot <- trainPlot + annotate("text", x=.775, y=.01, label=paste("AUC        = ", round(auc(roc.train), digits=2))) + theme(legend.position="none") +
+    theme(legend.justification=c(1,0)) +
+    theme(legend.title=element_blank())
+
+trainPlot <- trainPlot + annotate("text", x=.775, y=.05, label=paste("Accuracy = ", round(coords(roc.train, 'best', ret='accuracy'), digits=2))) + theme(legend.position="none") +
+    theme(legend.justification=c(1,0)) +
+    theme(legend.title=element_blank())
+
+# Now get the cut off value for the accuracy calucalation for the valid data
+cutoff <- coords(roc.train, 'best')[1]
+
 # Now do our validation data
 all.valid.data$variable <- rep('ratingNULL', nrow(all.valid.data))
 validOutcome <- predict(oneVsTwoModel, newdata=all.valid.data,
@@ -120,6 +133,16 @@ validOutcome <- predict(oneVsTwoModel, newdata=all.valid.data,
 validValues <- all.valid.data$averageRating.x
 roc.valid <- roc(validValues ~ validOutcome)
 validPlot <- rocplot.single(validValues, validOutcome, title="Validation Data")
+
+# Now append the AUC and accuracy as previously performed
+validPlot <- validPlot + annotate("text", x=.775, y=.01, label=paste("AUC        = ", round(auc(roc.valid), digits=2))) + theme(legend.position="none") +
+    theme(legend.justification=c(1,0)) +
+    theme(legend.title=element_blank())
+
+validPlot <- validPlot + annotate("text", x=.775, y=.05, label=paste("Accuracy = ", round(coords(roc.valid, cutoff, ret='accuracy'), digits=2))) + theme(legend.position="none") +
+    theme(legend.justification=c(1,0)) +
+    theme(legend.title=element_blank())
+
 
 # Now plot our values
 pdf('oneVsTwoROCPlotsFigure11.pdf', width=18, height=10)
