@@ -15,7 +15,7 @@ source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 set.seed(16)
 
 # load library(s)
-install_load('caret', 'corrplot')
+install_load('caret', 'ggplot2', 'grid', 'gridExtra', 'cowplot')
 
 # Now lets create our train and validation sets
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
@@ -47,12 +47,60 @@ names(validationData)[colsOfInterest] <- c('CNR', 'EFC', 'FBER', 'FWHM',
 trainCor <- cor(trainingData[,colsOfInterest])
 validCor <- cor(validationData[,colsOfInterest])
 
+# Now melt them so we can work with ggplot2
+trainCor <- melt(trainCor)
+validCor <- melt(validCor)
+
+# Now create our ggplot2 variables starting with training
+trainPlot <- ggplot(data = trainCor, aes(x=Var1, y=Var2, fill=value)) +
+    geom_tile() +
+    scale_fill_gradient2(low = "red", high = "blue", mid = "white",
+    midpoint = 0, limit = c(-1,1), space = "Lab") +
+    labs(title='Training') +
+    #geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 8) +
+    theme(
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.border = element_blank(),
+      panel.background = element_blank(),
+      axis.ticks = element_blank(),
+      legend.justification = c(1, 0),
+      legend.position = c(0.6, 0.7),
+      legend.direction = "horizontal",
+      plot.title=element_text(size=24, face="bold"),
+      axis.text.x=element_text(size=16, face="bold", angle=90),
+      axis.text.y=element_text(size=16, face="bold")) +
+      guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
+      title.position = "top", title.hjust = 0.5)) +
+    theme(legend.position="none")
+
+validPlot <- ggplot(data = validCor, aes(x=Var1, y=Var2, fill=value)) +
+    geom_tile() +
+    scale_fill_gradient2(low = "red", high = "blue", mid = "white",
+    midpoint = 0, limit = c(-1,1), space = "Lab") +
+    labs(title='Validation') +
+    #geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 8) +
+    theme(
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.border = element_blank(),
+      panel.background = element_blank(),
+      axis.ticks = element_blank(),
+      legend.justification = c(1, 0),
+      legend.position = c(0.6, 0.7),
+      legend.direction = "horizontal",
+      plot.title=element_text(size=24, face="bold"),
+      axis.text.x=element_text(size=16, face="bold", angle=90),
+      axis.text.y=element_text(size=16, face="bold", color='white')) +
+      guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
+      title.position = "top", title.hjust = 0.5)) +
+    theme(legend.position="none")
+
+
+
 # Now create our plots
 pdf('corPlotsFigure4QAP.pdf', height=10, width=20)
-par(mfrow=c(1,2))
-corrplot(trainCor, 'color', order='alphabet',tl.pos='lt', tl.cex=2, tl.col='black', cl.cex=2, main="Train")
-corrplot(validCor, 'color', order='alphabet',tl.pos='lt', tl.cex=2, tl.col='black', cl.cex=2, main="Valid")
+multiplot(trainPlot, validPlot, cols=2)
 dev.off()
-
-
-
