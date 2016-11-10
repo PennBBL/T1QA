@@ -29,19 +29,19 @@ train.n <- nrow(all.train.data)
 train.female <- length(which(all.train.data$sex==2))/train.n
 train.mean.age <- mean(all.train.data$ageAtGo1Scan/12)
 train.sd.age <- sd(all.train.data$ageAtGo1Scan/12)
-train.output <- cbind(c('Train'), train.n, train.female, train.mean.age, train.sd.age)
+train.output <- cbind(c('Training'), train.n, train.female, train.mean.age, train.sd.age)
 
 # Now valid data
 valid.n <- nrow(all.valid.data)
 valid.female <- length(which(all.valid.data$sex==2))/valid.n
 valid.mean.age <- mean(all.valid.data$ageAtGo1Scan/12)
 valid.sd.age <- sd(all.valid.data$ageAtGo1Scan/12)
-valid.output <- cbind(c('valid'), valid.n, valid.female, valid.mean.age, valid.sd.age)
+valid.output <- cbind(c('Validation'), valid.n, valid.female, valid.mean.age, valid.sd.age)
 
 
 #output <- as.data.frame(rbind(go1.output, mgi.output, go2.output))
 output <- as.data.frame(rbind(train.output, valid.output))
-colnames(output) <- c('Study', 'N', '% Female', 'Age Mean', 'Age SD')
+colnames(output) <- c('Sample', 'N', '% Female', 'Age Mean', 'Age SD')
 write.csv(output, './demographicsQAPPaperTable1.csv', quote=F, row.names=F)
 
 
