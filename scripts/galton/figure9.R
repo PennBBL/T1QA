@@ -80,7 +80,7 @@ aucZerovsNotZeroMonovariate <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2)
   theme(axis.text.x = element_text(angle=90,hjust=1)) +
   coord_cartesian(ylim=vals) +
   ggtitle("") + 
-  xlab("QAP Variables") +
+  xlab("Imaging Metrics") +
   ylab("AUC") +
   theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
         axis.title.x = element_text(size=36),

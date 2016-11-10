@@ -61,28 +61,29 @@ rocdata <- function(grp, pred){
 
 # Create a function which will plot a roc curve in ggplot
 rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
-  require(ggplot2)
-  plotdata <- rocdata(grp, pred)
- 
-  if (p.value == TRUE){
-    annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (P=", signif(p.value, 2), ")", sep=""))
-  } else {
-    annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (95%CI ", signif(ci.upper, 2), " - ", signif(ci.lower, 2), ")", sep=""))
-  }
- 
-  p <- ggplot(plotdata$roc, aes(x = x, y = y)) +
-      geom_line(aes(colour = "")) +
-      geom_abline (intercept = 0, slope = 1) +
-      theme_bw() +
-      scale_x_continuous("False Positive Rate (1-Specificity)") +
-      scale_y_continuous("True Positive Rate (Sensitivity)") +
-      scale_colour_manual(labels = annotation, values = "#000000") +
-      ggtitle(title) +
-      theme_bw() + 
-      theme(legend.position=c(1,0)) +
-      theme(legend.justification=c(1,0)) +
-      theme(legend.title=element_blank())
-  return(p)
+    require(ggplot2)
+    plotdata <- rocdata(grp, pred)
+   
+    p <- ggplot(plotdata$roc, aes(x = x, y = y)) +
+    geom_line(aes(colour = "")) +
+    geom_abline (intercept = 0, slope = 1) +
+    theme_bw() +
+    scale_x_continuous("False Positive Rate (1-Specificity)") +
+    scale_y_continuous("True Positive Rate (Sensitivity)") +
+    #scale_colour_manual(labels = annotation, values = "#000000") +
+    ggtitle(title) +
+    theme_bw() +
+    theme(legend.position="none") +
+    theme(legend.justification=c(1,0)) +
+    theme(legend.title=element_blank()) +
+    scale_colour_manual(values="#000000") +
+    theme(
+    #axis.text.x = element_text(angle=90,hjust=1, size=30),
+    axis.title.x = element_text(size=20),
+    axis.title.y = element_text(size=20),
+    text = element_text(size=20))
+    
+    return(p)
 }
 
 ## Load Library(s)
@@ -496,30 +497,26 @@ p7 <- roc.test(roc.7, roc.8, alternative='less')$p.value
 p8 <- roc.test(roc.8, roc.9, alternative='less')$p.value
 p9 <- roc.test(roc.9, roc.10, alternative='less')$p.value
 
-pVals <- rbind(p1, p2, p3, p4, p5, p6, p7, p8, p9)
-testVals <- rbind(c("Mono vs Bi"), c("Bi vs Tri"), c("Tri vs Quad"), c("Quad vs Penta"), 
-                  c("Penta vs Hexa"), c("Hexa vs Hepta"), c("Hepta vs Octa"), c("Octa vs Nona"), c("Nona vs Deca"))
+pVals <- rbind(p1, p2, p3, p4, p5, p6, p7, p8)
+testVals <- rbind(c("1 vs 2"), c("2 vs 3"), c("3 vs 4"), c("4 vs 5"),
+                  c("5 vs 6"), c("6 vs 7"), c("7 vs 8"), c("8 vs 9"))
 pVals <- as.data.frame(cbind(testVals, pVals))
-levels(pVals$V1) <- pVals$V1
-pVals$V1 <- as.factor(levels(pVals$V1))
-levels(pVals$V1) <- pVals$V1
+pVals$V1 <- factor(levels(pVals$V1), levels=pVals$V1)
 pVals$Z <- as.numeric(as.character(pVals$Z))
-pVals$Y <- c(p4, p1, p9, p8, p7, p3, p2, p6, p5)
-pVals <- pVals[-c(7,2),]
-pValsBarGraph <- ggplot(pVals, aes(x=V1, y=Y)) +
+pValsBarGraph <- ggplot(pVals, aes(x=V1, y=Z)) +
   geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
   theme(axis.text.x = element_text(angle=90,hjust=1)) +
-  coord_cartesian(ylim=c(0,.3)) +
+  coord_cartesian(ylim=seq(0,.1,.05)) +
   ggtitle("") + 
-  xlab("Model") +
-  ylab("P Value") + 
+  xlab("Number of Variables in Model") +
+  ylab("Delong Test P Value") +
   geom_hline(yintercept=.05) + 
   theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
         axis.title.x = element_text(size=36),
         axis.title.y = element_text(size=36),
         text = element_text(size=30))
 
-pdf("pValsBarGraph.pdf", width=12, height=12)
+pdf("pValsBarGraphFigure10.pdf", width=12, height=12)
 print(pValsBarGraph)
 dev.off()
 

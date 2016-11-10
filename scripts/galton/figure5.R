@@ -87,14 +87,17 @@ for(qapVal in varsOfInterest){
 allPlot <- ggplot(trainingValues, 
                  aes(x=factor(averageRating.y), y=as.numeric(as.character(mean)), fill=factor(averageRating.y))) + 
                  geom_bar(stat='identity', position=position_dodge(), size=.1) + 
-                 labs(title='Mean Standardized Quality Metric vs Mean Quality Rating', x='Mean Quality Rating', y='Mean Standardized Quality Metric') + 
+                 labs(title='', x='Mean Quality Rating', y='Mean Standardized Quality Metric (z-score)') +
                  geom_errorbar(aes(ymin=as.numeric(as.character(mean))-se, ymax=as.numeric(as.character(mean))+se), 
                        width = .1, position=position_dodge(.9)) + 
                  theme_bw() + 
                  facet_grid(Dataset ~ qapValue) + 
-                 theme(legend.position="none", axis.text.x = element_text(angle=90,hjust=1)) 
-
-
+                 theme(legend.position="none",
+                 axis.text.x = element_text(angle=90,hjust=1, size=16, face="bold"),
+                 axis.text.y = element_text(size=16, face="bold"),
+                 axis.title=element_text(size=20,face="bold"),
+                 strip.text.y = element_text(size = 12, angle = 90, face="bold"),
+                 strip.text.x = element_text(size = 12, angle = 90, face="bold"))
 
 pdf('qapMetricsVsQCQAPPaperFigure5.pdf', height=12, width=16)
 allPlot
