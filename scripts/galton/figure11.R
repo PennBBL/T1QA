@@ -120,11 +120,11 @@ roc.train <- roc(trainValues ~ trainOutcome)
 trainPlot <- rocplot.single(trainValues, trainOutcome, title="Training")
 
 # Now we need to append the accuracy of the graph 
-trainPlot <- trainPlot + annotate("text", x=.775, y=.01, label=paste("AUC        = ", round(auc(roc.train), digits=2))) + theme(legend.position="none") +
+trainPlot <- trainPlot + geom_text(data=NULL, x=.775, y=.01, label=paste("AUC        = ", round(auc(roc.train), digits=2)),size=8) + theme(legend.position="none") +
     theme(legend.justification=c(1,0)) +
     theme(legend.title=element_blank())
 
-trainPlot <- trainPlot + annotate("text", x=.775, y=.05, label=paste("Accuracy = ", round(coords(roc.train, 'best', ret='accuracy'), digits=2))) + theme(legend.position="none") +
+trainPlot <- trainPlot + geom_text(data=NULL, x=.775, y=.05, label=paste("Accuracy = ", round(coords(roc.train, 'best', ret='accuracy'), digits=2)),size=8) + theme(legend.position="none") +
     theme(legend.justification=c(1,0)) +
     theme(legend.title=element_blank())
 
@@ -140,11 +140,11 @@ roc.valid <- roc(validValues ~ validOutcome)
 validPlot <- rocplot.single(validValues, validOutcome, title="Validation")
 
 # Now append the AUC and accuracy as previously performed
-validPlot <- validPlot + annotate("text", x=.775, y=.01, label=paste("AUC        = ", round(auc(roc.valid), digits=2))) + theme(legend.position="none") +
+validPlot <- validPlot + geom_text(data=NULL, x=.775, y=.01, label=paste("AUC        = ", round(auc(roc.valid), digits=2)),size=8) + theme(legend.position="none") +
     theme(legend.justification=c(1,0)) +
     theme(legend.title=element_blank())
 
-validPlot <- validPlot + annotate("text", x=.775, y=.05, label=paste("Accuracy = ", round(coords(roc.valid, cutoff, ret='accuracy'), digits=2))) + theme(legend.position="none") +
+validPlot <- validPlot + geom_text(data=NULL, x=.775, y=.05, label=paste("Accuracy = ", round(coords(roc.valid, cutoff, ret='accuracy'), digits=2)),size=8) + theme(legend.position="none") +
     theme(legend.justification=c(1,0)) +
     theme(legend.title=element_blank())
 
