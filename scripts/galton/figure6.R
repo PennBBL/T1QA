@@ -154,7 +154,7 @@ aucZerovsNotZeroMonovariate <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2)
         text = element_text(size=30)) +
   coord_cartesian(ylim=c(.6,.95)) +
   ggtitle("") + 
-  xlab("QAP Variables") +
+  xlab("Image Quality Metrics") +
   ylab("AUC")
 
 

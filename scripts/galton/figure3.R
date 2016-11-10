@@ -45,23 +45,30 @@ bg2.vals$sex <- c('Male', 'Female', 'Male', 'Female')
 # Now lets plot our values
 bg1 <- ggplot(bg1.vals, aes(x=factor(averageRating), y=as.numeric(as.character(age)), fill=Dataset, group=Dataset)) + 
                 geom_bar(stat='identity', position=position_dodge(), size=.1, aes(fill=Dataset)) + 
-                labs(title='Mean Age vs Mean Quality Rating', x='Mean Quality Rating', y='Mean Age') + 
+                labs(title='', x='Mean Quality Rating', y='Mean Age') +
                 theme_bw() + 
                 coord_cartesian(ylim=c(10,16)) + 
                 geom_bar(stat="identity", position=position_dodge(), size=.1) + 
                        geom_errorbar(aes(ymin=as.numeric(as.character(age))-se, ymax=as.numeric(as.character(age))+se), 
                        width = .2, position=position_dodge(.9)) + 
-                theme(legend.position="none") 
+                theme(legend.position="none",axis.text=element_text(size=16, face="bold"),
+                axis.title=element_text(size=20,face="bold"), strip.text.y = element_text(size = 12, angle = 90, face="bold")) +
+                facet_grid(Dataset ~ .)
 
 bg2 <- ggplot(bg2.vals, aes(x=factor(sex), y=as.numeric(as.character(averageRating)), fill=Dataset, group=Dataset)) + 
                 geom_bar(stat='identity', position=position_dodge(), size=.1, aes(fill=Dataset)) + 
-                labs(title='Sex vs Mean Quality Rating', x='Sex', y='Mean Quality Rating') + 
+                labs(title='', x='Sex', y='Mean Quality Rating') +
                 theme_bw() + 
                 coord_cartesian(ylim=c(1.7,2)) + 
                 geom_bar(stat="identity", position=position_dodge(), size=.1) + 
                        geom_errorbar(aes(ymin=as.numeric(as.character(averageRating))-se, 
                                          ymax=as.numeric(as.character(averageRating))+se), 
-                       width = .2, position=position_dodge(.9))
+                width = .2, position=position_dodge(.9)) +
+                facet_grid(Dataset ~ .) +
+                theme(legend.position="none",axis.text=element_text(size=16, face="bold"),
+                axis.title=element_text(size=20,face="bold"),
+                strip.text.y = element_text(size = 12, angle = 90, face="bold"))
+
 
 pdf('demographicsvsRatingQAPPaperFigure3.pdf', width=16, height=10)
 multiplot(bg1, bg2, cols=2)
