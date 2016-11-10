@@ -108,35 +108,36 @@ detach(all.valid.data)
 
 # Now prepare our values to graph
 trainData <- rbind(meanValsAgeRegAverageRating, meanValsAgeRegOneVsTwo)
-colnames(trainData) <- c('Ants CT', 'Ants GMD', 'Ants Vol', 'FS CT', 'FS Area', 'FS Vol')
-rownames(trainData) <- c('Average Rating', 'One vs Two')
+colnames(trainData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol', 'FS CT', 'FS Area', 'FS Vol')
+rownames(trainData) <- c('Average Rating', '1 vs 2 Model')
 trainData <- melt(trainData)
-trainData$Var3 <- rep('Train', nrow(trainData))
+trainData$Var3 <- rep('Training', nrow(trainData))
 
 validData <- rbind(meanValsAgeRegAverageRatingValid, meanValsAgeRegOneVsTwoValid)
-colnames(validData) <- c('Ants CT', 'Ants GMD', 'Ants Vol', 'FS CT', 'FS Area', 'FS Vol')
-rownames(validData) <- c('Average Rating', 'One vs Two')
+colnames(validData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol', 'FS CT', 'FS Area', 'FS Vol')
+rownames(validData) <- c('Average Rating', '1 vs 2 Model')
 validData <- melt(validData)
-validData$Var3 <- rep('Valid', nrow(validData))
+validData$Var3 <- rep('Validation', nrow(validData))
 
 allData <- as.data.frame(rbind(trainData, validData))
 allData$Var1 <- as.factor(allData$Var1)
 allData$Var2 <- as.factor(allData$Var2)
 allData$value <- as.numeric(as.character(allData$value))
 allData$Var3 <- as.factor(allData$Var3)
-allData$Var2 <- factor(allData$Var2, levels=c('FS CT', 'Ants CT', 'FS Vol', 'Ants Vol', 'Ants GMD', 'FS Area'))
+allData$Var2 <- factor(allData$Var2, levels=c('FS CT', 'ANTs CT', 'FS Vol', 'ANTs Vol', 'ANTs GMD', 'FS Area'))
 
 # Now graph our data
 thing1 <- ggplot(allData, aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1)) +
-  geom_bar(stat='identity', position=position_dodge(), size=.1) +
-  theme(legend.position="none") +
-  labs(title='', x='Structural Imaging Metric', y='Partial Cor Value') +
+  geom_bar(stat='identity', position=position_dodge(), size=.1, colour="black") +
+  theme(legend.position="right") +
+  labs(title='', x='Structural Imaging Metric', y='Correlation Between \nQuality Measure and Imaging Metric') +
   theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
         axis.title.x = element_text(size=36),
         axis.title.y = element_text(size=36),
         text = element_text(size=30)) +
-  facet_grid(Var3 ~ ., space="free_x")
+  facet_grid(. ~ Var3, space="free_x") +
+  guides(fill = guide_legend(title = "Quality Measure"))
 
-pdf('partialCorBtn1vs2andAvgRatingFigure12.pdf', width=12, height=16)
+pdf('partialCorBtn1vs2andAvgRatingFigure12.pdf', width=18, height=12)
 thing1
 dev.off()
