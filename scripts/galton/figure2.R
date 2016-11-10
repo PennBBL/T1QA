@@ -30,19 +30,19 @@ all.valid.data <- merge(validationData, manualQAData, by = "bblid")
 attach(all.train.data)
 trainValue <- matrix(NA, nrow=3, ncol=3)
 # Start with jason's values
-trainValue[1,1] <- icc(cbind(ratingJB.x, ratingJB.x))$value
-trainValue[2,1] <- icc(cbind(ratingJB.x, ratingKS.x))$value
-trainValue[3,1] <- icc(cbind(ratingJB.x, ratingLV.x))$value
+trainValue[1,1] <- kappa2(cbind(ratingJB.x, ratingJB.x),weight='squared')$value
+trainValue[2,1] <- kappa2(cbind(ratingJB.x, ratingKS.x),weight='squared')$value
+trainValue[3,1] <- kappa2(cbind(ratingJB.x, ratingLV.x),weight='squared')$value
 
 # Now do Kevin's column
-trainValue[1,2] <- icc(cbind(ratingKS.x, ratingJB.x))$value
-trainValue[2,2] <- icc(cbind(ratingKS.x, ratingKS.x))$value
-trainValue[3,2] <- icc(cbind(ratingKS.x, ratingLV.x))$value
+trainValue[1,2] <- kappa2(cbind(ratingKS.x, ratingJB.x),weight='squared')$value
+trainValue[2,2] <- kappa2(cbind(ratingKS.x, ratingKS.x),weight='squared')$value
+trainValue[3,2] <- kappa2(cbind(ratingKS.x, ratingLV.x),weight='squared')$value
 
 # And now prayosha's
-trainValue[1,3] <- icc(cbind(ratingLV.x, ratingJB.x))$value
-trainValue[2,3] <- icc(cbind(ratingLV.x, ratingKS.x))$value
-trainValue[3,3] <- icc(cbind(ratingLV.x, ratingLV.x))$value
+trainValue[1,3] <- kappa2(cbind(ratingLV.x, ratingJB.x),weight='squared')$value
+trainValue[2,3] <- kappa2(cbind(ratingLV.x, ratingKS.x),weight='squared')$value
+trainValue[3,3] <- kappa2(cbind(ratingLV.x, ratingLV.x),weight='squared')$value
 
 # Now fix the column and row names
 colnames(trainValue) <- c('Rater 1', 'Rater 2', 'Rater 3')
@@ -57,19 +57,19 @@ trainValueDone <- trainValue
 attach(all.valid.data)
 trainValue <- matrix(NA, nrow=3, ncol=3)
 # Start with jason's values
-trainValue[1,1] <- icc(cbind(ratingJB.x, ratingJB.x))$value
-trainValue[2,1] <- icc(cbind(ratingJB.x, ratingKS.x))$value
-trainValue[3,1] <- icc(cbind(ratingJB.x, ratingLV.x))$value
+trainValue[1,1] <- kappa2(cbind(ratingJB.x, ratingJB.x),weight='squared')$value
+trainValue[2,1] <- kappa2(cbind(ratingJB.x, ratingKS.x),weight='squared')$value
+trainValue[3,1] <- kappa2(cbind(ratingJB.x, ratingLV.x),weight='squared')$value
 
 # Now do Kevin's column
-trainValue[1,2] <- icc(cbind(ratingKS.x, ratingJB.x))$value
-trainValue[2,2] <- icc(cbind(ratingKS.x, ratingKS.x))$value
-trainValue[3,2] <- icc(cbind(ratingKS.x, ratingLV.x))$value
+trainValue[1,2] <- kappa2(cbind(ratingKS.x, ratingJB.x),weight='squared')$value
+trainValue[2,2] <- kappa2(cbind(ratingKS.x, ratingKS.x),weight='squared')$value
+trainValue[3,2] <- kappa2(cbind(ratingKS.x, ratingLV.x),weight='squared')$value
 
 # And now prayosha's
-trainValue[1,3] <- icc(cbind(ratingLV.x, ratingJB.x))$value
-trainValue[2,3] <- icc(cbind(ratingLV.x, ratingKS.x))$value
-trainValue[3,3] <- icc(cbind(ratingLV.x, ratingLV.x))$value
+trainValue[1,3] <- kappa2(cbind(ratingLV.x, ratingJB.x),weight='squared')$value
+trainValue[2,3] <- kappa2(cbind(ratingLV.x, ratingKS.x),weight='squared')$value
+trainValue[3,3] <- kappa2(cbind(ratingLV.x, ratingLV.x),weight='squared')$value
 
 # Now fix the column and row names
 colnames(trainValue) <- c('Rater 1', 'Rater 2', 'Rater 3')
@@ -86,19 +86,23 @@ trainCor <- ggplot(data = trainData, aes(x=Var1, y=Var2, fill=value)) +
   scale_fill_gradient2(low = "red", high = "blue", mid = "white",
   midpoint = 0, limit = c(-1,1), space = "Lab") +
   geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 8) +
-  theme(
-  axis.title.x = element_blank(),
-  axis.title.y = element_blank(),
-  panel.grid.major = element_blank(),
-  panel.border = element_blank(),
-  panel.background = element_blank(),
-  axis.ticks = element_blank(),
-  legend.justification = c(1, 0),
-  legend.position = c(0.6, 0.7),
-  legend.direction = "horizontal")+
+    theme(
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.border = element_blank(),
+      panel.background = element_blank(),
+      axis.ticks = element_blank(),
+      legend.justification = c(1, 0),
+      legend.position = c(0.6, 0.7),
+      legend.direction = "horizontal",
+      plot.title=element_text(size=24, face="bold"),
+      axis.text.x=element_text(size=16, face="bold", angle=90),
+      axis.text.y=element_text(size=16, face="bold")) +
   guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
   title.position = "top", title.hjust = 0.5)) +
-  theme(legend.position="none")
+  theme(legend.position="none") + 
+  labs(title='Training')
 
 validData <- melt(validValueDone)
 validCor <- ggplot(data = validData, aes(x=Var1, y=Var2, fill=value)) +
@@ -106,19 +110,21 @@ validCor <- ggplot(data = validData, aes(x=Var1, y=Var2, fill=value)) +
   scale_fill_gradient2(low = "red", high = "blue", mid = "white",
   midpoint = 0, limit = c(-1,1), space = "Lab") +
   geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 8) +
-  theme(
-  axis.title.x = element_blank(),
-  axis.title.y = element_blank(),
-  panel.grid.major = element_blank(),
-  panel.border = element_blank(),
-  panel.background = element_blank(),
-  axis.ticks = element_blank(),
-  legend.justification = c(1, 0),
-  legend.position = c(0.6, 0.7),
-  legend.direction = "horizontal")+
-  guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
-  title.position = "top", title.hjust = 0.5)) +
-  theme(legend.position="none")
+    theme(
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.border = element_blank(),
+      panel.background = element_blank(),
+      axis.ticks = element_blank(),
+      legend.justification = c(1, 0),
+      legend.position = c(0.6, 0.7),
+      legend.direction = "horizontal",
+      plot.title=element_text(size=24, face="bold"),
+      axis.text.x=element_text(size=16, face="bold", angle=90),
+      axis.text.y=element_text(size=16, face="bold", color='white')) +
+  theme(legend.position="none") + 
+  labs(title='Validation')
 
 
 
@@ -126,19 +132,28 @@ validCor <- ggplot(data = validData, aes(x=Var1, y=Var2, fill=value)) +
 dataQaDfTrain <- as.data.frame(table(round(all.train.data$rawAverageRating.x, digits=2)))
 trainBG <- ggplot(dataQaDfTrain, aes(x=Var1, y=Freq, fill=Var1)) +
   geom_bar(stat='identity') +
-  labs(title='Training', x='Average Quality Rating', y='# Images') +
-  geom_text(data=dataQaDfTrain,aes(x=Var1,y=Freq,label=Freq),vjust=0) +
+  labs(title='', x='Average Quality Rating', y='# Images', size=16) +
+  geom_text(data=dataQaDfTrain,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
   theme_bw() +
-  theme(legend.position="none")
+  theme(legend.position="none",
+  axis.text.x=element_text(size=16, face="bold",),
+  axis.text.y=element_text(size=16, face="bold"),
+  axis.title.y=element_text(size=16, face="bold"),
+  axis.title.x=element_text(size=16, face="bold"))
+  
 
 # Now do the validation data
 dataQaDfValid <- as.data.frame(table(round(all.valid.data$rawAverageRating.x, digits=2)))
 validBG <- ggplot(dataQaDfValid, aes(x=Var1, y=Freq, fill=Var1)) +
   geom_bar(stat='identity') +
-  labs(title='Validation', x='Average Quality Rating', y='# Images') +
-  geom_text(data=dataQaDfValid,aes(x=Var1,y=Freq,label=Freq),vjust=0) +
+  labs(title='', x='Average Quality Rating', y='# Images') +
+  geom_text(data=dataQaDfValid,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
   theme_bw() +
-  theme(legend.position="none")
+  theme(legend.position="none",
+  axis.text.x=element_text(size=16, face="bold",),
+  axis.text.y=element_text(size=16, face="bold"),
+  axis.title.x=element_text(size=16, face="bold"),
+  axis.title.y=element_text(size=16, face="bold", color='white'))
 
 
 # Now create our plot
