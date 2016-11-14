@@ -82,81 +82,81 @@ validValueDone <- trainValue
 # Now create our cor matrices plots
 trainData <- melt(trainValueDone)
 trainCor <- ggplot(data = trainData, aes(x=Var1, y=Var2, fill=value)) +
-  geom_tile() +
-  scale_fill_gradient2(low = "red", high = "blue", mid = "white",
-  midpoint = 0, limit = c(-1,1), space = "Lab") +
-  geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 8) +
-    theme(
-      axis.title.x = element_blank(),
-      axis.title.y = element_blank(),
-      panel.grid.major = element_blank(),
-      panel.border = element_blank(),
-      panel.background = element_blank(),
-      axis.ticks = element_blank(),
-      legend.justification = c(1, 0),
-      legend.position = c(0.6, 0.7),
-      legend.direction = "horizontal",
-      plot.title=element_text(size=24, face="bold"),
-      axis.text.x=element_text(size=16, face="bold", angle=90),
-      axis.text.y=element_text(size=16, face="bold")) +
-  guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
-  title.position = "top", title.hjust = 0.5)) +
-  theme(legend.position="none") + 
-  labs(title='Training')
+geom_tile() +
+scale_fill_gradient2(low = "red", high = "blue", mid = "white",
+midpoint = 0, limit = c(-1,1), space = "Lab") +
+geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 8) +
+theme(
+axis.title.x = element_blank(),
+axis.title.y = element_blank(),
+panel.grid.major = element_blank(),
+panel.border = element_blank(),
+panel.background = element_blank(),
+axis.ticks = element_blank(),
+legend.justification = c(1, 0),
+legend.position = c(0.6, 0.7),
+legend.direction = "horizontal",
+plot.title=element_text(size=40),
+axis.text.x=element_text(size=30, angle=90),
+axis.text.y=element_text(size=30)) +
+guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
+title.position = "top", title.hjust = 0.5)) +
+theme(legend.position="none") +
+labs(title='Training')
 
 validData <- melt(validValueDone)
 validCor <- ggplot(data = validData, aes(x=Var1, y=Var2, fill=value)) +
-  geom_tile() +
-  scale_fill_gradient2(low = "red", high = "blue", mid = "white",
-  midpoint = 0, limit = c(-1,1), space = "Lab") +
-  geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 8) +
-    theme(
-      axis.title.x = element_blank(),
-      axis.title.y = element_blank(),
-      panel.grid.major = element_blank(),
-      panel.border = element_blank(),
-      panel.background = element_blank(),
-      axis.ticks = element_blank(),
-      legend.justification = c(1, 0),
-      legend.position = c(0.6, 0.7),
-      legend.direction = "horizontal",
-      plot.title=element_text(size=24, face="bold"),
-      axis.text.x=element_text(size=16, face="bold", angle=90),
-      axis.text.y=element_text(size=16, face="bold", color='white')) +
-  theme(legend.position="none") + 
-  labs(title='Validation')
+geom_tile() +
+scale_fill_gradient2(low = "red", high = "blue", mid = "white",
+midpoint = 0, limit = c(-1,1), space = "Lab") +
+geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 8) +
+theme(
+axis.title.x = element_blank(),
+axis.title.y = element_blank(),
+panel.grid.major = element_blank(),
+panel.border = element_blank(),
+panel.background = element_blank(),
+axis.ticks = element_blank(),
+legend.justification = c(1, 0),
+legend.position = c(0.6, 0.7),
+legend.direction = "horizontal",
+plot.title=element_text(size=40),
+axis.text.x=element_text(size=30, angle=90),
+axis.text.y=element_text(size=30)) +
+theme(legend.position="none") +
+labs(title='Validation')
 
 
 
 # Now we need to create our bar graphs
 dataQaDfTrain <- as.data.frame(table(round(all.train.data$rawAverageRating.x, digits=2)))
 trainBG <- ggplot(dataQaDfTrain, aes(x=Var1, y=Freq, fill=Var1)) +
-  geom_bar(stat='identity') +
-  labs(title='', x='Average Quality Rating', y='# Images', size=16) +
-  geom_text(data=dataQaDfTrain,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
-  theme_bw() +
-  theme(legend.position="none",
-  axis.text.x=element_text(size=16, face="bold",),
-  axis.text.y=element_text(size=16, face="bold"),
-  axis.title.y=element_text(size=16, face="bold"),
-  axis.title.x=element_text(size=16, face="bold"))
-  
+geom_bar(stat='identity') +
+labs(title='', x='Average Quality Rating', y='# Images', size=20) +
+geom_text(data=dataQaDfTrain,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
+theme_bw() +
+theme(legend.position="none",
+axis.text.x=element_text(size=30),
+axis.text.y=element_text(size=30),
+axis.title.y=element_text(size=30),
+axis.title.x=element_text(size=30))
+
 
 # Now do the validation data
 dataQaDfValid <- as.data.frame(table(round(all.valid.data$rawAverageRating.x, digits=2)))
 validBG <- ggplot(dataQaDfValid, aes(x=Var1, y=Freq, fill=Var1)) +
-  geom_bar(stat='identity') +
-  labs(title='', x='Average Quality Rating', y='# Images') +
-  geom_text(data=dataQaDfValid,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
-  theme_bw() +
-  theme(legend.position="none",
-  axis.text.x=element_text(size=16, face="bold",),
-  axis.text.y=element_text(size=16, face="bold"),
-  axis.title.x=element_text(size=16, face="bold"),
-  axis.title.y=element_text(size=16, face="bold", color='white'))
+geom_bar(stat='identity') +
+labs(title='', x='Average Quality Rating', y='# Images') +
+geom_text(data=dataQaDfValid,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
+theme_bw() +
+theme(legend.position="none",
+axis.text.x=element_text(size=30),
+axis.text.y=element_text(size=30),
+axis.title.x=element_text(size=30),
+axis.title.y=element_text(size=30, color='white'))
 
 
 # Now create our plot
-pdf('figure2-concordanceAmongstRaters.pdf', height=20, width=20)
+pdf('concordanceAmongstRatersFigure2.pdf', height=20, width=20)
 multiplot(trainCor,  trainBG, validCor, validBG, cols=2)
 dev.off()
