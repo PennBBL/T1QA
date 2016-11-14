@@ -85,7 +85,7 @@ trainCor <- ggplot(data = trainData, aes(x=Var1, y=Var2, fill=value)) +
 geom_tile() +
 scale_fill_gradient2(low = "red", high = "blue", mid = "white",
 midpoint = 0, limit = c(-1,1), space = "Lab") +
-geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 8) +
+geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
 theme(
 axis.title.x = element_blank(),
 axis.title.y = element_blank(),
@@ -109,7 +109,7 @@ validCor <- ggplot(data = validData, aes(x=Var1, y=Var2, fill=value)) +
 geom_tile() +
 scale_fill_gradient2(low = "red", high = "blue", mid = "white",
 midpoint = 0, limit = c(-1,1), space = "Lab") +
-geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 8) +
+geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
 theme(
 axis.title.x = element_blank(),
 axis.title.y = element_blank(),
@@ -157,6 +157,6 @@ axis.title.y=element_text(size=30, color='white'))
 
 
 # Now create our plot
-pdf('concordanceAmongstRatersFigure2.pdf', height=20, width=20)
+pdf('figure2-concordanceAmongstRaters.pdf', height=20, width=20)
 multiplot(trainCor,  trainBG, validCor, validBG, cols=2)
 dev.off()
