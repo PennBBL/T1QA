@@ -42,7 +42,7 @@ valid.output <- cbind(c('Validation'), valid.n, valid.female, valid.mean.age, va
 #output <- as.data.frame(rbind(go1.output, mgi.output, go2.output))
 output <- as.data.frame(rbind(train.output, valid.output))
 colnames(output) <- c('Sample', 'N', '% Female', 'Age Mean', 'Age SD')
-write.csv(output, './demographicsQAPPaperTable1.csv', quote=F, row.names=F)
+write.csv(output, './table1-demographicsQAPPaper.csv', quote=F, row.names=F)
 
 
 

@@ -101,6 +101,6 @@ validPlot <- ggplot(data = validCor, aes(x=Var1, y=Var2, fill=value)) +
 
 
 # Now create our plots
-pdf('corPlotsFigure4QAP.pdf', height=10, width=20)
+pdf('figure4-corPlots.pdf', height=10, width=20)
 multiplot(trainPlot, validPlot, cols=2)
 dev.off()

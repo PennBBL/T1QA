@@ -138,6 +138,6 @@ thing1 <- ggplot(allData, aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1
   facet_grid(. ~ Var3, space="free_x") +
   guides(fill = guide_legend(title = "Quality Measure"))
 
-pdf('partialCorBtn1vs2andAvgRatingFigure12.pdf', width=18, height=12)
+pdf('figure12-partialCorBtn1vs2andAvgRating.pdf', width=18, height=12)
 thing1
 dev.off()

@@ -34,7 +34,6 @@ raw.lme.data$value[raw.lme.data$value > 1] <- 1
 load(file='/home/adrose/qapQA/data/0vsNot0FinalData.RData')
 predictor <- predict(m1, newdata=raw.lme.data, type='response')
 outcome <- raw.lme.data$value
-roc.1.vs.2.go.0.vs.not.0.model <- rocplot.single(outcome, predictor, title="1 vs 2 Using 0 vs !0 Model")
 
 # Now train with the same model variables just in the new data
 model1 <- as.formula("value ~ bg.kurtosis+bg.skewness+ (1|variable)")
@@ -42,7 +41,6 @@ m1 <- glmer(model1, data=raw.lme.data, family="binomial")
 # Now test this model's performance
 predictor <- predict(m1, type='response')
 outcome <- raw.lme.data$value
-roc.1.vs.2.go.train.in <- rocplot.single(outcome, predictor, title="1 vs 2 Using 1 vs 2 Model")
 
 # Now go through the same step wise process as I do in the 0 vs !0 data
 # Now run through each variable of interest and build an ROC curve for it
@@ -88,6 +86,6 @@ aucZerovsNotZeroMonovariate <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2)
         text = element_text(size=30))
 
 
-pdf('monovariateAUC1vs2Figure9.pdf', height=16, width=12)
+pdf('figure9-monovariateAUC1vs2.pdf', height=16, width=12)
 aucZerovsNotZeroMonovariate
 dev.off()

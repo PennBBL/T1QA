@@ -516,7 +516,7 @@ pValsBarGraph <- ggplot(pVals, aes(x=V1, y=Z)) +
         axis.title.y = element_text(size=36),
         text = element_text(size=30))
 
-pdf("pValsBarGraphFigure10.pdf", width=12, height=12)
+pdf("figure10-pValsBarGraph.pdf", width=12, height=12)
 print(pValsBarGraph)
 dev.off()
 

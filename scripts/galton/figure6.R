@@ -158,7 +158,7 @@ aucZerovsNotZeroMonovariate <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2)
   ylab("AUC")
 
 
-pdf('monovariateAUC0vsNot0Figure6.pdf', width=12, height=12)
+pdf('figure6-monovariateAUC0vsNot0.pdf', width=12, height=12)
 aucZerovsNotZeroMonovariate
 dev.off()
 

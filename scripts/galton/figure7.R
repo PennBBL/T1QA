@@ -211,6 +211,6 @@ aucZerovsNotZeroBivariate <- ggplot(aucVals, aes(x=reorder(V2, -V3), y=V3)) +
   ylab("AUC")
 
 # Now print the bar graph
-pdf('bivariateAUC0vsNot0Figure7.pdf', height=16, width=12)
+pdf('figure7-bivariateAUC0vsNot0s.pdf', height=16, width=12)
 aucZerovsNotZeroBivariate
 dev.off()
