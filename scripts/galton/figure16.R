@@ -46,7 +46,7 @@ trainZeroNotZeroBG <- ggplot(aucVals, aes(x=V1, y=V2)) +
         axis.title.y = element_text(size=36),
         text = element_text(size=30)) +
   coord_cartesian(ylim=c(.6,1)) +
-  ggtitle("Training") + 
+  ggtitle("Training", size=20) + 
   geom_hline(yintercept=.94, linetype="longdash", colour="black", size=0.5) + 
   xlab("Sequence") +
   ylab("AUC") +
@@ -72,7 +72,7 @@ validZeroNotZeroBG <- ggplot(aucVals, aes(x=V1, y=as.numeric(as.character(V2))))
         axis.title.y = element_text(size=36),
         text = element_text(size=30)) +
   coord_cartesian(ylim=c(.6,1)) +
-  ggtitle("Validation") + 
+  ggtitle("Validation", size=20) + 
   geom_hline(yintercept=.96, linetype="longdash", colour="black", size=0.5) + 
   xlab("Sequence") +
   ylab("AUC") + 
@@ -119,7 +119,7 @@ trainOneVsTwoBG <- ggplot(aucVals, aes(x=V1, y=as.numeric(as.character(V2)))) +
         axis.title.y = element_text(size=36),
         text = element_text(size=30)) +
   coord_cartesian(ylim=c(.6,1)) +
-  ggtitle("Training") + 
+  ggtitle("") + 
   geom_hline(yintercept=.87, linetype="longdash", colour="black", size=0.5) + 
   xlab("Sequence") +
   ylab("AUC") + 
@@ -148,7 +148,7 @@ validOneVsTwoBG <- ggplot(aucVals, aes(x=V1, y=as.numeric(as.character(V2)))) +
         axis.title.y = element_text(size=36),
         text = element_text(size=30)) +
   coord_cartesian(ylim=c(.6,1)) +
-  ggtitle("Validation") + 
+  ggtitle("") + 
   geom_hline(yintercept=.78, linetype="longdash", colour="black", size=0.5) + 
   xlab("Sequence") +
   ylab("AUC") + 
@@ -156,6 +156,6 @@ validOneVsTwoBG <- ggplot(aucVals, aes(x=V1, y=as.numeric(as.character(V2)))) +
 
 
 # Now plot all of this stuff 
-pdf('motionAsIdentifierAUCValuesFigure16.pdf', height=20, width=20)
+pdf('figure16-motionAsIdentifierAUCValues.pdf', height=20, width=20)
 multiplot(trainZeroNotZeroBG, trainOneVsTwoBG, validZeroNotZeroBG, validOneVsTwoBG, cols=2)
 dev.off()

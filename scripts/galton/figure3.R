@@ -70,7 +70,7 @@ bg2 <- ggplot(bg2.vals, aes(x=factor(sex), y=as.numeric(as.character(averageRati
                 strip.text.y = element_text(size = 12, angle = 90, face="bold"))
 
 
-pdf('demographicsvsRatingQAPPaperFigure3.pdf', width=16, height=10)
+pdf('figure3-demographicsvsRatingQAPPaper.pdf', width=16, height=10)
 multiplot(bg1, bg2, cols=2)
 dev.off()
 

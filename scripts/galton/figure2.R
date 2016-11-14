@@ -157,6 +157,6 @@ validBG <- ggplot(dataQaDfValid, aes(x=Var1, y=Freq, fill=Var1)) +
 
 
 # Now create our plot
-pdf('concordanceAmongstRatersFigure2.pdf', height=20, width=20)
+pdf('figure2-concordanceAmongstRaters.pdf', height=20, width=20)
 multiplot(trainCor,  trainBG, validCor, validBG, cols=2)
 dev.off()

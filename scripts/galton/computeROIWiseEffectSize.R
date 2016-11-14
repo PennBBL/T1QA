@@ -268,7 +268,12 @@ all.train.data <- all.train.data[which(all.train.data$averageRating!=0),]
 # Now create our z scores
 jlfCTVals <- pvalLoop('mprage_jlf_ct', all.train.data)
 jlfGMDVals <- pvalLoop('mprage_jlf_gmd', all.train.data)
+# Now trim the non cortical regions for our JLF vol regions
+tmp <- all.train.data
+all.train.data <- all.train.data[,-seq(2592,2629,1)]
 jlfVOLVals <- pvalLoop('mprage_jlf_vol', all.train.data, TBV=TRUE)
+all.train.data <- tmp
+rm(tmp)
 
 ## Now create our color values to export to ITK snap
 ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2])

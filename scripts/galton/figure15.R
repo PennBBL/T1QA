@@ -197,6 +197,6 @@ validMotion <- ggplot(motionValues, aes(x=.id, y=mean)) +
 
 
 # Now plot our data
-pdf('motionCorPlotsFigure15QAP.pdf', height=18, width=18)
+pdf('figure15-motionCorPlots.pdf', height=18, width=18)
 multiplot(trainPlot, trainMotion, validPlot, validMotion,cols=2)
 dev.off()

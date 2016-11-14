@@ -132,4 +132,4 @@ output <- rbind(output.train, output.valid)
 rownames(output) <- c('Train', 'Valid')
 
 # Now write our csv
-write.csv(output, 'zeroVsNotZeroROCMetricsTable2.csv', quote=F)
+write.csv(output, 'table2-zeroVsNotZeroROCMetrics.csv', quote=F)

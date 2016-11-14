@@ -1,11 +1,16 @@
-# AFGR November 6th 2016
-# This script is going to be used to produce the qap paper table # 3
-# This table will consit of the sensitivity and specificity of the 1 vs 2 model
+# AFGR October 24 2016
+# This script is going to be used to produce figure 18 for the qap project.
+# This will include the roc curves trained on the Go1 training data and validated on the MGI data
+# This includes both the 0 vs !0 and the 1 vs 2 models
 
 
-## Load the data
-source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
+## First thing as ever, load the data
+source('/home/adrose/T1QA/scripts/galton/loadMgiData.R')
+detachAllPackages()
 set.seed(16)
+load('/home/adrose/qapQA/data/0vsNot0FinalData.RData')
+zeroVsNotZeroModel <- m1
+rm(m1)
 load('/home/adrose/qapQA/data/1vs28variableModel.RData')
 oneVsTwoModel <- mod8
 rm(mod8)
@@ -70,11 +75,11 @@ rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
     require(ggplot2)
     plotdata <- rocdata(grp, pred)
     
-    if (p.value == TRUE){
-        annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (P=", signif(p.value, 2), ")", sep=""))
-    } else {
-        annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (95%CI ", signif(ci.upper, 2), " - ", signif(ci.lower, 2), ")", sep=""))
-    }
+    #if (p.value == TRUE){
+    #    annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (P=", signif(p.value, 2), ")", sep=""))
+    #} else {
+    #    annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (95%CI ", signif(ci.upper, 2), " - ", signif(ci.lower, 2), ")", sep=""))
+    #}
     
     p <- ggplot(plotdata$roc, aes(x = x, y = y)) +
     geom_line(aes(colour = "")) +
@@ -82,15 +87,22 @@ rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
     theme_bw() +
     scale_x_continuous("False Positive Rate (1-Specificity)") +
     scale_y_continuous("True Positive Rate (Sensitivity)") +
-    scale_colour_manual(labels = annotation, values = "#000000") +
+    #scale_colour_manual(labels = annotation, values = "#000000") +
     ggtitle(title) +
     theme_bw() +
-    theme(legend.position=c(1,0)) +
+    theme(legend.position="none") +
     theme(legend.justification=c(1,0)) +
-    theme(legend.title=element_blank())
+    theme(legend.title=element_blank()) +
+    scale_colour_manual(values="#000000") +
+    theme(
+    #axis.text.x = element_text(angle=90,hjust=1, size=30),
+    axis.title.x = element_text(size=20),
+    axis.title.y = element_text(size=20),
+    text = element_text(size=20))
     
     return(p)
 }
+
 
 # Now load the models
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
@@ -98,40 +110,48 @@ raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRati
 raw.lme.data <- raw.lme.data[which(raw.lme.data$averageRating.x!=0),]
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x<1.5] <- 1
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1.5] <- 2
-folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
 raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
-index <- unlist(folds[1])
 raw.lme.data$value <- raw.lme.data$averageRating.x
-trainingData <- raw.lme.data[index,]
-validationData <- raw.lme.data[-index,]
+all.train.data <- raw.lme.data
 
+# Now create our values!
+all.train.data$variable <- rep('ratingNULL', nrow(all.train.data))
+trainOutcome <- predict(zeroVsNotZeroModel, newdata=all.train.data,
+                        allow.new.levels=T, type='response')
+trainValues <- all.train.data$averageRating.x
+roc.train <- roc(trainValues ~ trainOutcome)
+trainPlot <- rocplot.single(trainValues, trainOutcome, title="0 vs !0 Model")
 
-# Now prep our individual data sets
-all.train.data <- merge(trainingData, manualQAData, by='bblid')
-all.valid.data <- merge(validationData, manualQAData, by='bblid')
+# Now we need to append the accuracy of the graph 
+trainPlot <- trainPlot + geom_text(data=NULL, x=.775, y=.01, label=paste("AUC        = ", round(auc(roc.train), digits=2)),size=8) + theme(legend.position="none") +
+    theme(legend.justification=c(1,0)) +
+    theme(legend.title=element_blank())
 
-# Now create our train roc curve
+trainPlot0 <- trainPlot + geom_text(data=NULL, x=.775, y=.05, label=paste("Accuracy = ", round(coords(roc.train, 'best', ret='accuracy'), digits=2)),size=8) + theme(legend.position="none") +
+    theme(legend.justification=c(1,0)) +
+    theme(legend.title=element_blank())
+
+# Now do the same thing for the 1 vs 2 model
+# Now create our values!
 all.train.data$variable <- rep('ratingNULL', nrow(all.train.data))
 trainOutcome <- predict(oneVsTwoModel, newdata=all.train.data,
-allow.new.levels=T, type='response')
+                        allow.new.levels=T, type='response')
 trainValues <- all.train.data$averageRating.x
-roc.train <- roc(trainValues ~ trainOutcome, controls='1', cases='1')
+roc.train <- roc(trainValues ~ trainOutcome)
+trainPlot <- rocplot.single(trainValues, trainOutcome, title="1 vs 2 Model")
 
-# Now do our validation data
-all.valid.data$variable <- rep('ratingNULL', nrow(all.valid.data))
-validOutcome <- predict(oneVsTwoModel, newdata=all.valid.data,
-allow.new.levels=T, type='response')
-validValues <- all.valid.data$averageRating.x
-roc.valid <- roc(validValues ~ validOutcome, controls='1', cases='1')
+# Now we need to append the accuracy of the graph 
+trainPlot <- trainPlot + geom_text(data=NULL, x=.775, y=.01, label=paste("AUC        = ", round(auc(roc.train), digits=2)),size=8) + theme(legend.position="none") +
+    theme(legend.justification=c(1,0)) +
+    theme(legend.title=element_blank())
 
+trainPlot1 <- trainPlot + geom_text(data=NULL, x=.775, y=.05, label=paste("Accuracy = ", round(coords(roc.train, 'best', ret='accuracy'), digits=2)),size=8) + theme(legend.position="none") +
+    theme(legend.justification=c(1,0)) +
+    theme(legend.title=element_blank())
 
-# Now prepare our table's values
-output.train <- coords(roc.train, 'best')
-output.valid <- coords(roc.valid, output.train[1])
+# Now produce our figure
+# Now plot our values
+pdf('figure18-mgiOutsideDataSetValid.pdf', width=18, height=10)
+multiplot(trainPlot0, trainPlot1, cols=2)
+dev.off()
 
-# Now create our table
-output <- rbind(output.train, output.valid)
-rownames(output) <- c('Train', 'Valid')
-
-# Now write our csv
-write.csv(output, 'table3-oneVsTwoROCMetrics.csv', quote=F)
