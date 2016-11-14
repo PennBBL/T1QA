@@ -9,7 +9,8 @@ install_load('caret', 'pROC', 'ggplot2')
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
-folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+#folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+load('/home/adrose/qapQA/data/foldsToUse.RData')
 raw.lme.data[,3:32] <- scale(raw.lme.data[,3:32], center=T, scale=T)
 index <- unlist(folds[1])
 trainingData <- raw.lme.data[index,]

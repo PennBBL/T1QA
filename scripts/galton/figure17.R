@@ -18,7 +18,8 @@ install_load('caret', 'lme4','BaylorEdPsych', 'mgcv', 'ppcor', 'ggplot2')
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
-folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+#folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+load('/home/adrose/qapQA/data/foldsToUse.RData')
 raw.lme.data[,3:32] <- scale(raw.lme.data[,3:32], center=T, scale=T)
 index <- unlist(folds[1])
 trainingData <- raw.lme.data#[index,]
@@ -206,10 +207,11 @@ thing1 <- ggplot(allData, aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1
   geom_bar(stat='identity', position=position_dodge(), size=.1, colour="black") +
   theme(legend.position="right") +
   labs(title='', x='Structural Imaging Metric', y='Correlation Between \nQuality Measure and Imaging Metric') +
-  theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
+  theme(text = element_text(size=30),
+        axis.text.x = element_text(angle=90,hjust=1, size=28), 
         axis.title.x = element_text(size=36),
-        axis.title.y = element_text(size=36),
-        text = element_text(size=30)) +
+        axis.title.y = element_text(size=28),
+        legend.text = element_text(size=20)) +
   facet_grid(. ~ Var3, space="free_x") +
   guides(fill = guide_legend(title = "Quality Measure"))
 

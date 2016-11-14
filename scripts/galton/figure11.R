@@ -99,7 +99,8 @@ raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRati
 raw.lme.data <- raw.lme.data[which(raw.lme.data$averageRating.x!=0),]
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x<1.5] <- 1
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1.5] <- 2
-folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+#folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+load('/home/adrose/qapQA/data/foldsToUse.RData')
 raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
 index <- unlist(folds[1])
 raw.lme.data$value <- raw.lme.data$averageRating.x

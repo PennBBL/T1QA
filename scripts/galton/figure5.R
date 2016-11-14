@@ -53,7 +53,8 @@ raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
 raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
-folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+#folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+load('/home/adrose/qapQA/data/foldsToUse.RData')
 index <- unlist(folds[1])
 trainingData <- raw.lme.data[index,]
 validationData <- raw.lme.data[-index,] 
@@ -96,8 +97,8 @@ allPlot <- ggplot(trainingValues,
                  axis.text.x = element_text(angle=90,hjust=1, size=16, face="bold"),
                  axis.text.y = element_text(size=16, face="bold"),
                  axis.title=element_text(size=20,face="bold"),
-                 strip.text.y = element_text(size = 12, angle = 90, face="bold"),
-                 strip.text.x = element_text(size = 12, angle = 90, face="bold"))
+                 strip.text.y = element_text(size = 16, angle = 270, face="bold"),
+                 strip.text.x = element_text(size = 16, angle = 90, face="bold"))
 
 pdf('figure5-qapMetricsVsQCQAPPaper.pdf', height=12, width=16)
 allPlot

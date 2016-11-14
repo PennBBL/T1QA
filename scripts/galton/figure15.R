@@ -19,7 +19,8 @@ install_load('caret', 'ggplot2')
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
-folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+#folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+load('/home/adrose/qapQA/data/foldsToUse.RData')
 raw.lme.data[,3:32] <- scale(raw.lme.data[,3:32], center=T, scale=T)
 index <- unlist(folds[1])
 
@@ -154,17 +155,17 @@ colnames(val3)[3] <- 'mean'
 val4 <- summarySE(data=all.train.data[,colsCorrect],  measurevar=names(all.train.data[,colsCorrect])[4], na.rm=T)
 colnames(val4)[3] <- 'mean'
 motionValues <- rbind(val1, val2, val3, val4)
-motionValues$.id <- c('2:46', '14:51', '20:19', '43:01')
-motionValues$.id <- factor(motionValues$.id, levels=c('2:46', '14:51', '20:19', '43:01'))
+motionValues$.id <- c('PCASL (2:46)', 'tfMRI 1 (14:51)', 'tfMRI 2 (20:19)', 'rsfMRI (43:01)')
+motionValues$.id <- factor(motionValues$.id, levels=c('PCASL (2:46)', 'tfMRI 1 (14:51)', 'tfMRI 2 (20:19)', 'rsfMRI (43:01)'))
 
 # Now plot these values
-trainMotion <- ggplot(motionValues, aes(x=.id, y=mean)) +
+trainMotion <- ggplot(motionValues, aes(x=.id, y=mean, fill=.id)) +
     geom_bar(stat='identity', position=position_dodge(), size=.1) +
     geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
     width = .2, position=position_dodge(.9)) +
     theme_bw() +
     theme(legend.position="none") +
-    labs(title='', x='Time in Scanner(min:sec)', y='Mean Rel RMS') +
+    labs(title='', x='Time from T1 Scan (min:sec)', y='Mean Relative Displacement (mm)') +
     coord_cartesian(ylim=c(.1,.15,.2)) +
     theme(text=element_text(size=20), axis.text.x = element_text(angle = 0))
 
@@ -180,17 +181,17 @@ colnames(val3)[3] <- 'mean'
 val4 <- summarySE(data=all.valid.data[,colsCorrect],  measurevar=names(all.train.data[,colsCorrect])[4], na.rm=T)
 colnames(val4)[3] <- 'mean'
 motionValues <- rbind(val1, val2, val3, val4)
-motionValues$.id <- c('2:46', '14:51', '20:19', '43:01')
-motionValues$.id <- factor(motionValues$.id, levels=c('2:46', '14:51', '20:19', '43:01'))
+motionValues$.id <- c('PCASL (2:46)', 'tfMRI 1 (14:51)', 'tfMRI 2 (20:19)', 'rsfMRI (43:01)')
+motionValues$.id <- factor(motionValues$.id, levels=c('PCASL (2:46)', 'tfMRI 1 (14:51)', 'tfMRI 2 (20:19)', 'rsfMRI (43:01)'))
 
 # Now plot the suckers
-validMotion <- ggplot(motionValues, aes(x=.id, y=mean)) +
+validMotion <- ggplot(motionValues, aes(x=.id, y=mean, fill=.id)) +
     geom_bar(stat='identity', position=position_dodge(), size=.1) +
     geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
     width = .2, position=position_dodge(.9)) +
     theme_bw() +
     theme(legend.position="none") +
-    labs(title='', x='Time in Scanner(min:sec)', y='Mean Rel RMS') +
+    labs(title='', x='Time from T1 Scan (min:sec)', y='Mean Relative Displacement (mm)') +
     coord_cartesian(ylim=c(.1,.15,.2)) +
     theme(text=element_text(size=20), axis.text.x = element_text(angle = 0),
     axis.title.y=element_text(color="white"))
