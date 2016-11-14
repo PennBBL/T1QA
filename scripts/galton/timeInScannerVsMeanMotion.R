@@ -89,7 +89,7 @@ newdata4 <- cbind(newdata4, rep(4, length(newdata4)))
 corValData <- rbind(newdata1, newdata2, newdata3, newdata4)
 corVal <- cor(corValData[,1], corValData[,2], use='complete')
 motionValues <- rbind(val1, val2, val3, val4)
-motionValues$.id <- c('ASL', 'nBack', 'iDemo', 'Rest')
+motionValues$.id <- c('2:46', '14:51', '20:19', '43:01')
 motionValues$.id <- factor(motionValues$.id, levels=c('ASL', 'nBack', 'iDemo', 'Rest'))
 
 pdf('timeInScannervsMeanMotion.pdf')
@@ -99,7 +99,7 @@ geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
 width = .2, position=position_dodge(.9)) +
 theme_bw() +
 theme(legend.position="none") +
-labs(title='', x='Scan Series', y='Mean Rel RMS') +
+labs(title='', x='Scan Series', y='Time in Scanner(min:sec)') +
 coord_cartesian(ylim=c(.1,.17)) +
 theme(text=element_text(size=20), axis.text.x = element_text(angle = 0))
 dev.off()
