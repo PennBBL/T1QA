@@ -97,7 +97,8 @@ raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRati
 raw.lme.data <- raw.lme.data[which(raw.lme.data$averageRating.x!=0),]
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x<1.5] <- 1
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1.5] <- 2
-folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+#folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+load('/home/adrose/qapQA/data/foldsToUse1vs2.RData')
 raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
 index <- unlist(folds[1])
 trainingData <- raw.lme.data[index,]
@@ -508,8 +509,8 @@ pValsBarGraph <- ggplot(pVals, aes(x=V1, y=Z)) +
   theme(axis.text.x = element_text(angle=90,hjust=1)) +
   coord_cartesian(ylim=seq(0,.1,.05)) +
   ggtitle("") + 
-  xlab("Number of Variables in Model") +
-  ylab("Delong Test P Value") +
+  xlab("Models Compared in Delong Test") +
+  ylab("Delong Test (P-Value)") +
   geom_hline(yintercept=.05) + 
   theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
         axis.title.x = element_text(size=36),
@@ -519,18 +520,3 @@ pValsBarGraph <- ggplot(pVals, aes(x=V1, y=Z)) +
 pdf("figure10-pValsBarGraph.pdf", width=12, height=12)
 print(pValsBarGraph)
 dev.off()
-
-
-source('/home/adrose/T1QA/scripts/galton/loadMgiData.R')
-raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
-raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
-raw.lme.data <- raw.lme.data[which(raw.lme.data$averageRating.x!=0),]
-raw.lme.data$averageRating.x[raw.lme.data$averageRating.x<1.5] <- 1
-raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1.5] <- 2
-folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
-raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
-raw.lme.data$variable <- rep("ratingNULL", nrow(raw.lme.data))
-predictor <- predict(mod8, newdata=raw.lme.data, allow.new.levels=T, type='response')
-outcome <- raw.lme.data$averageRating.x
-roc.tmp <- roc(outcome ~ predictor)
-pdf(

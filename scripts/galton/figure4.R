@@ -21,7 +21,8 @@ install_load('caret', 'ggplot2', 'grid', 'gridExtra', 'cowplot')
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
-folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+#folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+load('/home/adrose/qapQA/data/foldsToUse.RData')
 index <- unlist(folds[1])
 trainingData <- raw.lme.data[index,]
 validationData <- raw.lme.data[-index,] 
@@ -99,8 +100,35 @@ validPlot <- ggplot(data = validCor, aes(x=Var1, y=Var2, fill=value)) +
     theme(legend.position="none")
 
 
+testPlot <- ggplot(data = validCor, aes(x=Var1, y=Var2, fill=value)) +
+    geom_tile() +
+    scale_fill_gradient2(low = "red", high = "blue", mid = "white",
+    midpoint = 0, limit = c(-1,1), space = "Lab") +
+    labs(title='Validation') +
+    #geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 8) +
+    theme(
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.border = element_blank(),
+      panel.background = element_blank(),
+      axis.ticks = element_blank(),
+      legend.direction = "horizontal",
+      plot.title=element_text(size=24, face="bold"),
+      axis.text.x=element_text(size=16, face="bold", angle=90),
+      axis.text.y=element_text(size=16, face="bold", color='white')) +
+      guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
+      title.position = "top", title.hjust = 0.5)) +
+      theme(legend.justification = c(1, 0),
+  legend.position = 'right',
+  legend.direction = "vertical")+
+  guides(fill = guide_colorbar(barwidth = 3, barheight = 40,
+                title.position = "left", title.hjust = 0.5,
+                ticks=FALSE))
+
 
 # Now create our plots
 pdf('figure4-corPlots.pdf', height=10, width=20)
 multiplot(trainPlot, validPlot, cols=2)
+testPlot
 dev.off()

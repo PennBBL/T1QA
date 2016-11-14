@@ -18,8 +18,8 @@ vplayout <- function(x, y) viewport(layout.pos.row = x, layout.pos.col = y)
 raw.lme.data <- merge(isolatedVars, manualQAData2, by = "bblid")
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x > 1] <- 1
-folds <- createFolds(raw.lme.data$averageRating.x, k = 3, list = T,
-returnTrain = T)
+#folds <- createFolds(raw.lme.data$averageRating.x, k = 3, list = T, returnTrain = T)
+load('/home/adrose/qapQA/data/foldsToUse.RData')
 index <- unlist(folds[1])
 trainingData <- raw.lme.data[index, ]
 validationData <- raw.lme.data[-index, ]
@@ -122,7 +122,7 @@ legend.position = c(0.6, 0.7),
 legend.direction = "horizontal",
 plot.title=element_text(size=40),
 axis.text.x=element_text(size=30, angle=90),
-axis.text.y=element_text(size=30)) +
+axis.text.y=element_text(size=30, color='white')) +
 theme(legend.position="none") +
 labs(title='Validation')
 

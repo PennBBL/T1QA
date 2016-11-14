@@ -17,7 +17,8 @@ install_load('caret', 'lme4','BaylorEdPsych', 'mgcv', 'ppcor', 'ggplot2')
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
-folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+#folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+load('/home/adrose/qapQA/data/foldsToUse.RData')
 raw.lme.data[,3:32] <- scale(raw.lme.data[,3:32], center=T, scale=T)
 index <- unlist(folds[1])
 trainingData <- raw.lme.data#[index,]
@@ -36,7 +37,7 @@ all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 ## Now create our age regressed variables 
 all.train.data$meanCT <- apply(all.train.data[,grep('mprage_jlf_ct', names(all.train.data))], 1, mean)
 all.train.data$meanGMD <- apply(all.train.data[,grep('mprage_jlf_gmd', names(all.train.data))], 1, mean)
-all.train.data$meanVOL <- apply(all.train.data[,2630:2727], 1, mean)
+all.train.data$meanVOL <- apply(all.train.data[,2630:2727], 1, sum)
 all.train.data$modeRating <- apply(all.train.data[,2978:2980], 1, Mode)
 
 # Now create our scaled age and age squared values
@@ -51,7 +52,7 @@ all.train.data$meanFSCtAgeReg <- rep('NA', nrow(all.train.data))
 topindex <- as.numeric(names(lm(bh.meanthickness ~ age + ageSq + sex, data=all.train.data)$residuals))
 all.train.data$meanFSCtAgeReg[topindex] <- as.numeric(lm(bh.meanthickness ~ age + ageSq + sex, data=all.train.data)$residuals)
 all.train.data$meanFSAreaAgeReg <- as.numeric(lm(bh.totalarea ~ age + ageSq + sex, data=all.train.data)$residuals)
-
+all.train.data$CortexVolAgeReg <- residuals(lm(CortexVol ~ age + ageSq + sex, data=all.train.data, na.action=na.exclude))
 
 # Now do the age regressed quality metrics
 all.train.data$oneVsTwoOutcomeAgeReg <- lm(oneVsTwoOutcome ~ age + ageSq + sex, data=all.train.data)$residuals
@@ -73,7 +74,7 @@ meanValsAgeRegAverageRating <- cbind(cor(meanCTAgeReg, averageRatingAgeReg, meth
                                            averageRatingAgeReg, use='complete', method='spearman'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
                                            averageRatingAgeReg, use='complete', method='spearman'),
-                                       cor(CortexVol, averageRatingAgeReg, use='complete', method='spearman'))
+                                       cor(CortexVolAgeReg, averageRatingAgeReg, use='complete', method='spearman'))
 
 meanValsAgeRegOneVsTwo <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
                                        cor(meanGMDAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
@@ -82,7 +83,7 @@ meanValsAgeRegOneVsTwo <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method=
                                            oneVsTwoOutcomeAgeReg, method='spearman', use='complete'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
                                            oneVsTwoOutcomeAgeReg, method='spearman', use='complete'),
-                                       cor(CortexVol, oneVsTwoOutcomeAgeReg, use='complete', method='spearman'))
+                                       cor(CortexVolAgeReg, oneVsTwoOutcomeAgeReg, use='complete', method='spearman'))
 detach(all.train.data)
 # Now run through the validation data cor values
 all.valid.data <- all.valid.data[which(all.valid.data$averageRating.x!=0),]
@@ -94,7 +95,7 @@ meanValsAgeRegAverageRatingValid <- cbind(cor(meanCTAgeReg, averageRatingAgeReg,
                                       averageRatingAgeReg, use='complete', method='spearman'),
                                       cor(as.numeric(meanFSAreaAgeReg),
                                       averageRatingAgeReg, use='complete', method='spearman'),
-                                      cor(CortexVol, averageRatingAgeReg, use='complete', method='spearman'))
+                                      cor(CortexVolAgeReg, averageRatingAgeReg, use='complete', method='spearman'))
 
 meanValsAgeRegOneVsTwoValid <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
                                       cor(meanGMDAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
@@ -103,7 +104,7 @@ meanValsAgeRegOneVsTwoValid <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, me
                                         oneVsTwoOutcomeAgeReg, method='spearman', use='complete'),
                                       cor(as.numeric(meanFSAreaAgeReg),
                                         oneVsTwoOutcomeAgeReg, method='spearman', use='complete'),
-                                      cor(CortexVol, oneVsTwoOutcomeAgeReg, use='complete', method='spearman'))
+                                      cor(CortexVolAgeReg, oneVsTwoOutcomeAgeReg, use='complete', method='spearman'))
 detach(all.valid.data)
 
 # Now prepare our values to graph
@@ -134,7 +135,8 @@ thing1 <- ggplot(allData, aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1
   theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
         axis.title.x = element_text(size=36),
         axis.title.y = element_text(size=36),
-        text = element_text(size=30)) +
+        text = element_text(size=30),
+        legend.text = element_text(size=20)) +
   facet_grid(. ~ Var3, space="free_x") +
   guides(fill = guide_legend(title = "Quality Measure"))
 
