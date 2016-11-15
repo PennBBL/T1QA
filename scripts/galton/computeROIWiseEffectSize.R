@@ -247,7 +247,8 @@ raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data <- merge(raw.lme.data, tbvData, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
-folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+#folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+load('/home/adrose/qapQA/data/foldsToUse.RData')
 raw.lme.data[,3:32] <- scale(raw.lme.data[,3:32], center=T, scale=T)
 index <- unlist(folds[1])
 trainingData <- raw.lme.data[index,]
@@ -276,9 +277,9 @@ all.train.data <- tmp
 rm(tmp)
 
 ## Now create our color values to export to ITK snap
-ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2])
-gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2])
-volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2])
+ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
+gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
+volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
 
 # Now we need to create our label into our file which matches our ROI to our label
 jlfCTVals <- cbind(jlfCTVals, ctColors[2:(dim(jlfCTVals)[1]+1),1])
