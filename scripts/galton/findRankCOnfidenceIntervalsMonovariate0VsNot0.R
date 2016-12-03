@@ -1,16 +1,18 @@
 ## Load the data
-source('/home/adrose/qapQA/scripts/loadGo1Data.R')
+source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 detachAllPackages()
 
 ## Load Library(s)
-source('/home/adrose/qapQA/scripts/loadGo1Data.R')
 install_load('pROC', 'ggplot2', 'caret', 'lme4', 'foreach', 'doParallel')
 # Now split data into raw and traning 
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
 raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
-
+raw.lme.data.orig <- raw.lme.data
+load('/home/adrose/qapQA/data/foldsToUse.RData')
+index <- unlist(folds[1])
+raw.lme.data <- raw.lme.data[index,]
 
 # Now run through each variable of interest and build an ROC curve for it
 qapValNames <- qapValNames[-grep('size', qapValNames)]
@@ -50,7 +52,7 @@ outputRanks <- foreach(i=seq(1,1000), .combine='rbind') %dopar% {
     output <- cbind(qapVal, auc(roc.tmp))
     aucVals <- rbind(aucVals, output)
   }
-  order(aucVals[,2], decreasing =TRUE)
+  aucVals
 }
 stopCluster(cl)
 
