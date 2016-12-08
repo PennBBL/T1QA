@@ -20,7 +20,7 @@ exit 1
 # First lets declare all of the static variables
 jlfLookUp="/data/joy/BBL/studies/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/jlf_lookup.csv"
 pncJlfLabelImage="/data/joy/BBL/studies/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz"
-#pncJlfLabelImage="/data/joy/BBL/studies/pnc/processedData/structural/jlf/100761/20110228x4581/100761_20110228x4581_jlfLabels.nii.gz"
+#pncJlfLabelImage="/data/joy/BBL/studies/pnc/processedData/structural/jlf/100761/*x4581/100761_*x4581_jlfLabels.nii.gz"
 inputCSV=${1}
 colOfInterest=${2}
 workingDir=`pwd`
