@@ -10,7 +10,7 @@ source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 set.seed(16)
 
 # load library(s)
-install_load('caret', 'ggplot2')
+install_load('caret', 'ggplot2', 'lme4')
 
 # Now lets create our train and validation sets
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
@@ -72,6 +72,23 @@ bg2 <- ggplot(bg2.vals, aes(x=factor(sex), y=as.numeric(as.character(averageRati
                 axis.text=element_text(size=16, face="bold"),
                 axis.title=element_text(size=20,face="bold"),
                 strip.text.y = element_text(size = 16, angle = 270, face="bold"))
+
+# Now build a lme model in the training data 
+raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
+raw.lme.data <- melt(trainingData, id.vars = names(raw.lme.data)[1:32], measure.vars = names(raw.lme.data)[34:36])
+raw.lme.data$value[raw.lme.data$value > 1] <- 1
+train.data <- merge(raw.lme.data, all.train.data, by = "bblid")
+m1 <- lmer(rawAverageRating.y ~ age + sex +age * sex + (1|variable), data = train.data)
+sigValsTrain <- anova(m1)
+
+# Now do the same for the validation data
+raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
+raw.lme.data <- melt(validationData, id.vars = names(raw.lme.data)[1:32], measure.vars = names(raw.lme.data)[34:36])
+raw.lme.data$value[raw.lme.data$value > 1] <- 1
+train.data <- merge(raw.lme.data, all.valid.data, by = "bblid")
+m1 <- lmer(rawAverageRating.y ~ age + sex +age * sex + (1|variable), data = train.data)
+sigValsValid <- anova(m1)
+
 
 
 pdf('figure3-demographicsvsRatingQAPPaper.pdf', width=16, height=10)

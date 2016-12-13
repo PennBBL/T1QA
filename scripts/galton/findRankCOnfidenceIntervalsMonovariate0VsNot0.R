@@ -26,14 +26,13 @@ raw.lme.data.orig <- raw.lme.data
 
 cl <- makeCluster(20)
 registerDoParallel(cl)
-outputRanks <- foreach(i=seq(1,1000), .combine='rbind') %dopar% {
+outputRanks <- foreach(i=seq(1,1000), .combine='cbind') %dopar% {
   library('lme4')
   library('pROC')
   library('caret')
   set.seed(i)
   # Lets first create our fold
-  folds <- createFolds(raw.lme.data.orig$averageRating.x, k=3, list=T, returnTrain=T)
-  
+  folds <- createFolds(raw.lme.data.orig$averageRating.x, k=2, list=T, returnTrain=T)  
   # Now lets create our training data set
   index <- unlist(folds[1])
   trainingData <- raw.lme.data.orig[index,]
@@ -52,23 +51,23 @@ outputRanks <- foreach(i=seq(1,1000), .combine='rbind') %dopar% {
     output <- cbind(qapVal, auc(roc.tmp))
     aucVals <- rbind(aucVals, output)
   }
-  aucVals
+  aucVals[,2]
 }
 stopCluster(cl)
-
+rownames(outputRanks) <- qapValNames
 write.csv(outputRanks, 'ranks1000RepsMono.csv', quote=F)
 
 # Now do the bivariate model
-qapValNames <- qapValNames[-13]
+qapValNames <- qapValNames[-11]
 cl <- makeCluster(20)
 registerDoParallel(cl)
-outputRanks <- foreach(i=seq(1,1000), .combine='rbind') %dopar% {
+outputRanks <- foreach(i=seq(1,1000), .combine='cbind') %dopar% {
   library('lme4')
   library('pROC')
   library('caret')
   set.seed(i)
   # Lets first create our fold
-  folds <- createFolds(raw.lme.data.orig$averageRating.x, k=3, list=T, returnTrain=T)
+  folds <- createFolds(raw.lme.data.orig$averageRating.x, k=2, list=T, returnTrain=T)
   
   # Now lets create our training data set
   index <- unlist(folds[1])
@@ -88,7 +87,7 @@ outputRanks <- foreach(i=seq(1,1000), .combine='rbind') %dopar% {
     output <- cbind(qapVal, auc(roc.tmp))
     aucVals <- rbind(aucVals, output)
   }
-  order(aucVals[,2], decreasing =TRUE)
+  aucVals[,2]
 }
 stopCluster(cl)
 
