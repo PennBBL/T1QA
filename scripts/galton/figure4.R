@@ -45,8 +45,8 @@ names(validationData)[colsOfInterest] <- c('CNR', 'EFC', 'FBER', 'FWHM',
                                          'BG Skewness')
 
 # Now create our cor values
-trainCor <- cor(trainingData[,colsOfInterest])
-validCor <- cor(validationData[,colsOfInterest])
+trainCor <- cor(trainingData[,colsOfInterest], method='spearman')
+validCor <- cor(validationData[,colsOfInterest], method='spearman')
 
 # Now melt them so we can work with ggplot2
 trainCor <- melt(trainCor)
@@ -130,5 +130,5 @@ testPlot <- ggplot(data = validCor, aes(x=Var1, y=Var2, fill=value)) +
 # Now create our plots
 pdf('figure4-corPlots.pdf', height=10, width=20)
 multiplot(trainPlot, validPlot, cols=2)
-testPlot
+#testPlot
 dev.off()
