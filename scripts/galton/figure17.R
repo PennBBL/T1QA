@@ -37,8 +37,10 @@ all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 
 ## Now create our age regressed variables 
 all.train.data$meanCT <- apply(all.train.data[,grep('mprage_jlf_ct', names(all.train.data))], 1, mean)
-all.train.data$meanGMD <- apply(all.train.data[,grep('mprage_jlf_gmd', names(all.train.data))], 1, mean)
-all.train.data$meanVOL <- apply(all.train.data[,2630:2727], 1, mean)
+tmp <- read.csv('/home/adrose/qapQA/data/averageGMD.csv')
+all.train.data <- merge(all.train.data, tmp, by=c('bblid', 'scanid'))
+rm(tmp)
+all.train.data$meanVOL <- apply(all.train.data[,2630:2727], 1, sum)
 
 # Now create our scaled age and age squared values
 all.train.data$age <- scale(all.train.data$ageAtGo1Scan)
@@ -201,6 +203,7 @@ allData$Var1 <- factor(allData$Var1, levels=c('PCASL', 'tfMRI 1', 'tfMRI 2', 'rs
 allData$Var2 <- factor(allData$Var2, levels=c('FS CT', 'ANTs CT', 'FS Vol', 'ANTs Vol', 'ANTs GMD', 'FS Area'))
 allData$value <- abs(as.numeric(as.character(allData$value)))
 allData$Var3 <- as.factor(allData$Var3)
+allData <- allData[-grep('FS', allData$Var2),]
 
 # Now plot it 
 thing1 <- ggplot(allData, aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1)) +

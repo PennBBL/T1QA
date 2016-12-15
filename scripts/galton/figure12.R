@@ -36,7 +36,9 @@ all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 
 ## Now create our age regressed variables 
 all.train.data$meanCT <- apply(all.train.data[,grep('mprage_jlf_ct', names(all.train.data))], 1, mean)
-all.train.data$meanGMD <- apply(all.train.data[,grep('mprage_jlf_gmd', names(all.train.data))], 1, mean)
+tmp <- read.csv('/home/adrose/qapQA/data/averageGMD.csv')
+all.train.data <- merge(all.train.data, tmp, by=c('bblid', 'scanid'))
+rm(tmp)
 all.train.data$meanVOL <- apply(all.train.data[,2630:2727], 1, sum)
 all.train.data$modeRating <- apply(all.train.data[,2978:2980], 1, Mode)
 
@@ -126,6 +128,7 @@ allData$Var2 <- as.factor(allData$Var2)
 allData$value <- as.numeric(as.character(allData$value))
 allData$Var3 <- as.factor(allData$Var3)
 allData$Var2 <- factor(allData$Var2, levels=c('FS CT', 'ANTs CT', 'FS Vol', 'ANTs Vol', 'ANTs GMD', 'FS Area'))
+allData <- allData[-grep('FS', allData$Var2),]
 
 # Now graph our data
 thing1 <- ggplot(allData, aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1)) +
