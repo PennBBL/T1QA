@@ -1,6 +1,13 @@
 ## Load the data
 source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 set.seed(16)
+load('/home/adrose/qapQA/data/0vsNot0FinalData.RData')
+zeroVsNotZeroModel <- m1
+rm(m1)
+load('/home/adrose/qapQA/data/1vs28variableModel.RData')
+oneVsTwoModel <- mod8
+rm(mod8)
+
 
 ## Now load the library(s)
 install_load('caret', 'pROC', 'ggplot2')
@@ -9,6 +16,8 @@ install_load('caret', 'pROC', 'ggplot2')
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
+raw.lme.data$averageRating.y[raw.lme.data$averageRating.y<1.5] <- 1
+raw.lme.data$averageRating.y[raw.lme.data$averageRating.y>1.5] <- 2
 #folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
 load('/home/adrose/qapQA/data/foldsToUse.RData')
 raw.lme.data[,3:32] <- scale(raw.lme.data[,3:32], center=T, scale=T)
@@ -20,6 +29,23 @@ validationData <- raw.lme.data[-index,]
 all.train.data <- merge(trainingData, manualQAData, by='bblid')
 all.valid.data <- merge(validationData, manualQAData, by='bblid')
 
+# Now prepare our model prediciton output
+all.train.data$variable <- rep('ratingNULL', nrow(trainingData))
+all.valid.data$variable <- rep('ratingNULL', nrow(validationData))
+all.train.data$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=all.train.data,
+allow.new.levels=T, type='response')
+all.valid.data$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=all.valid.data,
+allow.new.levels=T, type='response')
+
+all.train.data$zeroVsNotZeroOutcome <- predict(zeroVsNotZeroModel, newdata=all.train.data, allow.new.levels=T, type='response')
+all.valid.data$zeroVsNotZeroOutcome <- predict(zeroVsNotZeroModel, newdata=all.valid.data, allow.new.levels=T, type='response')
+
+# Now make the train and valid outcomes for us to compare our delong tests to
+zeroVsNotZeroTrainModel <- roc(averageRating.x ~ zeroVsNotZeroOutcome, data=all.train.data)
+zeroVsNotZeroValidModel <- roc(averageRating.x ~ zeroVsNotZeroOutcome, data=all.valid.data)
+oneVsTwoTrainModel <- roc(averageRating.y ~ oneVsTwoOutcome, data=all.train.data)
+oneVsTwoValidModel <- roc(averageRating.y ~ oneVsTwoOutcome, data=all.valid.data)
+
 # Now prepare the column and row names
 namesNew <- c('tfMRI 1', 'tfMRI 2', 'PCASL', 'rsfMRI')
 
@@ -29,12 +55,15 @@ motionCols <- grep('Meanrelrms', names(all.train.data))
 # Now create an ROC curve for each of the motion metrics first for 0 vs !0
 outputVal <- all.train.data$averageRating.x
 aucVals <- NULL
+pVals <- NULL
 w <- 1
 for(i in motionCols){
   tmp.vals <- all.train.data[,i]
   roc.tmp <- roc(outputVal~tmp.vals)
+  pVal <- roc.test(roc.tmp, zeroVsNotZeroTrainModel, method='bootstrap')$p.value
   output <- cbind(namesNew[w], auc(roc.tmp), c('Train'), c('0 vs !0'))
   aucVals <- rbind(aucVals, output)
+  pVals <- rbind(pVals, pVal)
   w <- w + 1
 }
 aucVals <- as.data.frame(aucVals)
@@ -59,11 +88,14 @@ aucValsAll <- aucVals
 outputVal <- all.valid.data$averageRating.x
 w <- 1
 aucVals <- NULL
+pVals <- NULL
 for(i in motionCols){
   tmp.vals <- all.valid.data[,i]
   roc.tmp <- roc(outputVal~tmp.vals)
+  roc.test(roc.tmp, zeroVsNotZeroValidModel, method='bootstrap')$p.value
   output <- cbind(namesNew[w], auc(roc.tmp), c('Valid'), c('0 vs !0'))
   aucVals <- rbind(aucVals, output)
+  pVals <- rbind(pVals, pVal)
   w <- w + 1
 }
 aucVals <- as.data.frame(aucVals)
@@ -109,11 +141,14 @@ all.valid.data <- merge(validationData, manualQAData, by='bblid')
 outputVal <- all.train.data$averageRating.x
 w <- 1
 aucVals <- NULL
+pVals <- NULL
 for(i in motionCols){
   tmp.vals <- all.train.data[,i]
   roc.tmp <- roc(outputVal~tmp.vals)
+  pVal <- roc.test(roc.tmp, oneVsTwoTrainModel, method='bootstrap')
   output <- cbind(namesNew[w], auc(roc.tmp), c('Train'), c('1 vs 2'))
   aucVals <- rbind(aucVals, output)
+  pVals <- rbind(pVals, pVal)
   w <- w + 1
 }
 aucVals <- as.data.frame(aucVals)
@@ -141,11 +176,14 @@ aucValsAll <- rbind(aucValsAll, aucVals)
 outputVal <- all.valid.data$averageRating.x
 w <- 1
 aucVals <- NULL
+pVals <- NULL
 for(i in motionCols){
   tmp.vals <- all.valid.data[,i]
   roc.tmp <- roc(outputVal~tmp.vals)
+  pVal <- roc.test(roc.tmp, oneVsTwoTrainModel, method='bootstrap')
   output <- cbind(namesNew[w], auc(roc.tmp), c('Valid'), c('1 vs 2'))
   aucVals <- rbind(aucVals, output)
+  pVals <- rbind(pVals, pVal)
   w <- w + 1
 }
 aucVals <- as.data.frame(aucVals)
