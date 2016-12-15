@@ -10,7 +10,7 @@ rm(mod8)
 
 
 ## Now load the library(s)
-install_load('caret', 'pROC', 'ggplot2')
+install_load('caret', 'pROC', 'ggplot2', 'doParallel')
 
 # Now load the models
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
@@ -57,15 +57,19 @@ outputVal <- all.train.data$averageRating.x
 aucVals <- NULL
 pVals <- NULL
 w <- 1
+cl <- makeCluster(6)
+registerDoParallel(cl)
 for(i in motionCols){
   tmp.vals <- all.train.data[,i]
   roc.tmp <- roc(outputVal~tmp.vals)
-  pVal <- roc.test(roc.tmp, zeroVsNotZeroTrainModel, method='bootstrap')$p.value
+  pVal <- roc.test(roc.tmp, zeroVsNotZeroTrainModel, method='bootstrap', boot.stratified=T, boot.n=4000, parallel=T)$p.value
   output <- cbind(namesNew[w], auc(roc.tmp), c('Train'), c('0 vs !0'))
   aucVals <- rbind(aucVals, output)
   pVals <- rbind(pVals, pVal)
   w <- w + 1
 }
+stopCluster(cl)
+pValsZeroTrain <- pVals
 aucVals <- as.data.frame(aucVals)
 aucVals$V1 <- factor(aucVals$V1, levels=c('PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI'))
 aucVals$V2 <- as.numeric(as.character(aucVals$V2))
@@ -89,15 +93,19 @@ outputVal <- all.valid.data$averageRating.x
 w <- 1
 aucVals <- NULL
 pVals <- NULL
+cl <- makeCluster(6)
+registerDoParallel(cl)
 for(i in motionCols){
   tmp.vals <- all.valid.data[,i]
   roc.tmp <- roc(outputVal~tmp.vals)
-  roc.test(roc.tmp, zeroVsNotZeroValidModel, method='bootstrap')$p.value
+  pVal <- roc.test(roc.tmp, zeroVsNotZeroValidModel, method='bootstrap', boot.stratified=T, boot.n=4000, parallel=T)$p.value
   output <- cbind(namesNew[w], auc(roc.tmp), c('Valid'), c('0 vs !0'))
   aucVals <- rbind(aucVals, output)
   pVals <- rbind(pVals, pVal)
   w <- w + 1
 }
+stopCluster(cl)
+pValsZeroValid <- pVals
 aucVals <- as.data.frame(aucVals)
 aucVals$V1 <- factor(aucVals$V1, levels=c('PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI'))
 aucVals$V2 <- as.numeric(as.character(aucVals$V2))
@@ -142,15 +150,18 @@ outputVal <- all.train.data$averageRating.x
 w <- 1
 aucVals <- NULL
 pVals <- NULL
+cl <- makeCluster(6)
+registerDoParallel(cl)
 for(i in motionCols){
   tmp.vals <- all.train.data[,i]
   roc.tmp <- roc(outputVal~tmp.vals)
-  pVal <- roc.test(roc.tmp, oneVsTwoTrainModel, method='bootstrap')
+  pVal <- roc.test(roc.tmp, oneVsTwoTrainModel, method='bootstrap', boot.stratified=T, boot.n=4000, parallel=T)$p.value
   output <- cbind(namesNew[w], auc(roc.tmp), c('Train'), c('1 vs 2'))
   aucVals <- rbind(aucVals, output)
   pVals <- rbind(pVals, pVal)
   w <- w + 1
 }
+stopCluster(cl)
 aucVals <- as.data.frame(aucVals)
 aucVals$V1 <- factor(aucVals$V1, levels=c('PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI'))
 aucVals$V2 <- as.numeric(as.character(aucVals$V2))
@@ -177,15 +188,18 @@ outputVal <- all.valid.data$averageRating.x
 w <- 1
 aucVals <- NULL
 pVals <- NULL
+cl <- makeCluster(6)
+registerDoParallel(cl)
 for(i in motionCols){
   tmp.vals <- all.valid.data[,i]
   roc.tmp <- roc(outputVal~tmp.vals)
-  pVal <- roc.test(roc.tmp, oneVsTwoTrainModel, method='bootstrap')
+  pVal <- roc.test(roc.tmp, oneVsTwoTrainModel, method='bootstrap', boot.stratified=T, boot.n=4000, parallel=T)$p.value
   output <- cbind(namesNew[w], auc(roc.tmp), c('Valid'), c('1 vs 2'))
   aucVals <- rbind(aucVals, output)
   pVals <- rbind(pVals, pVal)
   w <- w + 1
 }
+stopCluster(cl)
 aucVals <- as.data.frame(aucVals)
 aucVals$V1 <- factor(aucVals$V1, levels=c('PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI'))
 aucVals$V2 <- as.numeric(as.character(aucVals$V2))
