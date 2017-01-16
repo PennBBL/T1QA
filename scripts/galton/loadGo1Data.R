@@ -18,7 +18,7 @@ allFSDataVol <- allFSDataVol[,-1]
 allFSData <- merge(allFSData, allFSDataVol, by=c('bblid', 'scanid'))
 allFSData <- allFSData[! duplicated(allFSData),]
 allJLFData <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/n1601_jlfVol.csv')
-allJLFDataGMD <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/n1601_jlfGMD.csv')
+allJLFDataGMD <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/threeClassGMDValues.csv')
 allJLFDataCT <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/n1601_jlfCt.csv')
 allJLFData <- merge(allJLFData, allJLFDataGMD, by=c('bblid', 'scanid'))
 allJLFData <- merge(allJLFData, allJLFDataCT, by=c('bblid', 'scanid'))
