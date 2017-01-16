@@ -61,7 +61,8 @@ manualQAColVal <- grep(manualQAValue, names(mergedQAP))
 qapValNames <- names(mergedQAP)[3:38]
 
 ## Now create a data set which only has good and bad data
-mergedQAP <- rbind(mergedQAP.penn, mergedQAP.pitt)
+#mergedQAP <- rbind(mergedQAP.penn, mergedQAP.pitt)
+mergedQAP <- mergedQAP.penn
 #mergedQAP <- mergedQAP[which(mergedQAP$age < 60),]
 colnames(mergedQAP) <- gsub(pattern='.x', replacement = '', x = colnames(mergedQAP), fixed = TRUE)
 isolatedVars <- mergedQAP[qapValNames]
