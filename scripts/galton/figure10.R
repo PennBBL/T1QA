@@ -8,64 +8,64 @@
 
 
 ## Load the data
-# Now do Go1
-source('/home/adrose/qapQA/scripts/loadGo1Data.R')
+source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 detachAllPackages()
+set.seed(16)
+load('/home/adrose/qapQA/data/1vs28variableModel.RData')
+oneVsTwoModel <- mod8
+rm(mod8)
 
-# Now load any library(s)
-install_load('multilevel', 'mediation')
+# Now work with the data
+## Load Library(s)
+source("/home/adrose/adroseHelperScripts/R/afgrHelpFunc.R")
+install_load('caret', 'lme4','BaylorEdPsych', 'mgcv', 'ppcor', 'ggplot2')
 
-# Now I need to attach the composite qap value to the mergedQAP df
-load('/home/adrose/qapQA/data/tmp6-15/go1Weights.RData')
-cols <- c('bg.kurtosis', 'bg.skewness', 'cnr',
-          'csf.kurtosis', 'csf.skewness', 'efc',
-          'fber', 'fwhm', 'gm.kurtosis',
-          'gm.skewness', 'qi1', 'snr', 'wm.kurtosis',
-          'wm.skewness')
-reg.vals.go <- apply(mergedQAP[cols], 1, function(x) weighted.mean(x, w))
-mergedQAP <- cbind(mergedQAP, reg.vals.go)
+## Now create the training data set and create the outcomes for all of the training data sets
+raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
+raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
+raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
+#folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+load('/home/adrose/qapQA/data/foldsToUse.RData')
+raw.lme.data[,3:32] <- scale(raw.lme.data[,3:32], center=T, scale=T)
+index <- unlist(folds[1])
+trainingData <- raw.lme.data#[index,]
+validationData <- raw.lme.data#[-index,]
 
-mergedQAP <- mergedQAP[complete.cases(mergedQAP$mprage_fs_mean_thickness),]
+## Now create our outcomes
+# First create our zero vs not zero outcome for everyone
+trainingData$variable <- rep('ratingNULL', nrow(trainingData))
+# Now lets do our 1 vs 2 model for everyone
+trainingData$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=trainingData,
+allow.new.levels=T, type='response')
 
-# Create the linear models 
-fit1 <- lm(ageAtGo1Scan ~ reg.vals.go, data=mergedQAP)
-fit2 <- lm(mprage_fs_mean_thickness ~ ageAtGo1Scan + reg.vals.go, data=mergedQAP)
-fit3 <- lm(mprage_fs_mean_thickness ~ ageAtGo1Scan, data=mergedQAP)
+## Now merge our scaled data values with the original data values
+all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 
+## Now create our age regressed variables
+all.train.data$meanCT <- apply(all.train.data[,grep('mprage_jlf_ct', names(all.train.data))], 1, mean)
+tmp <- read.csv('/home/adrose/qapQA/data/averageGMD.csv')
+all.train.data <- merge(all.train.data, tmp, by=c('bblid', 'scanid'))
+rm(tmp)
+all.train.data$meanVOL <- apply(all.train.data[,2630:2727], 1, sum)
+all.train.data$modeRating <- apply(all.train.data[,2978:2980], 1, Mode)
+trainingData$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=trainingData,
+    allow.new.levels=T, type='response')
 
-# Now find the output values 
-topLeftValue <- summary(fit1)$coefficients[2,1]
-topRightValue <- summary(fit2)$coefficients[3,1]
-bottomTopValue <- summary(fit3)$coefficients[2,1]
-bottomBottomValue <- summary(fit2)$coefficients[2,1]
-
-# Now try and compute a sobel value 
-zValue <- sobel(mergedQAP$ageAtGo1Scan, mergedQAP$reg.vals.go, mergedQAP$mprage_fs_mean_thickness)$z.value
-bottomBottomBottomValue <- pnorm(zValue) * 2
-
-# Now create a csv with all of these values 
-values <- rbind(topLeftValue, topRightValue, bottomTopValue, bottomBottomValue, bottomBottomBottomValue)
-words <- rbind(c('Age and Mediator'), c('Mediator and Outcome'), c('Predictor and Outcome no reg'), c('Predictor and Outcome w reg'), c('Sobel Score'))
-
-output <- cbind(words, values)
-#write.csv(output, 'figure10QAPPaper.csv', quote=F, row.names=F)
-
-# Now play around with bootstrapping the mediation analysis 
-# I am following the tips from this website:
-# https://cran.r-project.org/web/packages/mediation/vignettes/mediation.pdf
-med.fit <- lm(reg.vals.go ~ ageAtGo1Scan + sex, data=mergedQAP)
-out.fit <- lm(mprage_fs_mean_thickness ~ ageAtGo1Scan + reg.vals.go, data=mergedQAP)
-med.out <- mediate(med.fit, out.fit, treat="ageAtGo1Scan", mediator="reg.vals.go", sims=1000)
-
+tmp <- all.train.data
+all.train.data <- tmp[index,]
+all.valid.data <- tmp[-index,]
+rm(tmp)
 
 # Now try exploring the mediation with the psych::mediate
-foo <- psych::mediate(y="mprage_fs_mean_thickness", x="ageAtGo1Scan", m="reg.vals.go", data=mergedQAP)
+trainMed <- psych::mediate(x="meanCT", y="ageAtGo1Scan", m="oneVsTwoOutcome", data=all.train.data)
+validMed <- psych::mediate(x="meanCT", y="ageAtGo1Scan", m="oneVsTwoOutcome", data=all.valid.data)
 
 # Now do the same thing with the lavaan package
 library(lavaan)
-Y <- mergedQAP$mprage_fs_mean_thickness
-X <- mergedQAP$ageAtGo1Scan
-M <- mergedQAP$reg.vals.go
+# Start with the train data
+X <- all.train.data$meanCT
+Y <- all.train.data$ageAtGo1Scan
+M <- all.train.data$oneVsTwoOutcome
 Data <- data.frame(X = X, Y=Y, M=M)
 model <- ' # direct effect
              Y ~ c*X
@@ -77,6 +77,27 @@ model <- ' # direct effect
            # total effect
              total := c + (a*b)
          '
-fit <- sem(model, data = Data, se="bootstrap", bootstrap=1000)
+fit <- sem(model, data = Data, se="bootstrap", bootstrap=10000)
+summary(fit, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE)
+boot.fit <- parameterEstimates(fit_sem, boot.ci.type="perc",level=0.95, ci=TRUE,standardized = TRUE)
+boot.fit
 
-
+# Now move on to the valid data
+X <- all.valid.data$meanCT
+Y <- all.valid.data$ageAtGo1Scan
+M <- all.valid.data$oneVsTwoOutcome
+Data <- data.frame(X = X, Y=Y, M=M)
+model <- ' # direct effect
+Y ~ c*X
+# mediator
+M ~ a*X
+Y ~ b*M
+# indirect effect (a*b)
+ab := a*b
+# total effect
+total := c + (a*b)
+'
+fit <- sem(model, data = Data, se="bootstrap", bootstrap=10000)
+summary(fit, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE)
+boot.fit <- parameterEstimates(fit_sem, boot.ci.type="perc",level=0.95, ci=TRUE,standardized = TRUE)
+boot.fit
