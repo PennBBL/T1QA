@@ -1,6 +1,5 @@
 # AFGR June 13 2016
-# This script is oging to be used to produce the bivariate AUC 
-# for the 0 vs !0 prediction models
+# This script is oging to be used to produce the monovariate 1 vs 2 AUC values
 
 
 ## Load the data

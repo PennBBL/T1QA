@@ -87,7 +87,7 @@ rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
 }
 
 ## Load Library(s)
-install_load('pROC', 'ggplot2', 'caret', 'lme4', 'foreach', 'doParallel')
+install_load('pROC', 'ggplot2', 'caret', 'lme4', 'foreach', 'doParallel', 'useful')
 
 ## Now do the 1 vs 2 model's using the same 0 vs !0 model and then
 ## Move onto the step wise process for the 1 vs 2 models
@@ -107,6 +107,7 @@ validationData <- raw.lme.data[-index,]
 raw.lme.data <- melt(trainingData, id.vars=names(raw.lme.data)[1:32], measure.vars=names(raw.lme.data)[34:36])
 raw.lme.data$value[raw.lme.data$value <= 1] <- 0
 raw.lme.data$value[raw.lme.data$value > 1] <- 1
+raw.lme.data$value <- binary.flip(raw.lme.data$value)
 
 ## First check how the 0 vs !0 model performs in the 1 vs 2 data
 # Load the 0 vs !0 model here

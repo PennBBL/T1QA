@@ -103,13 +103,14 @@ rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
 
 
 ## Load Library(s)
-install_load('pROC', 'ggplot2', 'caret', 'lme4', 'foreach', 'doParallel')
+install_load('pROC', 'ggplot2', 'caret', 'lme4', 'foreach', 'doParallel', 'useful')
 
 # Now split data into raw and traning 
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
-folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+raw.lme.data$averageRating.x <- binary.flip(raw.lme.data$averageRating.x)
+#folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
 load('/home/adrose/qapQA/data/foldsToUse.RData')
 raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
 index <- unlist(folds[1])
@@ -118,6 +119,7 @@ validationData <- raw.lme.data[-index,]
 
 raw.lme.data <- melt(trainingData, id.vars=names(raw.lme.data)[1:32], measure.vars=names(raw.lme.data)[34:36])
 raw.lme.data$value[raw.lme.data$value > 1] <- 1
+raw.lme.data$value <- binary.flip(raw.lme.data$value)
 
 # Now run through each variable of interest and build an ROC curve for it
 outcome <- raw.lme.data$value
@@ -241,7 +243,7 @@ model2 <- finalModel
 m1 <- glmer(model1, data=raw.lme.data, family="binomial")
 m2 <- glmer(model2, data=raw.lme.data, family="binomial")
 predictor1 <- predict(m1, newdata=raw.lme.data, allow.new.levels=T, type='response')
-predictor2 <- predict(m2, newdata=raw.lme.data, allow.new.levels=T)
+predictor2 <- predict(m2, newdata=raw.lme.data, allow.new.levels=T, type='response')
 outcome <- raw.lme.data$value
 roc.1 <- roc(outcome ~ predictor1)
 roc.2 <- roc(outcome ~ predictor2)

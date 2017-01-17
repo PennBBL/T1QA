@@ -106,9 +106,9 @@ validationData <- raw.lme.data[-index,]
 
 # Now prep our individual data sets
 all.train.data <- merge(trainingData, manualQAData, by='bblid')
-all.train.data <- read.csv('/home/adrose/qapQA/data/allTrainData.csv')
+#all.train.data <- read.csv('/home/adrose/qapQA/data/allTrainData.csv')
 all.valid.data <- merge(validationData, manualQAData, by='bblid')
-all.valid.data <- read.csv('/home/adrose/qapQA/data/allValidData.csv')
+#all.valid.data <- read.csv('/home/adrose/qapQA/data/allValidData.csv')
 
 # Now create our train roc curve
 all.train.data$variable <- rep('ratingNULL', nrow(all.train.data))
