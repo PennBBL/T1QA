@@ -63,9 +63,9 @@ validMed <- psych::mediate(x="meanCT", y="ageAtGo1Scan", m="oneVsTwoOutcome", da
 # Now do the same thing with the lavaan package
 library(lavaan)
 # Start with the train data
-X <- all.train.data$meanCT
-Y <- all.train.data$ageAtGo1Scan
-M <- all.train.data$oneVsTwoOutcome
+Y <- scale(all.train.data$meanCT)
+X <- scale(all.train.data$ageAtGo1Scan)
+M <- scale(all.train.data$oneVsTwoOutcome)
 Data <- data.frame(X = X, Y=Y, M=M)
 model <- ' # direct effect
              Y ~ c*X
@@ -79,13 +79,13 @@ model <- ' # direct effect
          '
 fit <- sem(model, data = Data, se="bootstrap", bootstrap=10000)
 summary(fit, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE)
-boot.fit <- parameterEstimates(fit_sem, boot.ci.type="perc",level=0.95, ci=TRUE,standardized = TRUE)
+boot.fit <- parameterEstimates(fit, boot.ci.type="perc",level=0.95, ci=TRUE,standardized = TRUE)
 boot.fit
 
 # Now move on to the valid data
-X <- all.valid.data$meanCT
-Y <- all.valid.data$ageAtGo1Scan
-M <- all.valid.data$oneVsTwoOutcome
+Y <- scale(all.valid.data$meanCT)
+X <- scale(all.valid.data$ageAtGo1Scan)
+M <- scale(all.valid.data$oneVsTwoOutcome)
 Data <- data.frame(X = X, Y=Y, M=M)
 model <- ' # direct effect
 Y ~ c*X
@@ -97,7 +97,7 @@ ab := a*b
 # total effect
 total := c + (a*b)
 '
-fit <- sem(model, data = Data, se="bootstrap", bootstrap=10000)
+fit <- sem(model, data = Data, se="bootstrap", bootstrap=1000)
 summary(fit, fit.measures=TRUE, standardize=TRUE, rsquare=TRUE)
-boot.fit <- parameterEstimates(fit_sem, boot.ci.type="perc",level=0.95, ci=TRUE,standardized = TRUE)
+boot.fit <- parameterEstimates(fit, boot.ci.type="perc",level=0.95, ci=TRUE,standardized = TRUE)
 boot.fit
