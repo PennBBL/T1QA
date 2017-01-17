@@ -35,7 +35,18 @@ trainingData$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=trainingData,
 all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 
 ## Now create our age regressed variables 
-all.train.data$meanCT <- apply(all.train.data[,grep('mprage_jlf_ct', names(all.train.data))], 1, mean)
+# Now create a matrix of CT values and volume in order to create a weighted mean CT value
+tmp <- cbind(all.train.data[,grep('mprage_jlf_ct', names(all.train.data))], all.train.data[,grep('mprage_jlf_vol', names(all.train.data))])
+# Now trim non cortical regions
+tmp <- tmp[,-seq(99,136)]
+meanCT <- NULL
+for(i in seq(1, nrow(tmp))){
+  tmpVal <- weighted.mean(x=tmp[i,1:98], w=tmp[i,99:196])
+  meanCT <- append(meanCT, tmpVal)
+}
+all.train.data$meanCT <- meanCT
+rm(meanCT)
+#all.train.data$meanCT <- apply(all.train.data[,grep('mprage_jlf_ct', names(all.train.data))], 1, mean)
 tmp <- read.csv('/home/adrose/qapQA/data/averageGMD.csv')
 all.train.data <- merge(all.train.data, tmp, by=c('bblid', 'scanid'))
 rm(tmp)
