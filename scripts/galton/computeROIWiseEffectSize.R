@@ -116,7 +116,20 @@ returnTVal <- function(imagingVal, qualityVal, regVals, df, regressAgeBOO=TRUE, 
 # but lets start by trying =/
 returnHeatMapITKSnapVals <- function(inputZScores, lowColor='blue', hiColor='red'){
   # Create some functions this function will call... yeesh
-  range01 <- function(x)(x-min(x))/diff(range(x))
+  range01 <- function(x){
+      # Now make sure we have some standard deviation
+      # If no standard deviation return 1
+      if( is.na(sd(x)) == 'TRUE'){
+        output <- rep(1, length(x))
+        return(output)
+      }
+      else if (sd(x) < 0 ){
+        output <- rep(1, length(x))
+        return(output)
+      }
+      else
+        (x-min(x))/diff(range(x))
+  }
   cRamp <- function(x){
     cols <- colorRamp(c(lowColor, hiColor))(range01(as.numeric(x)))
   }   
@@ -181,24 +194,24 @@ returnPosNegAndNeuColorScale <- function(outputZScores, colorScaleNeg=c('light b
   blankRow <- append(values, paste('"', 'Clear Label' ,'"', sep=''))
 
   # Now we need to create our individual color scales 
-  startPoint <- NULL
+  #startPoint <- NULL
   output <- blankRow
-  if(length(negativeValues > 0 )){
+  if(length(negativeValues) > 0 ){
     negativeColors <- returnHeatMapITKSnapVals(negativeValues, lowColor=colorScaleNeg[1], hiColor=colorScaleNeg[2])[2:(length(negativeValues)+1),]
-    negIndex <- max(as.numeric(as.character(negativeColors[,1])))
-    startPoint <- cbind(startPoint, negIndex)
+    #negIndex <- max(as.numeric(as.character(negativeColors[,1])))
+    #startPoint <- cbind(startPoint, negIndex)
     output <- rbind(output, negativeColors)
   } 
-  if(length(neutralValues > 0)){
+  if(length(neutralValues) > 0){
     neutralColors <- returnHeatMapITKSnapVals(neutralValues, lowColor=colorScaleNeu[1], hiColor=colorScaleNeu[1])[2:(length(neutralValues)+1),]
-    neuIndex <- max(as.numeric(as.character(neutralColors[,1])))
-    startPoint <- cbind(startPoint, neuIndex)
+    #neuIndex <- max(as.numeric(as.character(neutralColors[,1])))
+    #startPoint <- cbind(startPoint, neuIndex)
     output <- rbind(output, neutralColors)
   }
-  if(length(positiveValues > 0 )){
+  if(length(positiveValues) > 0 ){
     positiveColors <- returnHeatMapITKSnapVals(positiveValues, lowColor=colorScalePos[1], hiColor=colorScalePos[2])[2:(length(positiveValues)+1),]
-    posIndex <- max(as.numeric(as.character(positiveColors[,1])))
-    startPoint <- cbind(startPoint, posIndex)
+    #posIndex <- max(as.numeric(as.character(positiveColors[,1])))
+    #startPoint <- cbind(startPoint, posIndex)
     output <- rbind(output, positiveColors)
   } 
   # Now I need to make sure that the index column doesn't have any repeats
@@ -239,7 +252,7 @@ pvalLoop <- function(grepPattern, dataFrame, TBV=FALSE){
 }
 
 ## Load library(s) we will need
-install_load('caret', 'lme4')
+install_load('caret', 'lme4', 'bda')
 
 ## Now lets prep the data
 ## Now create the training data set and create the outcomes for all of the training data sets
@@ -266,6 +279,21 @@ all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 ## to our ants values 
 all.train.data <- all.train.data[which(all.train.data$averageRating!=0),]
 
+vals <- grep('mprage_jlf_ct', names(all.train.data))
+zScoreCT <- NULL
+for(i in vals){
+  foo <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[1]
+  zScoreCT <- append(zScoreCT, foo)
+}
+
+vals <- grep('mprage_jlf_gmd', names(all.train.data))
+zScoreGMD <- NULL
+for(i in vals[23:120]){
+    foo <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[1]
+    zScoreGMD <- append(zScoreGMD, foo)
+}
+
+
 # Now create our z scores
 jlfCTVals <- pvalLoop('mprage_jlf_ct', all.train.data)
 jlfGMDVals <- pvalLoop('mprage_jlf_gmd', all.train.data)
@@ -278,7 +306,9 @@ rm(tmp)
 
 ## Now create our color values to export to ITK snap
 ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
+ctColors <- returnPosNegAndNeuColorScale(zScoreCT, colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
 gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
+gmdColors <- returnPosNegAndNeuColorScale(zScoreGMD, colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
 volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
 
 # Now we need to create our label into our file which matches our ROI to our label
