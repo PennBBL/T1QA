@@ -9,7 +9,7 @@
 
 
 ## Load the data
-source('/home/adrose/qapQA/scripts/loadGo1Data.R')
+source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 detachAllPackages()
 set.seed(16)
 load('/home/adrose/qapQA/data/1vs28variableModel.RData')
@@ -265,34 +265,42 @@ load('/home/adrose/qapQA/data/foldsToUse.RData')
 raw.lme.data[,3:32] <- scale(raw.lme.data[,3:32], center=T, scale=T)
 index <- unlist(folds[1])
 trainingData <- raw.lme.data[index,]
-
+validationData <- raw.lme.data[-index,]
 ## Now create our outcomes
 # First create our zero vs not zero outcome for everyone 
 trainingData$variable <- rep('ratingNULL', nrow(trainingData))
+validationData$variable <- rep('ratingNULL', nrow(validationData))
 # Now lets do our 1 vs 2 model for everyone 
 trainingData$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=trainingData,
 					       allow.new.levels=T, type='response')
+validationData$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=validationData,
+					       allow.new.levels=T, type='response')
 ## Now merge our scaled data values with the original data values 
 all.train.data <- merge(mergedQAP, trainingData, by='bblid')
+all.valid.data <- merge(mergedQAP, validationData, by='bblid')
 
 ## Now remove the 0 values because they do weird things
 ## to our ants values 
 all.train.data <- all.train.data[which(all.train.data$averageRating!=0),]
-
+all.valid.data <- all.valid.data[which(all.valid.data$averageRating!=0),]
 vals <- grep('mprage_jlf_ct', names(all.train.data))
 zScoreCT <- NULL
 for(i in vals){
   foo <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[1]
-  zScoreCT <- append(zScoreCT, foo)
+  toAppend <- c(names(all.train.data)[i], foo)
+  zScoreCT <- rbind(zScoreCT, toAppend)
 }
+zScoreCT <- zScoreCT[order(as.numeric(zScoreCT[,2])),]
 
 vals <- grep('mprage_jlf_gmd', names(all.train.data))
+# Now rm nonesense ROI's
 zScoreGMD <- NULL
-for(i in vals[23:120]){
-    foo <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[1]
-    zScoreGMD <- append(zScoreGMD, foo)
+for(i in vals[39:136]){
+  foo <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[1]
+  toAppend <- c(names(all.train.data)[i], foo)  
+  zScoreGMD <- rbind(zScoreGMD, toAppend)
 }
-
+zScoreGMD <- zScoreGMD[order(as.numeric(zScoreGMD[,2])),]
 
 # Now create our z scores
 jlfCTVals <- pvalLoop('mprage_jlf_ct', all.train.data)
@@ -306,14 +314,14 @@ rm(tmp)
 
 ## Now create our color values to export to ITK snap
 ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
-ctColors <- returnPosNegAndNeuColorScale(zScoreCT, colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
+ctColors <- returnPosNegAndNeuColorScale(zScoreCT[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
 gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
-gmdColors <- returnPosNegAndNeuColorScale(zScoreGMD, colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
+gmdColors <- returnPosNegAndNeuColorScale(zScoreGMD[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
 volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
 
 # Now we need to create our label into our file which matches our ROI to our label
-jlfCTVals <- cbind(jlfCTVals, ctColors[2:(dim(jlfCTVals)[1]+1),1])
-jlfGMDVals <- cbind(jlfGMDVals, gmdColors[2:(dim(jlfGMDVals)[1]+1),1])
+jlfCTVals <- cbind(zScoreCT, seq(1, nrow(zScoreCT)))
+jlfGMDVals <- cbind(zScoreGMD, seq(1, nrow(zScoreGMD)))
 jlfVOLVals <- cbind(jlfVOLVals, volColors[2:(dim(jlfVOLVals)[1]+1),1])
 
 # Now I need to save these color scales and the other thing
@@ -330,3 +338,57 @@ fsCTVals <- pvalLoop('mprage_fs_ct', all.train.data)
 fsVolVals <- pvalLoop('mprage_fs_vol', all.train.data, TBV=TRUE)
 write.csv(fsCTVals, 'fsSigQAPROIct.csv', quote=F)
 write.csv(fsVolVals, 'fsSigQAPROIvol.csv', quote=F)
+
+
+### Now do the same thing for the validation data
+static <- all.train.data
+all.train.data <- all.valid.data
+vals <- grep('mprage_jlf_ct', names(all.train.data))
+zScoreCT <- NULL
+for(i in vals){
+  foo <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[1]
+  toAppend <- c(names(all.train.data)[i], foo)
+  zScoreCT <- rbind(zScoreCT, toAppend)
+}
+zScoreCT <- zScoreCT[order(as.numeric(zScoreCT[,2])),]
+
+vals <- grep('mprage_jlf_gmd', names(all.train.data))
+# Now rm nonesense ROI's
+zScoreGMD <- NULL
+for(i in vals[39:136]){
+  foo <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[1]
+  toAppend <- c(names(all.train.data)[i], foo)  
+  zScoreGMD <- rbind(zScoreGMD, toAppend)
+}
+zScoreGMD <- zScoreGMD[order(as.numeric(zScoreGMD[,2])),]
+
+# Now create our z scores
+jlfCTVals <- pvalLoop('mprage_jlf_ct', all.train.data)
+jlfGMDVals <- pvalLoop('mprage_jlf_gmd', all.train.data)
+# Now trim the non cortical regions for our JLF vol regions
+tmp <- all.train.data
+all.train.data <- all.train.data[,-seq(2592,2629,1)]
+jlfVOLVals <- pvalLoop('mprage_jlf_vol', all.train.data, TBV=TRUE)
+all.train.data <- tmp
+rm(tmp)
+
+## Now create our color values to export to ITK snap
+ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
+ctColors <- returnPosNegAndNeuColorScale(zScoreCT[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
+gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
+gmdColors <- returnPosNegAndNeuColorScale(zScoreGMD[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
+volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
+
+# Now we need to create our label into our file which matches our ROI to our label
+jlfCTVals <- cbind(zScoreCT, seq(1, nrow(zScoreCT)))
+jlfGMDVals <- cbind(zScoreGMD, seq(1, nrow(zScoreGMD)))
+jlfVOLVals <- cbind(jlfVOLVals, volColors[2:(dim(jlfVOLVals)[1]+1),1])
+
+# Now I need to save these color scales and the other thing
+write.table(ctColors, file='ctColorScaleValid.txt', sep="\t", quote=F, row.names=F, col.names=F)
+write.table(gmdColors, file='gmdColorScaleValid.txt', sep="\t", quote=F, row.names=F, col.names=F)
+write.table(volColors, file='volColorScaleValid.txt', sep="\t", quote=F, row.names=F, col.names=F)
+write.csv(jlfCTVals, 'jlfSigQAPROIctValid.csv', quote=F)
+write.csv(jlfGMDVals, 'jlfSigQAPROIgmdValid.csv', quote=F)
+write.csv(jlfVOLVals, 'jlfSigQAPROIvolValid.csv', quote=F)
+
