@@ -20,7 +20,6 @@ exit 1
 # First lets declare all of the static variables
 jlfLookUp="/data/joy/BBL/studies/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/jlf_lookup.csv"
 pncJlfLabelImage="/data/joy/BBL/studies/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz"
-#pncJlfLabelImage="/data/joy/BBL/studies/pnc/processedData/structural/jlf/100761/*x4581/100761_*x4581_jlfLabels.nii.gz"
 inputCSV=${1}
 colOfInterest=${2}
 workingDir=`pwd`
@@ -77,6 +76,7 @@ for lineValue in `seq 2 ${loopLength}` ; do
         fieldValue=`echo ${fieldValue} | cut -f 1 -d ' '` ; 
       fi
       specLine=`echo ${specLine} | cut -f ${fieldValue} -d ' '`
+      valueToFind=`echo ${valueToFind} | cut -f ${fieldValue} -d ' '`
     fi
     intensityValue=`echo ${specLine} | cut -f 1 -d ,` 
     newValue=`echo ${valueToFind} | cut -f ${colOfInterest} -d ,`
