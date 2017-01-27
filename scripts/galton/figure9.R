@@ -86,6 +86,6 @@ aucZerovsNotZeroMonovariate <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2)
         text = element_text(size=30))
 
 
-pdf('figure9-monovariateAUC1vs2.pdf', height=16, width=12)
+png('figure9-monovariateAUC1vs2.png', height=16, width=12, units='in', res=300)
 aucZerovsNotZeroMonovariate
 dev.off()

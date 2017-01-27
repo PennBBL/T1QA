@@ -151,6 +151,6 @@ validPlot <- validPlot + geom_text(data=NULL, x=.775, y=.05, label=paste("Accura
 
 
 # Now plot our values
-pdf('figure11-oneVsTwoROCPlots.pdf', width=18, height=10)
+png('figure11-oneVsTwoROCPlots.png', width=18, height=10, units='in', res=300)
 multiplot(trainPlot, validPlot, cols=2)
 dev.off()

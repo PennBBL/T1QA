@@ -100,7 +100,7 @@ allPlot <- ggplot(trainingValues,
                  strip.text.y = element_text(size = 16, angle = 270, face="bold"),
                  strip.text.x = element_text(size = 16, angle = 90, face="bold"))
 
-pdf('figure5-qapMetricsVsQCQAPPaper.pdf', height=12, width=16)
+png('figure5-qapMetricsVsQCQAPPaper.png', height=12, width=16, units='in', res=300)
 allPlot
 dev.off()
 

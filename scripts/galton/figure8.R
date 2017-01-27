@@ -148,6 +148,6 @@ validPlot <- validPlot + geom_text(data=NULL, x=.775, y=.05, label=paste("Accura
     theme(legend.title=element_blank())
 
 # Now plot our values
-pdf('figure8-zeroVsNotZeroROCPlots.pdf', width=18, height=10)
+png('figure8-zeroVsNotZeroROCPlots.png', width=18, height=10, units='in', res=300)
 multiplot(trainPlot, validPlot, cols=2)
 dev.off()

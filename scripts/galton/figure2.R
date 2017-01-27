@@ -157,6 +157,7 @@ axis.title.y=element_text(size=30, color='white'))
 
 
 # Now create our plot
-pdf('figure2-concordanceAmongstRaters.pdf', height=20, width=20)
+png('figure2-concordanceAmongstRaters.png', height=20, width=20, units='in', res=300)
 multiplot(trainCor,  trainBG, validCor, validBG, cols=2)
 dev.off()
+

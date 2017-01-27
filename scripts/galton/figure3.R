@@ -91,7 +91,7 @@ sigValsValid <- anova(m1)
 
 
 
-pdf('figure3-demographicsvsRatingQAPPaper.pdf', width=16, height=10)
+png('figure3-demographicsvsRatingQAPPaper.png', width=16, height=10, units='in', res=300)
 multiplot(bg1, bg2, cols=2)
 dev.off()
 

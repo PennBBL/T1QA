@@ -233,6 +233,6 @@ thing1 <- ggplot(aucValsAll, aes(x=V1, y=as.numeric(as.character(V2)))) +
 
 
 # Now plot all of this stuff
-pdf('figure16-motionAsIdentifierAUCValues.pdf', height=20, width=20)
+png('figure16-motionAsIdentifierAUCValues.png', height=20, width=20, units='in', res=300)
 thing1
 dev.off()

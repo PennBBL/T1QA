@@ -198,6 +198,6 @@ validMotion <- ggplot(motionValues, aes(x=.id, y=mean, fill=.id)) +
 
 
 # Now plot our data
-pdf('figure15-motionCorPlots.pdf', height=18, width=18)
+png('figure15-motionCorPlots.pdf', height=18, width=18, units='in', res=300)
 multiplot(trainPlot, trainMotion, validPlot, validMotion,cols=2)
 dev.off()

@@ -128,7 +128,7 @@ testPlot <- ggplot(data = validCor, aes(x=Var1, y=Var2, fill=value)) +
 
 
 # Now create our plots
-pdf('figure4-corPlots.pdf', height=10, width=20)
+png('figure4-corPlots.png', height=10, width=20, units='in', res=300)
 multiplot(trainPlot, validPlot, cols=2)
 #testPlot
 dev.off()

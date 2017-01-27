@@ -151,7 +151,7 @@ trainPlot1 <- trainPlot + geom_text(data=NULL, x=.775, y=.05, label=paste("Accur
 
 # Now produce our figure
 # Now plot our values
-pdf('figure18-mgiOutsideDataSetValid.pdf', width=18, height=10)
+png('figure18-mgiOutsideDataSetValid.png', width=18, height=10, units='in', res=300)
 multiplot(trainPlot0, trainPlot1, cols=2)
 dev.off()
 
