@@ -46,7 +46,7 @@ summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
 }
 
 # load library(s)
-install_load('caret', 'ggplot2')
+install_load('caret', 'ggplot2', 'grid', 'gridExtra')
 
 # Now lets create our train and validation sets
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
@@ -58,6 +58,12 @@ load('/home/adrose/qapQA/data/foldsToUse.RData')
 index <- unlist(folds[1])
 trainingData <- raw.lme.data[index,]
 validationData <- raw.lme.data[-index,] 
+
+## Now merge our scaled data values with the original data values 
+all.train.data <- merge(mergedQAP, trainingData, by='bblid')
+all.valid.data <- merge(mergedQAP, validationData, by='bblid')
+names(all.train.data) <- gsub(pattern='.x', x=names(all.train.data), replacement='')
+names(all.valid.data) <- gsub(pattern='.x', x=names(all.valid.data), replacement='')
 
 # Now lets declare our variables of interest 
 varsOfInterest <- c('bg.kurtosis', 'bg.skewness', 'cnr', 'efc', 'fber', 'qi1', 'snr', 'wm.skewness')
@@ -84,6 +90,36 @@ for(qapVal in varsOfInterest){
   i <- i + 1
 }
 
+# Now produce all of our partial corellations 
+corVals <- NULL
+i <- 1
+residAverageRating <- lm(averageRating.y ~ ageAtGo1Scan + s + ageAtGo1Scan^2, data=all.train.data)$residuals
+for(qapVal in varsOfInterest){
+  form1 <- as.formula(paste(qapVal,' ~ ageAtGo1Scan + s + ageAtGo1Scan^2', sep=''))
+  residQuant <- lm(form1, data=all.train.data)$residuals
+  corVal <- cor(residAverageRating, residQuant, method='spearman')
+  qapValue <- prettyNames[i]
+  Dataset <- 'Training'
+  valsToAppend <- cbind(corVal, qapValue, Dataset)
+  corVals <- rbind(corVals, valsToAppend)
+  i <- i + 1
+}
+i <- 1
+residAverageRating <- lm(averageRating.y ~ ageAtGo1Scan + s + ageAtGo1Scan^2, data=all.valid.data)$residuals
+for(qapVal in varsOfInterest){
+  form1 <- as.formula(paste(qapVal,' ~ ageAtGo1Scan + s + ageAtGo1Scan^2', sep=''))
+  residQuant <- lm(form1, data=all.valid.data)$residuals
+  corVal <- cor(residAverageRating, residQuant, method='spearman')
+  qapValue <- prettyNames[i]
+  Dataset <- 'Validation'
+  valsToAppend <- cbind(corVal, qapValue, Dataset)
+  corVals <- rbind(corVals, valsToAppend)
+  i <- i + 1
+}
+
+
+
+
 # Now make our plot
 allPlot <- ggplot(trainingValues, 
                  aes(x=factor(averageRating.y), y=as.numeric(as.character(mean)), fill=factor(averageRating.y))) + 
@@ -99,8 +135,22 @@ allPlot <- ggplot(trainingValues,
                  axis.title=element_text(size=20,face="bold"),
                  strip.text.y = element_text(size = 16, angle = 270, face="bold"),
                  strip.text.x = element_text(size = 16, angle = 90, face="bold"))
+corVals <- as.data.frame(corVals)
+corPlot <- ggplot(corVals, 
+                 aes(x=factor(qapValue), y=as.numeric(as.character(corVal)), fill=factor(Dataset))) + 
+                 geom_bar(stat='identity', position=position_dodge(), size=.1) + 
+                 labs(title='', x='Quantitative Metric', y='Partial Spearman Corellation') + 
+                 theme_bw() + 
+                 facet_grid(Dataset ~ .) + 
+                 theme(legend.position="none",
+                 axis.text.x = element_text(angle=90,hjust=1, size=16, face="bold"),
+                 axis.text.y = element_text(size=16, face="bold"),
+                 axis.title=element_text(size=20,face="bold"),
+                 strip.text.y = element_text(size = 16, angle = 270, face="bold"),
+                 strip.text.x = element_text(size = 16, angle = 90, face="bold"))
 
-png('figure5-qapMetricsVsQCQAPPaper.png', height=12, width=16, units='in', res=300)
-allPlot
+png('figure5-qapMetricsVsQCQAPPaper.png', height=12, width=20, units='in', res=300)
+multiplot(allPlot, corPlot, cols=2)
+grid.arrange(allPlot, corPlot, ncol = 3, layout_matrix = cbind(c(1,1,1,1,1,1),c(1,1,1,1,1,1),c(2,2,2,2,2,2)))
 dev.off()
 
