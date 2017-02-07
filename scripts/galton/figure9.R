@@ -19,7 +19,7 @@ raw.lme.data <- raw.lme.data[which(raw.lme.data$averageRating.x!=0),]
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x<1.5] <- 1
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1.5] <- 2
 #folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
-load('/home/adrose/qapQA/data/foldsToUse.RData')
+load('/home/adrose/qapQA/data/foldsToUse1vs2.RData')
 raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
 index <- unlist(folds[1])
 trainingData <- raw.lme.data[index,]
@@ -29,18 +29,6 @@ raw.lme.data <- melt(trainingData, id.vars=names(raw.lme.data)[1:32], measure.va
 raw.lme.data$value[raw.lme.data$value <= 1] <- 0
 raw.lme.data$value[raw.lme.data$value > 1] <- 1
 
-## First check how the 0 vs !0 model performs in the 1 vs 2 data
-# Load the 0 vs !0 model here
-load(file='/home/adrose/qapQA/data/0vsNot0FinalData.RData')
-predictor <- predict(m1, newdata=raw.lme.data, type='response')
-outcome <- raw.lme.data$value
-
-# Now train with the same model variables just in the new data
-model1 <- as.formula("value ~ bg.kurtosis+bg.skewness+ (1|variable)")
-m1 <- glmer(model1, data=raw.lme.data, family="binomial")
-# Now test this model's performance
-predictor <- predict(m1, type='response')
-outcome <- raw.lme.data$value
 
 # Now go through the same step wise process as I do in the 0 vs !0 data
 # Now run through each variable of interest and build an ROC curve for it
