@@ -252,7 +252,7 @@ pvalLoop <- function(grepPattern, dataFrame, TBV=FALSE){
 }
 
 ## Load library(s) we will need
-install_load('caret', 'lme4', 'bda')
+install_load('caret', 'lme4', 'bda', 'ggplot2')
 
 ## Now lets prep the data
 ## Now create the training data set and create the outcomes for all of the training data sets
@@ -285,16 +285,24 @@ all.train.data <- all.train.data[which(all.train.data$averageRating!=0),]
 all.valid.data <- all.valid.data[which(all.valid.data$averageRating!=0),]
 vals <- grep('mprage_jlf_ct', names(all.train.data))
 zScoreCT <- NULL
+binVals <- NULL
 for(i in vals){
   foo <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[1]
+  bar <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[2]
   toAppend <- c(names(all.train.data)[i], foo)
+  toAppend2 <- c(names(all.train.data)[i], bar)
   zScoreCT <- rbind(zScoreCT, toAppend)
+  binVals <- rbind(binVals, toAppend2)
 }
+binValsApply <- rep(0, length(vals))
+binValsApply[which(p.adjust(binVals[,2], method='fdr')<.05)] <- 1
+zScoreCT[,2] <- as.numeric(zScoreCT[,2]) * binValsApply
 zScoreCT <- zScoreCT[order(as.numeric(zScoreCT[,2])),]
 
 vals <- grep('mprage_jlf_gmd', names(all.train.data))
 # Now rm nonesense ROI's
 zScoreGMD <- NULL
+binVals <- NULL
 for(i in vals[39:136]){
   foo <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[1]
   toAppend <- c(names(all.train.data)[i], foo)  
@@ -392,3 +400,113 @@ write.csv(jlfCTVals, 'jlfSigQAPROIctValid.csv', quote=F)
 write.csv(jlfGMDVals, 'jlfSigQAPROIgmdValid.csv', quote=F)
 write.csv(jlfVOLVals, 'jlfSigQAPROIvolValid.csv', quote=F)
 
+
+
+
+###
+###
+###
+## Now look at our CT paradox down here
+###
+###
+###
+
+# This section is going to be used to compare the raw age corellations vs the partial corellations of CT values
+# This si going to be done for each cortical thickness ROI
+all.train.data <- static
+vals <- grep('mprage_jlf_ct', names(all.train.data))
+rValCT <- NULL
+regressedQaulityVals <- lm(oneVsTwoOutcome ~ ageAtGo1Scan + ageAtGo1Scan^2 + sex, data=all.train.data)$residuals
+regressedAgeVal <- lm(ageAtGo1Scan ~ sex + oneVsTwoOutcome, data=all.train.data)$residuals
+for(i in vals){
+    # First we need to create our regressed values
+    tmpRegVals <- lm(all.train.data[,i] ~ oneVsTwoOutcome + sex, data=all.train.data)$residuals
+    # Now find our cor value and our partial cor value
+    corVal <- cor(all.train.data$ageAtGo1Scan, all.train.data[,i])
+    pCorVal <- cor(tmpRegVals, regressedAgeVal)
+    toAppend <- c(names(all.train.data)[i], corVal, 'Raw')
+    toAppend <- rbind(toAppend, c(names(all.train.data)[i], pCorVal, 'Partial'))
+    toAppend <- rbind(toAppend, c(names(all.train.data)[i], corVal - pCorVal, 'Diff'))
+    rValCT <- rbind(rValCT, toAppend)
+}
+# Now plot these values
+rValDiff <- rValCT[grep('Diff', rValCT[,3]),]
+rValCT <- rValCT[-grep('Diff', rValCT[,3]),]
+rValCT[,1] <-gsub(rValCT[,1], pattern='mprage_jlf_ct_', replacement='')
+rValCT <- as.data.frame(rValCT)
+rValCT$V1 <- as.factor(rValCT$V1)
+rValCT$V2 <- as.numeric(as.character(rValCT$V2))
+rValCT$V3 <- as.factor(rValCT$V3)
+tmp <- rValCT
+rValCT <- rValCT[seq(1,98),]
+barPlot <- ggplot(rValCT, aes(x=V1, y=V2, group=V3, fill=V3)) +
+  geom_bar(stat='identity', position=position_dodge(), size=.1) +
+theme(legend.position="right") +
+labs(title='', x='ROI', y='Cor and PCor BTN CT and Age') +
+theme(text = element_text(size=30),
+axis.text.x = element_text(angle=90,hjust=1, size=16),
+axis.title.x = element_text(size=26),
+axis.title.y = element_text(size=26),
+legend.text = element_text(size=20))
+
+rValCT <- tmp[seq(99,198),]
+barPlot2 <- ggplot(rValCT, aes(x=V1, y=V2, group=V3, fill=V3)) +
+geom_bar(stat='identity', position=position_dodge(), size=.1) +
+theme(legend.position="right") +
+labs(title='', x='ROI', y='Cor and PCor BTN CT and Age') +
+theme(text = element_text(size=30),
+axis.text.x = element_text(angle=90,hjust=1, size=16),
+axis.title.x = element_text(size=26),
+axis.title.y = element_text(size=26),
+legend.text = element_text(size=20))
+
+rValCT <- rValDiff
+rValCT[,1] <-gsub(rValCT[,1], pattern='mprage_jlf_ct_', replacement='')
+rValCT <- as.data.frame(rValCT)
+rValCT$V1 <- as.factor(rValCT$V1)
+rValCT$V2 <- as.numeric(as.character(rValCT$V2))
+rValCT$V3 <- as.factor(rValCT$V3)
+
+barPlot3 <- ggplot(rValCT[seq(1,49),], aes(x=V1, y=V2, group=V3, fill=V3)) +
+geom_bar(stat='identity', position=position_dodge(), size=.1) +
+theme(legend.position="right") +
+labs(title='', x='ROI', y='Cor and PCor BTN CT and Age') +
+theme(text = element_text(size=30),
+axis.text.x = element_text(angle=90,hjust=1, size=16),
+axis.title.x = element_text(size=26),
+axis.title.y = element_text(size=26),
+legend.text = element_text(size=20))
+
+
+barPlot4 <- ggplot(rValCT[seq(50,98),], aes(x=V1, y=V2, group=V3, fill=V3)) +
+geom_bar(stat='identity', position=position_dodge(), size=.1) +
+theme(legend.position="right") +
+labs(title='', x='ROI', y='Cor and PCor BTN CT and Age') +
+theme(text = element_text(size=30),
+axis.text.x = element_text(angle=90,hjust=1, size=16),
+axis.title.x = element_text(size=26),
+axis.title.y = element_text(size=26),
+legend.text = element_text(size=20))
+
+
+pdf('ctCorVsPCor.pdf', height=16, width=24)
+barPlot
+barPlot2
+barPlot3
+barPlot4
+dev.off()
+
+
+# Now I need to plot the most and the least effected ROI's
+# The most from the diff analysis was the right temporal lobe ("R_TMP")
+# The R_TMP saw an increase in developmental effects - i.e. the p cor was farther from zero then the raw cor value
+# The area that had the largest decrease in corellation values(cor > pcor) was the L_MOG
+pdf('scatterCTPlots.pdf', width=12, height=8)
+plot(y=scale(all.train.data$mprage_jlf_ct_R_TMP), x=scale(all.train.data$ageAtGo1Scan), xlab='Z-Score Age', ylab='Z-Score CT', main='Age vs Raw R_TMP CT Values')
+newVals <- lm(all.train.data$mprage_jlf_ct_R_TMP ~ all.train.data$oneVsTwoOutcome)$residuals
+newAge <- lm(all.train.data$ageAtGo1Scan ~ all.train.data$oneVsTwoOutcome)$residuals
+plot(y=scale(newVals), x=scale(newAge), xlab='Z-Score Reg Age', ylab='Z-Score Reg CT', main='Reg Age vs Reg R_TMP CT Values')
+plot(y=scale(all.train.data$mprage_jlf_ct_L_MOG), x=scale(all.train.data$ageAtGo1Scan), xlab='Z-Score Age', ylab='Z-Score CT', main='Age vs Raw L_MOG CT Values')
+newVals <- lm(all.train.data$mprage_jlf_ct_L_MOG ~ all.train.data$oneVsTwoOutcome)$residuals
+plot(y=scale(newVals), x=scale(newAge), xlab='Z-Score Reg Age', ylab='Z-Score Reg CT', main='Reg Age vs Reg L_MOG CT Values')
+dev.off()
