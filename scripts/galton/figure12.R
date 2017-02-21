@@ -68,6 +68,10 @@ all.train.data$nbackAgeReg <- residuals(lm(nbackEpi10qaMeanrelrms ~ age + ageSq 
 all.train.data$restAgeReg <- residuals(lm(restEpi10qaMeanrelrms ~ age + ageSq + sex, data=all.train.data, na.action=na.exclude))
 all.train.data$oneVsTwoOutcomeAgeReg <- lm(oneVsTwoOutcome ~ age + ageSq + sex, data=all.train.data)$residuals
 all.train.data$averageRatingAgeReg <- lm(averageRating ~ age + ageSq + sex, data=all.train.data)$residuals
+all.train.data$ratingJBAgeReg <- lm(ratingJB.x ~ age + ageSq + sex, data=all.train.data)$residuals
+all.train.data$ratingKSAgeReg <- lm(ratingKS.x ~ age + ageSq + sex, data=all.train.data)$residuals
+all.train.data$ratingLVAgeReg <- lm(ratingLV.x ~ age + ageSq + sex, data=all.train.data)$residuals
+
 
 # Now split into our train and validation data sets
 tmp <- all.train.data
@@ -133,5 +137,81 @@ thing1 <- ggplot(allData, aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1
   guides(fill = guide_legend(title = "Quality Measure"))
 
 png('figure12-partialCorBtn1vs2andAvgRating.png', width=18, height=12, units='in', res=300)
+thing1
+dev.off()
+
+## Now comapre individual raters down here
+attach(all.train.data)
+# Lets do the training data first
+meanValsAgeRegJBRating <- cbind(cor(meanCTAgeReg, ratingJBAgeReg, method='spearman'),
+                                       cor(meanGMDAgeReg, ratingJBAgeReg , method='spearman'),
+                                       cor(meanVOLAgeReg, ratingJBAgeReg , method='spearman'))
+
+meanValsAgeRegKSRating <- cbind(cor(meanCTAgeReg, ratingKSAgeReg , method='spearman'),
+                                       cor(meanGMDAgeReg, ratingKSAgeReg, method='spearman'),
+                                       cor(meanVOLAgeReg, ratingKSAgeReg , method='spearman'))
+
+meanValsAgeRegLVRating <- cbind(cor(meanCTAgeReg, ratingLVAgeReg, method='spearman'),
+                                       cor(meanGMDAgeReg, ratingLVAgeReg, method='spearman'),
+                                       cor(meanVOLAgeReg, ratingLVAgeReg, method='spearman'))
+
+meanValsAgeRegOneVsTwo <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                       cor(meanGMDAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                       cor(meanVOLAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'))
+detach(all.train.data)
+
+
+attach(all.valid.data)
+# Now valid data
+meanValsAgeRegJBRatingValid <- cbind(cor(meanCTAgeReg, ratingJBAgeReg, method='spearman'),
+                                       cor(meanGMDAgeReg, ratingJBAgeReg , method='spearman'),
+                                       cor(meanVOLAgeReg, ratingJBAgeReg , method='spearman'))
+
+meanValsAgeRegKSRatingValid <- cbind(cor(meanCTAgeReg, ratingKSAgeReg , method='spearman'),
+                                       cor(meanGMDAgeReg, ratingKSAgeReg, method='spearman'),
+                                       cor(meanVOLAgeReg, ratingKSAgeReg , method='spearman'))
+
+meanValsAgeRegLVRatingValid <- cbind(cor(meanCTAgeReg, ratingLVAgeReg, method='spearman'),
+                                       cor(meanGMDAgeReg, ratingLVAgeReg, method='spearman'),
+                                       cor(meanVOLAgeReg, ratingLVAgeReg, method='spearman'))
+
+meanValsAgeRegOneVsTwoValid <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                       cor(meanGMDAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                       cor(meanVOLAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'))
+detach(all.valid.data)
+
+# Now prepare our values to graph
+trainData <- rbind(meanValsAgeRegJBRating, meanValsAgeRegKSRating, meanValsAgeRegLVRating, meanValsAgeRegOneVsTwo)
+colnames(trainData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol')
+rownames(trainData) <- c('Rater 1', 'Rater 2', 'Rater 3', '1 vs 2 Model')
+trainData <- melt(trainData)
+trainData$Var3 <- rep('Training', nrow(trainData))
+
+validData <- rbind(meanValsAgeRegJBRatingValid, meanValsAgeRegKSRatingValid, meanValsAgeRegLVRatingValid, meanValsAgeRegOneVsTwoValid)
+colnames(validData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol')
+rownames(validData) <- c('Rater 1', 'Rater 2', 'Rater 3', '1 vs 2 Model')
+validData <- melt(validData)
+validData$Var3 <- rep('Validation', nrow(validData))
+
+allData <- as.data.frame(rbind(trainData, validData))
+allData$Var1 <- as.factor(allData$Var1)
+allData$Var2 <- as.factor(allData$Var2)
+allData$value <- as.numeric(as.character(allData$value))
+allData$Var3 <- as.factor(allData$Var3)
+allData$Var2 <- factor(allData$Var2, levels=c('ANTs CT','ANTs Vol', 'ANTs GMD'))
+
+thing1 <- ggplot(allData, aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1)) +
+  geom_bar(stat='identity', position=position_dodge(), size=.1, colour="black") +
+  theme(legend.position="right") +
+  labs(title='', x='Structural Imaging Metric', y='Correlation Between \nQuality Measure and Imaging Metric') +
+  theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
+        axis.title.x = element_text(size=36),
+        axis.title.y = element_text(size=36),
+        text = element_text(size=30),
+        legend.text = element_text(size=20)) +
+  facet_grid(. ~ Var3, space="free_x") +
+  guides(fill = guide_legend(title = "Quality Measure"))
+
+png('supp-partialCorBtn1vs2andIndividualRating.png', width=18, height=12, units='in', res=300)
 thing1
 dev.off()
