@@ -10,7 +10,7 @@ source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 set.seed(16)
 
 # load library(s)
-install_load('caret', 'ggplot2', 'lme4')
+install_load('caret', 'ggplot2', 'lme4', 'car')
 
 # Now lets create our train and validation sets
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
@@ -78,16 +78,18 @@ raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data <- melt(trainingData, id.vars = names(raw.lme.data)[1:32], measure.vars = names(raw.lme.data)[34:36])
 raw.lme.data$value[raw.lme.data$value > 1] <- 1
 train.data <- merge(raw.lme.data, all.train.data, by = "bblid")
+train.data$age <- as.factor(train.data$age)
 m1 <- lmer(rawAverageRating.y ~ age + sex +age * sex + (1|variable), data = train.data)
-sigValsTrain <- anova(m1)
+sigValsTrain <- Anova(m1)
 
 # Now do the same for the validation data
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data <- melt(validationData, id.vars = names(raw.lme.data)[1:32], measure.vars = names(raw.lme.data)[34:36])
 raw.lme.data$value[raw.lme.data$value > 1] <- 1
 train.data <- merge(raw.lme.data, all.valid.data, by = "bblid")
+train.data$age <- as.factor(train.data$age)
 m1 <- lmer(rawAverageRating.y ~ age + sex +age * sex + (1|variable), data = train.data)
-sigValsValid <- anova(m1)
+sigValsValid <- Anova(m1)
 
 
 
