@@ -8,7 +8,7 @@
 source("/home/adrose/T1QA/scripts/galton/loadGo1Data.R")
 
 ## Now load any library(s) we need
-install_load("corrplot", "caret", "ggplot2", "irr", "grid")
+install_load("corrplot", "caret", "ggplot2", "irr", "grid", "polycor")
 set.seed(16)
 
 # Now declare any necassary functions
@@ -161,3 +161,112 @@ png('figure2-concordanceAmongstRaters.png', height=20, width=20, units='in', res
 multiplot(trainCor,  trainBG, validCor, validBG, cols=2)
 dev.off()
 
+
+
+# Now do the polychoric cor's down here
+attach(all.train.data)
+trainValue <- matrix(NA, nrow=3, ncol=3)
+# Start with jason's values
+trainValue[1,1] <- polychor(x=ratingJB.x, y=ratingJB.x, ML=TRUE, maxcor=1)
+trainValue[2,1] <- polychor(x=ratingJB.x, y=ratingKS.x, ML=TRUE, maxcor=1)
+trainValue[3,1] <- polychor(x=ratingJB.x, y=ratingLV.x, ML=TRUE, maxcor=1)
+
+# Now do Kevin's column
+trainValue[1,2] <- polychor(x=ratingKS.x, y=ratingJB.x, ML=TRUE, maxcor=1)
+trainValue[2,2] <- polychor(x=ratingKS.x, y=ratingKS.x, ML=TRUE, maxcor=1)
+trainValue[3,2] <- polychor(x=ratingKS.x, y=ratingLV.x, ML=TRUE, maxcor=1)
+
+# And now prayosha's
+trainValue[1,3] <- polychor(x=ratingLV.x, y=ratingJB.x, ML=TRUE, maxcor=1)
+trainValue[2,3] <- polychor(x=ratingLV.x, y=ratingKS.x, ML=TRUE, maxcor=1)
+trainValue[3,3] <- polychor(x=ratingLV.x, y=ratingLV.x, ML=TRUE, maxcor=1)
+
+# Now fix the column and row names
+diag(trainValue) <- 1
+colnames(trainValue) <- c('Rater 1', 'Rater 2', 'Rater 3')
+rownames(trainValue) <- c('Rater 1', 'Rater 2', 'Rater 3')
+
+# All done with the train data
+detach(all.train.data)
+trainValueDone <- trainValue
+
+## Now do the validation data
+attach(all.valid.data)
+trainValue <- matrix(NA, nrow=3, ncol=3)
+# Start with jason's values
+trainValue[1,1] <- polychor(x=ratingJB.x, y=ratingJB.x, ML=TRUE, maxcor=1)
+trainValue[2,1] <- polychor(x=ratingJB.x, y=ratingKS.x, ML=TRUE, maxcor=1)
+trainValue[3,1] <- polychor(x=ratingJB.x, y=ratingLV.x, ML=TRUE, maxcor=1)
+
+# Now do Kevin's column
+trainValue[1,2] <- polychor(x=ratingKS.x, y=ratingJB.x, ML=TRUE, maxcor=1)
+trainValue[2,2] <- polychor(x=ratingKS.x, y=ratingKS.x, ML=TRUE, maxcor=1)
+trainValue[3,2] <- polychor(x=ratingKS.x, y=ratingLV.x, ML=TRUE, maxcor=1)
+
+# And now prayosha's
+trainValue[1,3] <- polychor(x=ratingLV.x, y=ratingJB.x, ML=TRUE, maxcor=1)
+trainValue[2,3] <- polychor(x=ratingLV.x, y=ratingKS.x, ML=TRUE, maxcor=1)
+trainValue[3,3] <- polychor(x=ratingLV.x, y=ratingLV.x, ML=TRUE, maxcor=1)
+
+# Now fix the column and row names
+diag(trainValue) <- 1
+colnames(trainValue) <- c('Rater 1', 'Rater 2', 'Rater 3')
+rownames(trainValue) <- c('Rater 1', 'Rater 2', 'Rater 3')
+
+# All done with the validation data set
+detach(all.valid.data)
+validValueDone <- trainValue
+
+
+# Now create our cor matrices plots
+trainData <- melt(trainValueDone)
+trainCor <- ggplot(data = trainData, aes(x=Var1, y=Var2, fill=value)) +
+geom_tile() +
+scale_fill_gradient2(low = "red", high = "blue", mid = "white",
+midpoint = 0, limit = c(-1,1), space = "Lab") +
+geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
+theme(
+axis.title.x = element_blank(),
+axis.title.y = element_blank(),
+panel.grid.major = element_blank(),
+panel.border = element_blank(),
+panel.background = element_blank(),
+axis.ticks = element_blank(),
+legend.justification = c(1, 0),
+legend.position = c(0.6, 0.7),
+legend.direction = "horizontal",
+plot.title=element_text(size=40),
+axis.text.x=element_text(size=30, angle=90),
+axis.text.y=element_text(size=30)) +
+guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
+title.position = "top", title.hjust = 0.5)) +
+theme(legend.position="none") +
+labs(title='Training')
+
+validData <- melt(validValueDone)
+validCor <- ggplot(data = validData, aes(x=Var1, y=Var2, fill=value)) +
+geom_tile() +
+scale_fill_gradient2(low = "red", high = "blue", mid = "white",
+midpoint = 0, limit = c(-1,1), space = "Lab") +
+geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
+theme(
+axis.title.x = element_blank(),
+axis.title.y = element_blank(),
+panel.grid.major = element_blank(),
+panel.border = element_blank(),
+panel.background = element_blank(),
+axis.ticks = element_blank(),
+legend.justification = c(1, 0),
+legend.position = c(0.6, 0.7),
+legend.direction = "horizontal",
+plot.title=element_text(size=40),
+axis.text.x=element_text(size=30, angle=90),
+axis.text.y=element_text(size=30, color='white')) +
+theme(legend.position="none") +
+labs(title='Validation')
+
+
+# Now create our plot
+png('figure2-concordanceAmongstRatersPolyCorValues.png', height=20, width=20, units='in', res=300)
+multiplot(trainCor,validCor,cols=2)
+dev.off()
