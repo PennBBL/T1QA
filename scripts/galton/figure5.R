@@ -98,9 +98,10 @@ for(qapVal in varsOfInterest){
   form1 <- as.formula(paste(qapVal,' ~ ageAtGo1Scan + s + ageAtGo1Scan^2', sep=''))
   residQuant <- lm(form1, data=all.train.data)$residuals
   corVal <- cor(residAverageRating, residQuant, method='spearman')
+  corPVal <- cor.test(residAverageRating, residQuant, method='spearman')$p.value
   qapValue <- prettyNames[i]
   Dataset <- 'Training'
-  valsToAppend <- cbind(corVal, qapValue, Dataset)
+  valsToAppend <- cbind(corVal, qapValue, Dataset, corPVal)
   corVals <- rbind(corVals, valsToAppend)
   i <- i + 1
 }
@@ -110,9 +111,10 @@ for(qapVal in varsOfInterest){
   form1 <- as.formula(paste(qapVal,' ~ ageAtGo1Scan + s + ageAtGo1Scan^2', sep=''))
   residQuant <- lm(form1, data=all.valid.data)$residuals
   corVal <- cor(residAverageRating, residQuant, method='spearman')
+  corPVal <- cor.test(residAverageRating, residQuant, method='spearman')$p.value
   qapValue <- prettyNames[i]
   Dataset <- 'Validation'
-  valsToAppend <- cbind(corVal, qapValue, Dataset)
+  valsToAppend <- cbind(corVal, qapValue, Dataset, corPVal)
   corVals <- rbind(corVals, valsToAppend)
   i <- i + 1
 }

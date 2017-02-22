@@ -60,6 +60,8 @@ all.train.data$meanFSCtAgeReg <- rep('NA', nrow(all.train.data))
 topindex <- as.numeric(names(lm(bh.meanthickness ~ age + ageSq + sex, data=all.train.data)$residuals))
 all.train.data$meanFSCtAgeReg[topindex] <- as.numeric(lm(bh.meanthickness ~ age + ageSq + sex, data=all.train.data)$residuals)
 all.train.data$meanFSAreaAgeReg <- as.numeric(lm(bh.totalarea ~ age + ageSq + sex, data=all.train.data)$residuals)
+all.train.data$TotalGrayVolAgeReg <- 'NA'
+all.train.data$TotalGrayVolAgeReg[topindex] <- as.numeric(residuals(lm(TotalGrayVol ~ age + ageSq + sex, data=all.train.data)))
 
 # Now do the age regressed quality metrics
 all.train.data$pcaslAgeReg <- residuals(lm(aslEpi10qaMeanrelrms ~ age + ageSq + sex, data=all.train.data, na.action=na.exclude))
@@ -84,33 +86,42 @@ attach(all.train.data)
 # Lets do the training data first
 meanValsAgeRegAverageRating <- cbind(cor(meanCTAgeReg, averageRatingAgeReg, method='spearman'),
                                        cor(meanGMDAgeReg, averageRatingAgeReg, method='spearman'),
-                                       cor(meanVOLAgeReg, averageRatingAgeReg, method='spearman'))
+                                       cor(meanVOLAgeReg, averageRatingAgeReg, method='spearman'),
+                                       cor(as.numeric(meanFSCtAgeReg), averageRatingAgeReg, method='spearman'),
+                                       cor(as.numeric(TotalGrayVolAgeReg), averageRatingAgeReg, method='spearman'))
 
 meanValsAgeRegOneVsTwo <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
                                        cor(meanGMDAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
-                                       cor(meanVOLAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'))
+                                       cor(meanVOLAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                       cor(as.numeric(meanFSCtAgeReg), oneVsTwoOutcomeAgeReg, method='spearman'),
+                                       cor(as.numeric(TotalGrayVolAgeReg), oneVsTwoOutcomeAgeReg, method='spearman'))
 detach(all.train.data)
 # Now run through the validation data cor values
 all.valid.data <- all.valid.data[which(all.valid.data$averageRating.x!=0),]
 attach(all.valid.data)
+
 meanValsAgeRegAverageRatingValid <- cbind(cor(meanCTAgeReg, averageRatingAgeReg, method='spearman'),
-                                      cor(meanGMDAgeReg, averageRatingAgeReg, method='spearman'),
-                                      cor(meanVOLAgeReg, averageRatingAgeReg, method='spearman'))
+                                          cor(meanGMDAgeReg, averageRatingAgeReg, method='spearman'),
+                                          cor(meanVOLAgeReg, averageRatingAgeReg, method='spearman'),
+                                          cor(as.numeric(meanFSCtAgeReg), averageRatingAgeReg, method='spearman'),
+                                          cor(as.numeric(TotalGrayVolAgeReg), averageRatingAgeReg, method='spearman'))
 
 meanValsAgeRegOneVsTwoValid <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
-                                      cor(meanGMDAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
-                                      cor(meanVOLAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'))
+                                          cor(meanGMDAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                          cor(meanVOLAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                          cor(as.numeric(meanFSCtAgeReg), oneVsTwoOutcomeAgeReg, method='spearman'),
+                                          cor(as.numeric(TotalGrayVolAgeReg), oneVsTwoOutcomeAgeReg, method='spearman'))
 detach(all.valid.data)
 
 # Now prepare our values to graph
 trainData <- rbind(meanValsAgeRegAverageRating, meanValsAgeRegOneVsTwo)
-colnames(trainData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol')
+colnames(trainData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol', 'FS CT', 'FS Vol')
 rownames(trainData) <- c('Average Rating', '1 vs 2 Model')
 trainData <- melt(trainData)
 trainData$Var3 <- rep('Training', nrow(trainData))
 
 validData <- rbind(meanValsAgeRegAverageRatingValid, meanValsAgeRegOneVsTwoValid)
-colnames(validData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol')
+colnames(validData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol', 'FS CT', 'FS Vol')
 rownames(validData) <- c('Average Rating', '1 vs 2 Model')
 validData <- melt(validData)
 validData$Var3 <- rep('Validation', nrow(validData))
@@ -120,7 +131,7 @@ allData$Var1 <- as.factor(allData$Var1)
 allData$Var2 <- as.factor(allData$Var2)
 allData$value <- as.numeric(as.character(allData$value))
 allData$Var3 <- as.factor(allData$Var3)
-allData$Var2 <- factor(allData$Var2, levels=c('ANTs CT','ANTs Vol', 'ANTs GMD'))
+allData$Var2 <- factor(allData$Var2, levels=c('ANTs CT','ANTs Vol', 'ANTs GMD', 'FS CT', 'FS Vol'))
 
 
 # Now graph our data
@@ -136,7 +147,7 @@ thing1 <- ggplot(allData, aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1
   facet_grid(. ~ Var3, space="free_x") +
   guides(fill = guide_legend(title = "Quality Measure"))
 
-png('figure12-partialCorBtn1vs2andAvgRating.png', width=18, height=12, units='in', res=300)
+png('figure12-partialCorBtn1vs2andAvgRating-withFS.png', width=18, height=12, units='in', res=300)
 thing1
 dev.off()
 
