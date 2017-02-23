@@ -382,9 +382,9 @@ rm(tmp)
 
 ## Now create our color values to export to ITK snap
 ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
-ctColors <- returnPosNegAndNeuColorScale(zScoreCT[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
+#ctColors <- returnPosNegAndNeuColorScale(zScoreCT[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
 gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
-gmdColors <- returnPosNegAndNeuColorScale(zScoreGMD[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
+#gmdColors <- returnPosNegAndNeuColorScale(zScoreGMD[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
 volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
 
 # Now we need to create our label into our file which matches our ROI to our label
