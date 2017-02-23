@@ -14,9 +14,15 @@ rm(m1)
 load('/home/adrose/qapQA/data/1vs28variableModel.RData')
 oneVsTwoModel <- mod8
 rm(mod8)
+load('/home/adrose/qapQA/data/mgiModels/mgi10vs1Model.RData')
+zeroVsNotZeroModelMGI <- m1
+rm(m1)
+load('/home/adrose/qapQA/data/mgiModels/mgi1vs2Model.RData')
+oneVsTwoModelMGI <- mod5
+rm(mod5)
 
 # Now load any library(s)
-install_load('ggplot2', 'caret', 'pROC')
+install_load('ggplot2', 'caret', 'pROC', 'useful')
 
 # Declare any functions
 rocdata <- function(grp, pred){
@@ -107,9 +113,9 @@ rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
 # Now load the models
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
-raw.lme.data <- raw.lme.data[which(raw.lme.data$averageRating.x!=0),]
-raw.lme.data$averageRating.x[raw.lme.data$averageRating.x<1.5] <- 1
-raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1.5] <- 2
+raw.lme.data$averageRatingPlaceHolder <- as.numeric(as.character(raw.lme.data$averageRating.x))
+raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
+raw.lme.data$averageRating.x <- binary.flip(raw.lme.data$averageRating.x)
 raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
 raw.lme.data$value <- raw.lme.data$averageRating.x
 all.train.data <- raw.lme.data
@@ -131,12 +137,35 @@ trainPlot0 <- trainPlot + geom_text(data=NULL, x=.775, y=.05, label=paste("Accur
     theme(legend.justification=c(1,0)) +
     theme(legend.title=element_blank())
 
-# Now do the same thing for the 1 vs 2 model
-# Now create our values!
+# Now do the MGI models!!!
+all.train.data$variable <- rep('ratingNULL', nrow(all.train.data))
+trainOutcome <- predict(zeroVsNotZeroModelMGI, newdata=all.train.data,
+                        allow.new.levels=T, type='response')
+trainValues <- all.train.data$averageRating.x
+roc.train <- roc(trainValues ~ trainOutcome)
+trainPlot <- rocplot.single(trainValues, trainOutcome, title="0 vs !0 Model")
+
+# Now we need to append the accuracy of the graph 
+trainPlot <- trainPlot + geom_text(data=NULL, x=.775, y=.01, label=paste("AUC        = ", round(auc(roc.train), digits=2)),size=8) + theme(legend.position="none") +
+    theme(legend.justification=c(1,0)) +
+    theme(legend.title=element_blank())
+
+trainPlot0MGI <- trainPlot + geom_text(data=NULL, x=.775, y=.05, label=paste("Accuracy = ", round(coords(roc.train, 'best', ret='accuracy'), digits=2)),size=8) + theme(legend.position="none") +
+    theme(legend.justification=c(1,0)) +
+    theme(legend.title=element_blank())
+
+# Now do the 1 vs 2 jazz down here
+raw.lme.data$averageRating.x <- raw.lme.data$averageRatingPlaceHolder
+raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
+raw.lme.data <- raw.lme.data[which(raw.lme.data$averageRating.x!=0),]
+raw.lme.data$averageRating.x[raw.lme.data$averageRating.x<1.5] <- 1
+raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1.5] <- 2
+
+# Now create our plots
 all.train.data$variable <- rep('ratingNULL', nrow(all.train.data))
 trainOutcome <- predict(oneVsTwoModel, newdata=all.train.data,
                         allow.new.levels=T, type='response')
-trainValues <- all.train.data$averageRating.x
+trainValues <- binary.flip(all.train.data$averageRating.x)
 roc.train <- roc(trainValues ~ trainOutcome)
 trainPlot <- rocplot.single(trainValues, trainOutcome, title="1 vs 2 Model")
 
@@ -149,9 +178,26 @@ trainPlot1 <- trainPlot + geom_text(data=NULL, x=.775, y=.05, label=paste("Accur
     theme(legend.justification=c(1,0)) +
     theme(legend.title=element_blank())
 
+# Now do the MGI noise
+trainOutcome <- predict(oneVsTwoModelMGI, newdata=all.train.data,
+                        allow.new.levels=T, type='response')
+trainValues <- all.train.data$averageRating.x
+roc.train <- roc(trainValues ~ trainOutcome)
+trainPlot <- rocplot.single(trainValues, trainOutcome, title="1 vs 2 Model")
+ 
+trainPlot <- trainPlot + geom_text(data=NULL, x=.775, y=.05, label=paste("Accuracy = ", round(coords(roc.train, 'best', ret='accuracy'), digits=2)),size=8) + theme(legend.position="none") +
+    theme(legend.justification=c(1,0)) +
+    theme(legend.title=element_blank())
+
+trainPlot1MGI <- trainPlot + geom_text(data=NULL, x=.775, y=.01, label=paste("AUC        = ", round(auc(roc.train), digits=2)),size=8) + theme(legend.position="none") +
+    theme(legend.justification=c(1,0)) +
+    theme(legend.title=element_blank())
+
+
+
 # Now produce our figure
 # Now plot our values
-png('figure18-mgiOutsideDataSetValid.png', width=18, height=10, units='in', res=300)
-multiplot(trainPlot0, trainPlot1, cols=2)
+png('figure18-mgiOutsideDataSetValid.png', width=18, height=18, units='in', res=300)
+multiplot(trainPlot0,trainPlot1,  trainPlot0MGI, trainPlot1MGI, cols=2)
 dev.off()
 
