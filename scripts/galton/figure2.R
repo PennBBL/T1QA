@@ -97,12 +97,11 @@ legend.justification = c(1, 0),
 legend.position = c(0.6, 0.7),
 legend.direction = "horizontal",
 plot.title=element_text(size=40),
-axis.text.x=element_text(size=30, angle=90),
+axis.text.x=element_text(size=30, angle=90, color='white'),
 axis.text.y=element_text(size=30)) +
 guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
 title.position = "top", title.hjust = 0.5)) +
-theme(legend.position="none") +
-labs(title='Training')
+theme(legend.position="none")
 
 validData <- melt(validValueDone)
 validCor <- ggplot(data = validData, aes(x=Var1, y=Var2, fill=value)) +
@@ -121,10 +120,9 @@ legend.justification = c(1, 0),
 legend.position = c(0.6, 0.7),
 legend.direction = "horizontal",
 plot.title=element_text(size=40),
-axis.text.x=element_text(size=30, angle=90),
+axis.text.x=element_text(size=30, angle=90, color='white'),
 axis.text.y=element_text(size=30, color='white')) +
-theme(legend.position="none") +
-labs(title='Validation')
+theme(legend.position="none")
 
 
 
@@ -132,29 +130,33 @@ labs(title='Validation')
 dataQaDfTrain <- as.data.frame(table(round(all.train.data$rawAverageRating.x, digits=2)))
 trainBG <- ggplot(dataQaDfTrain, aes(x=Var1, y=Freq, fill=Var1)) +
 geom_bar(stat='identity') +
-labs(title='', x='Average Quality Rating', y='# Images') +
+labs(title='Training', x='Average Quality Rating', y='# Images') +
 geom_text(data=dataQaDfTrain,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
 theme_bw() +
 theme(legend.position="none",
 axis.text.x=element_text(size=30),
 axis.text.y=element_text(size=30),
 axis.title.y=element_text(size=30),
-axis.title.x=element_text(size=30)) + 
-scale_fill_grey()
+axis.title.x=element_text(size=30),
+plot.title=element_text(size=40)) +
+scale_fill_grey() +
+scale_y_continuous(breaks=round(seq(0, 800, 200), digits=2))
 
 # Now do the validation data
 dataQaDfValid <- as.data.frame(table(round(all.valid.data$rawAverageRating.x, digits=2)))
 validBG <- ggplot(dataQaDfValid, aes(x=Var1, y=Freq, fill=Var1)) +
 geom_bar(stat='identity') +
-labs(title='', x='Average Quality Rating', y='# Images') +
+labs(title='Validation', x='Average Quality Rating', y='# Images') +
 geom_text(data=dataQaDfValid,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
 theme_bw() +
 theme(legend.position="none",
 axis.text.x=element_text(size=30),
 axis.text.y=element_text(size=30),
 axis.title.x=element_text(size=30),
-axis.title.y=element_text(size=30, color='white')) +
+axis.title.y=element_text(size=30, color='white'),
+plot.title=element_text(size=40)) +
 scale_fill_grey()
+
 
 # Now do the polychoric cor's down here
 attach(all.train.data)
@@ -233,8 +235,7 @@ axis.text.x=element_text(size=30, angle=90),
 axis.text.y=element_text(size=30)) +
 guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
 title.position = "top", title.hjust = 0.5)) +
-theme(legend.position="none") +
-labs(title='Training')
+theme(legend.position="none")
 
 validDataPoly <- melt(validValueDone)
 validCorPoly <- ggplot(data = validDataPoly, aes(x=Var1, y=Var2, fill=value)) +
@@ -255,11 +256,31 @@ legend.direction = "horizontal",
 plot.title=element_text(size=40),
 axis.text.x=element_text(size=30, angle=90),
 axis.text.y=element_text(size=30, color='white')) +
-theme(legend.position="none") +
-labs(title='Validation')
+theme(legend.position="none")
+
+foo <- ggplot(data = validDataPoly, aes(x=Var1, y=Var2, fill=value)) +
+geom_tile() +
+scale_fill_gradient2(low = "red", high = "blue", mid = "white",
+midpoint = 0, limit = c(-1,1), space = "Lab") +
+geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
+theme(
+axis.title.x = element_blank(),
+axis.title.y = element_blank(),
+panel.grid.major = element_blank(),
+panel.border = element_blank(),
+panel.background = element_blank(),
+axis.ticks = element_blank(),
+legend.justification = c(1, 0),
+legend.position = c(0.6, 0.7),
+legend.direction = "horizontal",
+plot.title=element_text(size=40),
+axis.text.x=element_text(size=30, angle=90),
+axis.text.y=element_text(size=30, color='white')) +
+theme(legend.position="bottom")
 
 
 # Now create our plot
 png('figure2-concordanceAmongstRaters.png', height=20, width=20, units='in', res=300)
 multiplot(trainBG,  trainCor, trainCorPoly, validBG, validCor, validCorPoly, cols=2)
+foo
 dev.off()
