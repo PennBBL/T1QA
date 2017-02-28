@@ -280,8 +280,9 @@ panel.border = element_blank(),
 panel.background = element_blank(),
 axis.ticks = element_blank(),
 legend.justification = c(1, 0),
-legend.position = c(0.6, 0.7),
+legend.position = c(0, 1),
 legend.direction = "horizontal",
+legend.key.size = unit(2.5, "cm"),
 plot.title=element_text(size=40),
 axis.text.x=element_text(size=30, angle=90),
 axis.text.y=element_text(size=30, color='white')) +
@@ -293,5 +294,9 @@ png('figure2-concordanceAmongstRaters.png', height=16, width=30, units='in', res
 #multiplot(trainBG,  trainCor, trainCorPoly, validBG, validCor, validCorPoly, cols=3)
 multiplot(trainBG,  validBG, trainCor, validCor, trainCorPoly, validCorPoly, cols=3)
 #foo
+dev.off()
+
+png('foo.png')
+foo
 dev.off()
 
