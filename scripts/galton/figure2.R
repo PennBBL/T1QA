@@ -132,15 +132,15 @@ labs(title='Validation')
 dataQaDfTrain <- as.data.frame(table(round(all.train.data$rawAverageRating.x, digits=2)))
 trainBG <- ggplot(dataQaDfTrain, aes(x=Var1, y=Freq, fill=Var1)) +
 geom_bar(stat='identity') +
-labs(title='', x='Average Quality Rating', y='# Images', size=20) +
+labs(title='', x='Average Quality Rating', y='# Images') +
 geom_text(data=dataQaDfTrain,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
 theme_bw() +
 theme(legend.position="none",
 axis.text.x=element_text(size=30),
 axis.text.y=element_text(size=30),
 axis.title.y=element_text(size=30),
-axis.title.x=element_text(size=30))
-
+axis.title.x=element_text(size=30)) + 
+scale_fill_grey()
 
 # Now do the validation data
 dataQaDfValid <- as.data.frame(table(round(all.valid.data$rawAverageRating.x, digits=2)))
@@ -153,15 +153,8 @@ theme(legend.position="none",
 axis.text.x=element_text(size=30),
 axis.text.y=element_text(size=30),
 axis.title.x=element_text(size=30),
-axis.title.y=element_text(size=30, color='white'))
-
-
-# Now create our plot
-png('figure2-concordanceAmongstRaters.png', height=20, width=20, units='in', res=300)
-multiplot(trainCor,  trainBG, validCor, validBG, cols=2)
-dev.off()
-
-
+axis.title.y=element_text(size=30, color='white')) +
+scale_fill_grey()
 
 # Now do the polychoric cor's down here
 attach(all.train.data)
@@ -219,8 +212,8 @@ validValueDone <- trainValue
 
 
 # Now create our cor matrices plots
-trainData <- melt(trainValueDone)
-trainCor <- ggplot(data = trainData, aes(x=Var1, y=Var2, fill=value)) +
+trainDataPoly <- melt(trainValueDone)
+trainCorPoly <- ggplot(data = trainDataPoly, aes(x=Var1, y=Var2, fill=value)) +
 geom_tile() +
 scale_fill_gradient2(low = "red", high = "blue", mid = "white",
 midpoint = 0, limit = c(-1,1), space = "Lab") +
@@ -243,8 +236,8 @@ title.position = "top", title.hjust = 0.5)) +
 theme(legend.position="none") +
 labs(title='Training')
 
-validData <- melt(validValueDone)
-validCor <- ggplot(data = validData, aes(x=Var1, y=Var2, fill=value)) +
+validDataPoly <- melt(validValueDone)
+validCorPoly <- ggplot(data = validDataPoly, aes(x=Var1, y=Var2, fill=value)) +
 geom_tile() +
 scale_fill_gradient2(low = "red", high = "blue", mid = "white",
 midpoint = 0, limit = c(-1,1), space = "Lab") +
@@ -267,6 +260,6 @@ labs(title='Validation')
 
 
 # Now create our plot
-png('figure2-concordanceAmongstRatersPolyCorValues.png', height=20, width=20, units='in', res=300)
-multiplot(trainCor,validCor,cols=2)
+png('figure2-concordanceAmongstRaters.png', height=20, width=20, units='in', res=300)
+multiplot(trainBG,  trainCor, trainCorPoly, validBG, validCor, validCorPoly, cols=2)
 dev.off()
