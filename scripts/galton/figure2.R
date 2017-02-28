@@ -140,7 +140,7 @@ axis.title.y=element_text(size=30),
 axis.title.x=element_text(size=30),
 plot.title=element_text(size=40)) +
 scale_fill_grey() +
-scale_y_continuous(breaks=round(seq(0, 800, 200), digits=2))
+scale_y_continuous(breaks=round(seq(0, 1000, 200), digits=2))
 
 # Now do the validation data
 dataQaDfValid <- as.data.frame(table(round(all.valid.data$rawAverageRating.x, digits=2)))
@@ -155,7 +155,8 @@ axis.text.y=element_text(size=30),
 axis.title.x=element_text(size=30),
 axis.title.y=element_text(size=30, color='white'),
 plot.title=element_text(size=40)) +
-scale_fill_grey()
+scale_fill_grey() +
+scale_y_continuous(breaks=round(seq(0, 500, 100), digits=2))
 
 
 # Now do the polychoric cor's down here
@@ -282,5 +283,6 @@ theme(legend.position="bottom")
 # Now create our plot
 png('figure2-concordanceAmongstRaters.png', height=20, width=20, units='in', res=300)
 multiplot(trainBG,  trainCor, trainCorPoly, validBG, validCor, validCorPoly, cols=2)
-foo
+#foo
 dev.off()
+
