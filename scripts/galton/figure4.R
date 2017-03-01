@@ -123,6 +123,25 @@ for(qapVal in varsOfInterest){
 
 
 # Now make our plot
+corVals <- corVals[order(as.numeric(corVals[,1])),]
+corVals <- as.data.frame(corVals)
+corVals$qapValue <- factor(corVals$qapValue, levels=unique(as.character(corVals$qapValue)))
+corPlot <- ggplot(corVals, 
+                 aes(x=factor(qapValue), y=as.numeric(as.character(corVal)), fill=factor(Dataset))) + 
+                 geom_bar(stat='identity', position=position_dodge(), size=.1) + 
+                 labs(title='', x='Quantitative Metric', y='Partial Spearman Corellation') + 
+                 theme_bw() + 
+                 facet_grid(Dataset ~ qapValue, space = "free", scales='free_x') + 
+                 theme(legend.position="none",
+                 axis.text.x = element_blank(),
+        	 axis.ticks.x=element_blank(),
+                 axis.text.y = element_text(size=16, face="bold"),
+                 axis.title=element_text(size=30,face="bold"),
+                 strip.text.y = element_text(size = 16, angle = 270, face="bold"),
+                 strip.text.x = element_text(size = 16, angle = 90, face="bold")) +
+		 scale_fill_manual(values=c("black", "black"))
+
+trainingValues$qapValue <- factor(trainingValues$qapValue, levels=levels(corVals$qapValue))
 allPlot <- ggplot(trainingValues, 
                  aes(x=factor(averageRating.y), y=as.numeric(as.character(mean)), fill=factor(averageRating.y))) + 
                  geom_bar(stat='identity', position=position_dodge(), size=.1) + 
@@ -132,27 +151,36 @@ allPlot <- ggplot(trainingValues,
                  theme_bw() + 
                  facet_grid(Dataset ~ qapValue) + 
                  theme(legend.position="none",
-                 axis.text.x = element_text(angle=90,hjust=1, size=16, face="bold"),
+                 axis.text.x = element_blank(),
                  axis.text.y = element_text(size=16, face="bold"),
-                 axis.title=element_text(size=20,face="bold"),
-                 strip.text.y = element_text(size = 16, angle = 270, face="bold"),
-                 strip.text.x = element_text(size = 16, angle = 90, face="bold"))
-corVals <- as.data.frame(corVals)
-corPlot <- ggplot(corVals, 
-                 aes(x=factor(qapValue), y=as.numeric(as.character(corVal)), fill=factor(Dataset))) + 
-                 geom_bar(stat='identity', position=position_dodge(), size=.1) + 
-                 labs(title='', x='Quantitative Metric', y='Partial Spearman Corellation') + 
-                 theme_bw() + 
-                 facet_grid(Dataset ~ .) + 
-                 theme(legend.position="none",
-                 axis.text.x = element_text(angle=90,hjust=1, size=16, face="bold"),
-                 axis.text.y = element_text(size=16, face="bold"),
-                 axis.title=element_text(size=20,face="bold"),
+        	 axis.ticks.x=element_blank(),
+                 axis.title=element_text(size=30,face="bold"),
                  strip.text.y = element_text(size = 16, angle = 270, face="bold"),
                  strip.text.x = element_text(size = 16, angle = 90, face="bold"))
 
-png('figure5-qapMetricsVsQCQAPPaper.png', height=12, width=20, units='in', res=300)
-multiplot(allPlot, corPlot, cols=2)
+
+foo <- ggplot(trainingValues, 
+                 aes(x=factor(averageRating.y), y=as.numeric(as.character(mean)), fill=factor(averageRating.y))) + 
+                 geom_bar(stat='identity', position=position_dodge(), size=.1) + 
+                 labs(title='', x='Mean Quality Rating', y='Mean Standardized Quality Metric (z-score)') +
+                 geom_errorbar(aes(ymin=as.numeric(as.character(mean))-se, ymax=as.numeric(as.character(mean))+se), 
+                       width = .1, position=position_dodge(.9)) + 
+                 theme_bw() + 
+                 facet_grid(Dataset ~ qapValue) + 
+                 theme(legend.position="bottom",
+                 axis.text.x = element_blank(),
+                 axis.text.y = element_text(size=16, face="bold"),
+        	 axis.ticks.x=element_blank(),
+                 axis.title=element_text(size=30,face="bold"),
+                 strip.text.y = element_text(size = 16, angle = 270, face="bold"),
+                 strip.text.x = element_text(size = 16, angle = 90, face="bold"))
+
+png('figure4-qapMetricsVsQCQAPPaper.png', height=12, width=20, units='in', res=300)
+#multiplot(allPlot, corPlot, cols=2)
 grid.arrange(allPlot, corPlot, ncol = 3, layout_matrix = cbind(c(1,1,1,1,1,1),c(1,1,1,1,1,1),c(2,2,2,2,2,2)))
+dev.off()
+
+png('foo.png')
+foo
 dev.off()
 
