@@ -134,7 +134,7 @@ coord_equal()
 dataQaDfTrain <- as.data.frame(table(round(all.train.data$rawAverageRating.x, digits=2)))
 trainBG <- ggplot(dataQaDfTrain, aes(x=Var1, y=Freq, fill=Var1)) +
 geom_bar(stat='identity') +
-labs(title='N of Avg Quality Class', x='', y='Training') +
+labs(title='Distribution of Manual Quality Ratings', x='', y='Training') +
 geom_text(data=dataQaDfTrain,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
 theme_bw() +
 theme(legend.position="none",
@@ -150,7 +150,7 @@ scale_y_continuous(limits=c(0,1000), breaks=round(seq(0, 1000, 200), digits=2))
 dataQaDfValid <- as.data.frame(table(round(all.valid.data$rawAverageRating.x, digits=2)))
 validBG <- ggplot(dataQaDfValid, aes(x=Var1, y=Freq, fill=Var1)) +
 geom_bar(stat='identity') +
-labs(title='', x='Avg Quality Class', y='Validation') +
+labs(title='', x='Manual Quality Rating (mean value)', y='Validation') +
 geom_text(data=dataQaDfValid,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
 theme_bw() +
 theme(legend.position="none",
