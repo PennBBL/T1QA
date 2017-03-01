@@ -10,7 +10,7 @@ source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 set.seed(16)
 
 # load library(s)
-install_load('caret', 'ggplot2', 'lme4', 'car')
+install_load('caret', 'ggplot2', 'lme4', 'car', 'visreg')
 
 # Now lets create our train and validation sets
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
@@ -98,4 +98,6 @@ multiplot(bg1, bg2, cols=2)
 dev.off()
 
 
-
+### Sample code for potential new fig
+mod1 <- lm(age ~ rawAverageRating.x, data=all.train.data)
+visreg(mod1, "rawAverageRating.x", line=list(col="red"), points=list(cex=0, pch=0))

@@ -1,134 +1,158 @@
-# AFGR June 6 2016
-# This script is going to be used to produce the correllation plots for the QAP project
-# This is going to be amongst only the qap metrics of interest these are listed below:
-#                            ('CNR', 'EFC', 'FBER', 'FWHM',
-#                             'QI1', 'SNR', 'BG Kurtosis', 
-#                             'BG Skewness', 'CSF Kurtosis',
-#                             'CSF Skewness', 'GM Kurtosis',
-#                             'GM Skewness', 'WM Kurtosis',
-#                             'WM Skewness') 
-# These plots will be seperated across training and validation data sets. 
+# AFGR October 26 2016
+# This script is going to be used to plot the differences amongst the training and testing sets 
+# in relation to the quantitative variables and their relation to the qualititative manual ratings.
+# It is going to plot the 8 values from the outcome of the 1 vs 2 octavariate model
+# These include:
+#	qi1 wm.skewness cnr bg.kurtosis efc bg.skewness fber snr
+
 
 ## Load data
 # Start with Go1
 source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 set.seed(16)
 
+# Modify summarySE to make it easier to work with
+summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
+                      conf.interval=.95, .drop=TRUE) {
+    library(plyr)
+
+    # New version of length which can handle NA's: if na.rm==T, don't count them
+    length2 <- function (x, na.rm=FALSE) {
+        if (na.rm) sum(!is.na(x))
+        else       length(x)
+    }
+
+    # This does the summary. For each group's data frame, return a vector with
+    # N, mean, and sd
+    datac <- ddply(data, groupvars, .drop=.drop,
+      .fun = function(xx, col) {
+        c(N    = length2(xx[[col]], na.rm=na.rm),
+          mean = mean   (xx[[col]], na.rm=na.rm),
+          sd   = sd     (xx[[col]], na.rm=na.rm)
+        )
+      },
+      measurevar
+    )
+
+    datac$se <- datac$sd / sqrt(datac$N)  # Calculate standard error of the mean
+
+    # Confidence interval multiplier for standard error
+    # Calculate t-statistic for confidence interval: 
+    # e.g., if conf.interval is .95, use .975 (above/below), and use df=N-1
+    ciMult <- qt(conf.interval/2 + .5, datac$N-1)
+    datac$ci <- datac$se * ciMult
+
+    return(datac)
+}
+
 # load library(s)
-install_load('caret', 'ggplot2', 'grid', 'gridExtra', 'cowplot')
+install_load('caret', 'ggplot2', 'grid', 'gridExtra')
 
 # Now lets create our train and validation sets
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
+raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
 #folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
 load('/home/adrose/qapQA/data/foldsToUse.RData')
 index <- unlist(folds[1])
 trainingData <- raw.lme.data[index,]
 validationData <- raw.lme.data[-index,] 
 
-# Now create a value which contains the columns of interest from the trainindData
-colsOfInterest <- c(4, 7, 8, 11, 17, 18, 23, 24, 25, 26, 27, 28, 31, 32)
+## Now merge our scaled data values with the original data values 
+all.train.data <- merge(mergedQAP, trainingData, by='bblid')
+all.valid.data <- merge(mergedQAP, validationData, by='bblid')
+names(all.train.data) <- gsub(pattern='.x', x=names(all.train.data), replacement='')
+names(all.valid.data) <- gsub(pattern='.x', x=names(all.valid.data), replacement='')
 
-# Now fix the names of our metrics of interest -not sure if this is necassary or not-
-names(trainingData)[colsOfInterest] <- c('CNR', 'EFC', 'FBER', 'FWHM',
-                                         'QI1', 'SNR', 'CSF Kurtosis', 
-                                         'CSF Skewness', 'GM Kurtosis',
-                                         'GM Skewness', 'WM Kurtosis',
-                                         'WM Skewness', 'BG Kurtosis',
-                                         'BG Skewness') 
-names(validationData)[colsOfInterest] <- c('CNR', 'EFC', 'FBER', 'FWHM',
-                                         'QI1', 'SNR', 'CSF Kurtosis', 
-                                         'CSF Skewness', 'GM Kurtosis',
-                                         'GM Skewness', 'WM Kurtosis',
-                                         'WM Skewness', 'BG Kurtosis',
-                                         'BG Skewness')
+# Now lets declare our variables of interest 
+varsOfInterest <- c('bg.kurtosis', 'bg.skewness', 'cnr', 'efc', 'fber', 'qi1', 'snr', 'wm.skewness')
+prettyNames <- c('BG Kurtosis', 'BG Skewness', 'CNR', 'EFC', 'FBER', 'QI1', 'SNR', 'WM Skewness')
 
-# Now create our cor values
-trainCor <- cor(trainingData[,colsOfInterest], method='spearman')
-validCor <- cor(validationData[,colsOfInterest], method='spearman')
+# Now lets create our training values
+trainingValues <- NULL 
+i <- 1
+for(qapVal in varsOfInterest){
+  valsToAppend <- summarySE(data=trainingData, measurevar=qapVal, groupvars='averageRating.y')
+  qapValue <- rep(prettyNames[i], nrow(valsToAppend))
+  Dataset <- rep('Training', nrow(valsToAppend))
+  valsToAppend <- cbind(valsToAppend, qapValue, Dataset)
+  trainingValues <- rbind(trainingValues, valsToAppend)
+  i <- i + 1
+}
+i <- 1
+for(qapVal in varsOfInterest){
+  valsToAppend <- summarySE(data=validationData, measurevar=qapVal, groupvars='averageRating.y')
+  qapValue <- rep(prettyNames[i], nrow(valsToAppend))
+  Dataset <- rep('Validation', nrow(valsToAppend))
+  valsToAppend <- cbind(valsToAppend, qapValue, Dataset)
+  trainingValues <- rbind(trainingValues, valsToAppend)
+  i <- i + 1
+}
 
-# Now melt them so we can work with ggplot2
-trainCor <- melt(trainCor)
-validCor <- melt(validCor)
-
-# Now create our ggplot2 variables starting with training
-trainPlot <- ggplot(data = trainCor, aes(x=Var1, y=Var2, fill=value)) +
-    geom_tile() +
-    scale_fill_gradient2(low = "red", high = "blue", mid = "white",
-    midpoint = 0, limit = c(-1,1), space = "Lab") +
-    labs(title='Training') +
-    #geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 8) +
-    theme(
-      axis.title.x = element_blank(),
-      axis.title.y = element_blank(),
-      panel.grid.major = element_blank(),
-      panel.border = element_blank(),
-      panel.background = element_blank(),
-      axis.ticks = element_blank(),
-      legend.justification = c(1, 0),
-      legend.position = c(0.6, 0.7),
-      legend.direction = "horizontal",
-      plot.title=element_text(size=24, face="bold"),
-      axis.text.x=element_text(size=16, face="bold", angle=90),
-      axis.text.y=element_text(size=16, face="bold")) +
-      guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
-      title.position = "top", title.hjust = 0.5)) +
-    theme(legend.position="none")
-
-validPlot <- ggplot(data = validCor, aes(x=Var1, y=Var2, fill=value)) +
-    geom_tile() +
-    scale_fill_gradient2(low = "red", high = "blue", mid = "white",
-    midpoint = 0, limit = c(-1,1), space = "Lab") +
-    labs(title='Validation') +
-    #geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 8) +
-    theme(
-      axis.title.x = element_blank(),
-      axis.title.y = element_blank(),
-      panel.grid.major = element_blank(),
-      panel.border = element_blank(),
-      panel.background = element_blank(),
-      axis.ticks = element_blank(),
-      legend.justification = c(1, 0),
-      legend.position = c(0.6, 0.7),
-      legend.direction = "horizontal",
-      plot.title=element_text(size=24, face="bold"),
-      axis.text.x=element_text(size=16, face="bold", angle=90),
-      axis.text.y=element_text(size=16, face="bold", color='white')) +
-      guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
-      title.position = "top", title.hjust = 0.5)) +
-    theme(legend.position="none")
+# Now produce all of our partial corellations 
+corVals <- NULL
+i <- 1
+residAverageRating <- lm(averageRating.y ~ ageAtGo1Scan + s + ageAtGo1Scan^2, data=all.train.data)$residuals
+for(qapVal in varsOfInterest){
+  form1 <- as.formula(paste(qapVal,' ~ ageAtGo1Scan + s + ageAtGo1Scan^2', sep=''))
+  residQuant <- lm(form1, data=all.train.data)$residuals
+  corVal <- cor(residAverageRating, residQuant, method='spearman')
+  corPVal <- cor.test(residAverageRating, residQuant, method='spearman')$p.value
+  qapValue <- prettyNames[i]
+  Dataset <- 'Training'
+  valsToAppend <- cbind(corVal, qapValue, Dataset, corPVal)
+  corVals <- rbind(corVals, valsToAppend)
+  i <- i + 1
+}
+i <- 1
+residAverageRating <- lm(averageRating.y ~ ageAtGo1Scan + s + ageAtGo1Scan^2, data=all.valid.data)$residuals
+for(qapVal in varsOfInterest){
+  form1 <- as.formula(paste(qapVal,' ~ ageAtGo1Scan + s + ageAtGo1Scan^2', sep=''))
+  residQuant <- lm(form1, data=all.valid.data)$residuals
+  corVal <- cor(residAverageRating, residQuant, method='spearman')
+  corPVal <- cor.test(residAverageRating, residQuant, method='spearman')$p.value
+  qapValue <- prettyNames[i]
+  Dataset <- 'Validation'
+  valsToAppend <- cbind(corVal, qapValue, Dataset, corPVal)
+  corVals <- rbind(corVals, valsToAppend)
+  i <- i + 1
+}
 
 
-testPlot <- ggplot(data = validCor, aes(x=Var1, y=Var2, fill=value)) +
-    geom_tile() +
-    scale_fill_gradient2(low = "red", high = "blue", mid = "white",
-    midpoint = 0, limit = c(-1,1), space = "Lab") +
-    labs(title='Validation') +
-    #geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 8) +
-    theme(
-      axis.title.x = element_blank(),
-      axis.title.y = element_blank(),
-      panel.grid.major = element_blank(),
-      panel.border = element_blank(),
-      panel.background = element_blank(),
-      axis.ticks = element_blank(),
-      legend.direction = "horizontal",
-      plot.title=element_text(size=24, face="bold"),
-      axis.text.x=element_text(size=16, face="bold", angle=90),
-      axis.text.y=element_text(size=16, face="bold", color='white')) +
-      guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
-      title.position = "top", title.hjust = 0.5)) +
-      theme(legend.justification = c(1, 0),
-  legend.position = 'right',
-  legend.direction = "vertical")+
-  guides(fill = guide_colorbar(barwidth = 3, barheight = 40,
-                title.position = "left", title.hjust = 0.5,
-                ticks=FALSE))
 
 
-# Now create our plots
-png('figure4-corPlots.png', height=10, width=20, units='in', res=300)
-multiplot(trainPlot, validPlot, cols=2)
-#testPlot
+# Now make our plot
+allPlot <- ggplot(trainingValues, 
+                 aes(x=factor(averageRating.y), y=as.numeric(as.character(mean)), fill=factor(averageRating.y))) + 
+                 geom_bar(stat='identity', position=position_dodge(), size=.1) + 
+                 labs(title='', x='Mean Quality Rating', y='Mean Standardized Quality Metric (z-score)') +
+                 geom_errorbar(aes(ymin=as.numeric(as.character(mean))-se, ymax=as.numeric(as.character(mean))+se), 
+                       width = .1, position=position_dodge(.9)) + 
+                 theme_bw() + 
+                 facet_grid(Dataset ~ qapValue) + 
+                 theme(legend.position="none",
+                 axis.text.x = element_text(angle=90,hjust=1, size=16, face="bold"),
+                 axis.text.y = element_text(size=16, face="bold"),
+                 axis.title=element_text(size=20,face="bold"),
+                 strip.text.y = element_text(size = 16, angle = 270, face="bold"),
+                 strip.text.x = element_text(size = 16, angle = 90, face="bold"))
+corVals <- as.data.frame(corVals)
+corPlot <- ggplot(corVals, 
+                 aes(x=factor(qapValue), y=as.numeric(as.character(corVal)), fill=factor(Dataset))) + 
+                 geom_bar(stat='identity', position=position_dodge(), size=.1) + 
+                 labs(title='', x='Quantitative Metric', y='Partial Spearman Corellation') + 
+                 theme_bw() + 
+                 facet_grid(Dataset ~ .) + 
+                 theme(legend.position="none",
+                 axis.text.x = element_text(angle=90,hjust=1, size=16, face="bold"),
+                 axis.text.y = element_text(size=16, face="bold"),
+                 axis.title=element_text(size=20,face="bold"),
+                 strip.text.y = element_text(size = 16, angle = 270, face="bold"),
+                 strip.text.x = element_text(size = 16, angle = 90, face="bold"))
+
+png('figure5-qapMetricsVsQCQAPPaper.png', height=12, width=20, units='in', res=300)
+multiplot(allPlot, corPlot, cols=2)
+grid.arrange(allPlot, corPlot, ncol = 3, layout_matrix = cbind(c(1,1,1,1,1,1),c(1,1,1,1,1,1),c(2,2,2,2,2,2)))
 dev.off()
+
