@@ -44,34 +44,51 @@ bg2.vals$Dataset <- factor(bg2.vals$Dataset)
 bg2.vals$sex <- c('Male', 'Female', 'Male', 'Female')
 
 # Now lets plot our values
-bg1 <- ggplot(bg1.vals, aes(x=factor(averageRating), y=as.numeric(as.character(age)), group=Dataset)) + 
+bg1 <- ggplot(bg2.vals[which(bg2.vals$Dataset=='Training'),], aes(x=factor(sex), y=as.numeric(as.character(averageRating)), group=Dataset)) + 
                 geom_bar(stat='identity', position=position_dodge(), size=.1, aes(fill=Dataset)) + 
-                labs(title='', x='Mean Quality Rating', y='Mean Age (Years)') +
+                labs(title='Training', x='Sex', y='Mean Quality Rating') +
                 theme_bw() + 
-                coord_cartesian(ylim=c(10,16)) + 
-                geom_bar(stat="identity", position=position_dodge(), size=.1) + 
-                       geom_errorbar(aes(ymin=as.numeric(as.character(age))-se, ymax=as.numeric(as.character(age))+se), 
-                       width = .2, position=position_dodge(.9)) + 
-                theme(legend.position="none",
-                axis.text=element_text(size=16, face="bold"),
-                axis.title=element_text(size=20,face="bold"), 
-                strip.text.y = element_text(size = 16, angle = 270, face="bold")) +
-                facet_grid(Dataset ~ .)
-
-bg2 <- ggplot(bg2.vals, aes(x=factor(sex), y=as.numeric(as.character(averageRating)), group=Dataset)) + 
-                geom_bar(stat='identity', position=position_dodge(), size=.1, aes(fill=Dataset)) + 
-                labs(title='', x='Sex', y='Mean Quality Rating') +
-                theme_bw() + 
-                coord_cartesian(ylim=c(1.7,2)) + 
+                coord_cartesian(ylim=c(1.6,2)) + 
                 geom_bar(stat="identity", position=position_dodge(), size=.1) + 
                        geom_errorbar(aes(ymin=as.numeric(as.character(averageRating))-se, 
                                          ymax=as.numeric(as.character(averageRating))+se), 
                 width = .2, position=position_dodge(.9)) +
-                facet_grid(Dataset ~ .) +
+                #facet_grid(Dataset ~ .) +
                 theme(legend.position="none",
                 axis.text=element_text(size=16, face="bold"),
                 axis.title=element_text(size=20,face="bold"),
                 strip.text.y = element_text(size = 16, angle = 270, face="bold"))
+
+bg2 <- ggplot(bg2.vals[which(bg2.vals$Dataset=='Validation'),], aes(x=factor(sex), y=as.numeric(as.character(averageRating)), group=Dataset)) + 
+                geom_bar(stat='identity', position=position_dodge(), size=.1, aes(fill=Dataset)) + 
+                labs(title='Validation', x='Sex', y='Mean Quality Rating') +
+                theme_bw() + 
+                coord_cartesian(ylim=c(1.6,2)) + 
+                geom_bar(stat="identity", position=position_dodge(), size=.1) + 
+                       geom_errorbar(aes(ymin=as.numeric(as.character(averageRating))-se, 
+                                         ymax=as.numeric(as.character(averageRating))+se), 
+                width = .2, position=position_dodge(.9)) +
+                #facet_grid(Dataset ~ .) +
+                theme(legend.position="none",
+                axis.text.y=element_text(size=16, face="bold", color='white'),
+                axis.title.y=element_text(size=20,face="bold", color='white'),
+		axis.ticks.y=element_blank(),
+                strip.text.y = element_text(size = 16, angle = 270, face="bold")) 
+
+# Now build our models to show geneerl age trends
+mod1 <- ggplot(all.train.data, aes(x=rawAverageRating.x, y=age)) +
+   geom_smooth(method=lm, color='black') +
+   theme_bw() +
+   labs(title='', x='Mean Quality Rating', y='Age')
+mod2 <- ggplot(all.train.data, aes(x=rawAverageRating.x, y=age)) +
+   geom_smooth(method=lm, color='black') +
+   theme_bw() +
+   labs(title='', x='Mean Quality Rating', y='Age') + 
+   theme()
+
+png('figure3-demographicsvsRatingQAPPaper.png', width=16, height=10, units='in', res=300)
+multiplot(bg1, mod1, bg2, mod2, cols=2)
+dev.off()
 
 # Now build a lme model in the training data 
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
@@ -90,14 +107,3 @@ train.data <- merge(raw.lme.data, all.valid.data, by = "bblid")
 train.data$age <- as.factor(train.data$age)
 m1 <- lmer(rawAverageRating.y ~ age + sex +age * sex + (1|variable), data = train.data)
 sigValsValid <- Anova(m1)
-
-
-
-png('figure3-demographicsvsRatingQAPPaper.png', width=16, height=10, units='in', res=300)
-multiplot(bg1, bg2, cols=2)
-dev.off()
-
-
-### Sample code for potential new fig
-mod1 <- lm(age ~ rawAverageRating.x, data=all.train.data)
-visreg(mod1, "rawAverageRating.x", line=list(col="red"), points=list(cex=0, pch=0))
