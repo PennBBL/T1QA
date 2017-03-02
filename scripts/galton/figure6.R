@@ -7,6 +7,9 @@
 source('/home/adrose/qapQA/scripts/loadGo1Data.R')
 detachAllPackages()
 set.seed(16)
+load('/home/adrose/qapQA/data/0vsNot0FinalData.RData')
+zeroVsNotZeroModel <- m1
+rm(m1)
 
 ## Declare any functions
 rocdata <- function(grp, pred){
@@ -72,32 +75,18 @@ rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
   }
  
   p <- ggplot(plotdata$roc, aes(x = x, y = y)) +
-      geom_line(aes(colour = "")) +
+      geom_line(aes(colour = ""), size=3) +
       geom_abline (intercept = 0, slope = 1) +
       theme_bw() +
       scale_x_continuous("False Positive Rate (1-Specificity)") +
       scale_y_continuous("True Positive Rate (Sensitivity)") +
       scale_colour_manual(labels = annotation, values = "#000000") +
       ggtitle(title) +
-      theme_bw() + 
-      #theme(axis.title.x = theme_text(face="bold", size=12)) +
-      #theme(axis.title.y = theme_text(face="bold", size=12, angle=90)) +
+      theme_bw() +
       theme(legend.position=c(1,0)) +
       theme(legend.justification=c(1,0)) +
       theme(legend.title=element_blank())
-      
 
-     #theme(title = title,
-           #plot.title = theme_text(face="bold", size=14), 
-           #axis.title.x = theme_text(face="bold", size=12),
-           #axis.title.y = theme_text(face="bold", size=12, angle=90),
-           #panel.grid.major = theme_blank(),
-           #panel.grid.minor = theme_blank(),
-           #legend.justification=c(1,0), 
-           #legend.position=c(1,0),
-           #legend.title=theme_blank(),
-           #legend.key = theme_blank()
-           #)
   return(p)
 }
 
@@ -139,7 +128,7 @@ for(qapVal in qapValNames){
 
 aucVals[, 1] <- c("CNR", "EFC", "FBER", "FWHM", "QI1", "SNR", 
  "CSF Kurtosis", "CSF Skewness", "GM Kurtosis", "GM Skewness", 
- "WM Kurtosis", "WM Skewness", "BG Kurtosis", "BG Skewness")
+ "WM Kurtosis", "WM Skewness", "BG Kurtosis*", "BG Skewness*")
 
 # Now order and find the AUC heirarchy 
 aucVals <- as.data.frame(aucVals)
@@ -158,8 +147,51 @@ aucZerovsNotZeroMonovariate <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2)
   xlab("Image Quality Metrics") +
   ylab("AUC")
 
+# Now prep our individual data sets
+all.train.data <- merge(trainingData, manualQAData, by='bblid')
+#all.train.data <- read.csv('/home/adrose/qapQA/data/allTrainData.csv')
+all.valid.data <- merge(validationData, manualQAData, by='bblid')
+#all.valid.data <- read.csv('/home/adrose/qapQA/data/allValidData.csv')
 
-png('figure6-monovariateAUC0vsNot0.png', width=12, height=12, units='in', res=300)
-aucZerovsNotZeroMonovariate
+# Now create our train roc curve
+all.train.data$variable <- rep('ratingNULL', nrow(all.train.data))
+trainOutcome <- predict(zeroVsNotZeroModel, newdata=all.train.data,
+allow.new.levels=T, type='response')
+trainValues <- all.train.data$averageRating.x
+roc.train <- roc(trainValues ~ trainOutcome)
+trainPlot <- rocplot.single(trainValues, trainOutcome, title="Training")
+
+# Now we need to append the accuracy of the graph
+trainPlot <- trainPlot + geom_text(data=NULL, x=.775, y=.01, label=paste("AUC        = ", round(auc(roc.train), digits=2)), size=8) + theme(legend.position="none") +
+theme(legend.justification=c(1,0)) +
+theme(legend.title=element_blank())
+
+trainPlot <- trainPlot + geom_text(data=NULL, x=.5, y=.05, label=paste("Classification Accuracy = ", round(coords(roc.train, 'best', ret='accuracy'), digits=2)), size=8) + theme(legend.position="none") +
+theme(legend.justification=c(1,0)) +
+theme(legend.title=element_blank())
+
+# Now get the cut off value for the accuracy calucalation for the valid data
+cutoff <- coords(roc.train, 'best')[1]
+
+# Now do our validation data
+all.valid.data$variable <- rep('ratingNULL', nrow(all.valid.data))
+validOutcome <- predict(zeroVsNotZeroModel, newdata=all.valid.data,
+allow.new.levels=T, type='response')
+validValues <- all.valid.data$averageRating.x
+roc.valid <- roc(validValues ~ validOutcome)
+validPlot <- rocplot.single(validValues, validOutcome, title="Validation")
+
+# Now append the AUC and accuracy as previously performed
+validPlot <- validPlot + geom_text(data=NULL, x=.775, y=.01, label=paste("AUC        = ", round(auc(roc.valid), digits=2)),size=8) + theme(legend.position="none") +
+theme(legend.justification=c(1,0)) +
+theme(legend.title=element_blank())
+
+validPlot <- validPlot + geom_text(data=NULL, x=.5, y=.05, label=paste("Classification Accuracy = ", round(coords(roc.valid, cutoff, ret='accuracy'), digits=2)),size=8) + theme(legend.position="none") +
+theme(legend.justification=c(1,0)) +
+theme(legend.title=element_blank())
+
+
+png('figure6-monovariateAUC0vsNot0.png', width=21, height=12, units='in', res=300)
+multiplot(aucZerovsNotZeroMonovariate, trainPlot, validPlot, cols=3)
 dev.off()
 
