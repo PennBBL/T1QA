@@ -46,47 +46,64 @@ bg2.vals$sex <- c('Male', 'Female', 'Male', 'Female')
 # Now lets plot our values
 bg1 <- ggplot(bg2.vals[which(bg2.vals$Dataset=='Training'),], aes(x=factor(sex), y=as.numeric(as.character(averageRating)), group=Dataset)) + 
                 geom_bar(stat='identity', position=position_dodge(), size=.1, aes(fill=Dataset)) + 
-                labs(title='Training', x='Sex', y='Mean Quality Rating') +
+                labs(title='Training', x='Sex', y='Manual Quality Rating (mean value)') +
                 theme_bw() + 
                 coord_cartesian(ylim=c(1.6,2)) + 
                 geom_bar(stat="identity", position=position_dodge(), size=.1) + 
                        geom_errorbar(aes(ymin=as.numeric(as.character(averageRating))-se, 
                                          ymax=as.numeric(as.character(averageRating))+se), 
-                width = .2, position=position_dodge(.9)) +
+                width = .1, position=position_dodge(.9)) +
                 #facet_grid(Dataset ~ .) +
                 theme(legend.position="none",
-                axis.text=element_text(size=16, face="bold"),
-                axis.title=element_text(size=20,face="bold"),
-                strip.text.y = element_text(size = 16, angle = 270, face="bold"))
+                axis.text=element_text(size=20),
+                axis.title=element_text(size=30),
+                strip.text.y = element_text(size = 16, angle = 270, face="bold"),
+                title=element_text(size=30))
 
-bg2 <- ggplot(bg2.vals[which(bg2.vals$Dataset=='Validation'),], aes(x=factor(sex), y=as.numeric(as.character(averageRating)), group=Dataset)) + 
+bg2 <- ggplot(bg2.vals[which(bg2.vals$Dataset=='Validation'),], aes(x=factor(sex), y=as.numeric(as.character(averageRating)), group=Dataset)) +
                 geom_bar(stat='identity', position=position_dodge(), size=.1, aes(fill=Dataset)) + 
-                labs(title='Validation', x='Sex', y='Mean Quality Rating') +
+                labs(title='Validation', x='Sex', y='Manual Quality Rating (mean value)') +
                 theme_bw() + 
                 coord_cartesian(ylim=c(1.6,2)) + 
                 geom_bar(stat="identity", position=position_dodge(), size=.1) + 
                        geom_errorbar(aes(ymin=as.numeric(as.character(averageRating))-se, 
                                          ymax=as.numeric(as.character(averageRating))+se), 
-                width = .2, position=position_dodge(.9)) +
+                width = .1, position=position_dodge(.9)) +
                 #facet_grid(Dataset ~ .) +
                 theme(legend.position="none",
-                axis.text.y=element_text(size=16, face="bold", color='white'),
-                axis.title.y=element_text(size=20,face="bold", color='white'),
+                axis.text.y=element_text(size=20, color='white'),
+                axis.title.y=element_text(size=30, color='white'),
+                axis.text=element_text(size=20),
+                axis.title=element_text(size=30),
 		axis.ticks.y=element_blank(),
-                strip.text.y = element_text(size = 16, angle = 270, face="bold")) 
+                strip.text.y = element_text(size = 16, angle = 270, face="bold"),
+                title=element_text(size=30))
 
 # Now build our models to show geneerl age trends
 mod1 <- ggplot(all.train.data, aes(x=rawAverageRating.x, y=age)) +
    geom_smooth(method=lm, color='black') +
    theme_bw() +
-   labs(title='', x='Mean Quality Rating', y='Age')
-mod2 <- ggplot(all.train.data, aes(x=rawAverageRating.x, y=age)) +
+   coord_cartesian(ylim=c(7,16)) +
+   labs(title='', x='Manual Quality Rating (mean value)', y='Age') +
+   theme(
+    axis.text=element_text(size=20),
+    axis.title=element_text(size=30)) +
+   scale_x_continuous(breaks=c(0,.33,.66,1,1.33,1.66,2))
+
+mod2 <- ggplot(all.valid.data, aes(x=rawAverageRating.x, y=age)) +
    geom_smooth(method=lm, color='black') +
    theme_bw() +
-   labs(title='', x='Mean Quality Rating', y='Age') + 
-   theme()
+   coord_cartesian(ylim=c(7,16)) +
+   labs(title='', x='Manual Quality Rating (mean value)', y='Age') +
+   theme(
+    axis.text=element_text(size=20),
+    axis.title=element_text(size=30),
+    axis.title.y=element_text(size=20, color='white'),
+    axis.text.y=element_text(size=30, color='white'),
+    axis.ticks.y=element_blank()) +
+    scale_x_continuous(breaks=c(0,.33,.66,1,1.33,1.66,2))
 
-png('figure3-demographicsvsRatingQAPPaper.png', width=16, height=10, units='in', res=300)
+png('figure3-demographicsvsRatingQAPPaper.png', width=16, height=16, units='in', res=300)
 multiplot(bg1, mod1, bg2, mod2, cols=2)
 dev.off()
 
