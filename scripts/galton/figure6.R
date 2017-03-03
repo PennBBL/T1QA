@@ -93,7 +93,7 @@ rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
 
 
 ## Load Library(s)
-install_load('pROC', 'ggplot2', 'caret', 'lme4', 'foreach', 'doParallel')
+install_load('pROC', 'ggplot2', 'caret', 'lme4', 'grid', 'gridExtra')
 
 # Now split data into raw and traning 
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
@@ -163,13 +163,14 @@ roc.train <- roc(trainValues ~ trainOutcome)
 trainPlot <- rocplot.single(trainValues, trainOutcome, title="Training")
 
 # Now we need to append the accuracy of the graph
-trainPlot <- trainPlot + geom_text(data=NULL, x=.695, y=.1, label=paste("AUC        = ", round(auc(roc.train), digits=2)), size=8) + theme(legend.position="none") +
+trainPlot <- trainPlot + geom_text(data=NULL, x=.62, y=.15, label=paste("AUC        =", round(auc(roc.train), digits=2)), size=8) + theme(legend.position="none") +
 theme(legend.justification=c(1,0)) +
 theme(legend.title=element_blank())
 
-trainPlot <- trainPlot + geom_text(data=NULL, x=.5, y=.05, label=paste("Classification Accuracy = ", round(coords(roc.train, 'best', ret='accuracy'), digits=2)), size=8) + theme(legend.position="none") +
+trainPlot <- trainPlot + geom_text(data=NULL, x=.5, y=.05, label=paste("Classification Accuracy = ", round(coords(roc.train, 'best', ret='accuracy'), digits=2), sep=''), size=8) + theme(legend.position="none") +
 theme(legend.justification=c(1,0)) +
-theme(legend.title=element_blank())
+theme(legend.title=element_blank(),
+      axis.title=element_text(color='white'))
 
 # Now get the cut off value for the accuracy calucalation for the valid data
 cutoff <- coords(roc.train, 'best')[1]
@@ -183,16 +184,17 @@ roc.valid <- roc(validValues ~ validOutcome)
 validPlot <- rocplot.single(validValues, validOutcome, title="Validation")
 
 # Now append the AUC and accuracy as previously performed
-validPlot <- validPlot + geom_text(data=NULL, x=.695, y=.1, label=paste("AUC        = ", round(auc(roc.valid), digits=2)),size=8) + theme(legend.position="none") +
+validPlot <- validPlot + geom_text(data=NULL, x=.62, y=.15, label=paste("AUC        =", round(auc(roc.valid), digits=2)),size=8) + theme(legend.position="none") +
 theme(legend.justification=c(1,0)) +
 theme(legend.title=element_blank())
 
-validPlot <- validPlot + geom_text(data=NULL, x=.5, y=.05, label=paste("Classification Accuracy = ", round(coords(roc.valid, cutoff, ret='accuracy'), digits=2)),size=8) + theme(legend.position="none") +
+validPlot <- validPlot + geom_text(data=NULL, x=.5, y=.05, label=paste("Classification Accuracy = ", round(coords(roc.valid, cutoff, ret='accuracy'), digits=2), '0', sep=''),size=8) + theme(legend.position="none") +
 theme(legend.justification=c(1,0)) +
 theme(legend.title=element_blank())
 
 
 png('figure6-monovariateAUC0vsNot0.png', width=21, height=12, units='in', res=300)
-multiplot(aucZerovsNotZeroMonovariate, trainPlot, validPlot, cols=3)
+#multiplot(aucZerovsNotZeroMonovariate, trainPlot, validPlot, cols=3)
+grid.arrange(aucZerovsNotZeroMonovariate, trainPlot, validPlot, ncol = 2, layout_matrix = cbind(c(1,1), c(2,3)))
 dev.off()
 
