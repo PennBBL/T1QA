@@ -85,7 +85,8 @@ rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
       theme_bw() +
       theme(legend.position=c(1,0)) +
       theme(legend.justification=c(1,0)) +
-      theme(legend.title=element_blank())
+      theme(legend.title=element_blank(),
+      text = element_text(size=30))
 
   return(p)
 }
@@ -138,12 +139,12 @@ aucValsMono <- aucVals
 # Now make a bar plot of all of the 0 vs !0 AUC's
 aucZerovsNotZeroMonovariate <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2)) +
   geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
-  theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
-        axis.title.x = element_text(size=36),
-        axis.title.y = element_text(size=36),
+  theme(axis.text.x = element_text(angle=90,hjust=1, size=20), 
+        axis.title.x = element_text(size=30),
+        axis.title.y = element_text(size=30),
         text = element_text(size=30)) +
   coord_cartesian(ylim=c(.6,.95)) +
-  ggtitle("") + 
+  ggtitle("Monovariate AUC Values") + 
   xlab("Image Quality Metrics") +
   ylab("AUC")
 
@@ -162,7 +163,7 @@ roc.train <- roc(trainValues ~ trainOutcome)
 trainPlot <- rocplot.single(trainValues, trainOutcome, title="Training")
 
 # Now we need to append the accuracy of the graph
-trainPlot <- trainPlot + geom_text(data=NULL, x=.775, y=.01, label=paste("AUC        = ", round(auc(roc.train), digits=2)), size=8) + theme(legend.position="none") +
+trainPlot <- trainPlot + geom_text(data=NULL, x=.695, y=.1, label=paste("AUC        = ", round(auc(roc.train), digits=2)), size=8) + theme(legend.position="none") +
 theme(legend.justification=c(1,0)) +
 theme(legend.title=element_blank())
 
@@ -182,7 +183,7 @@ roc.valid <- roc(validValues ~ validOutcome)
 validPlot <- rocplot.single(validValues, validOutcome, title="Validation")
 
 # Now append the AUC and accuracy as previously performed
-validPlot <- validPlot + geom_text(data=NULL, x=.775, y=.01, label=paste("AUC        = ", round(auc(roc.valid), digits=2)),size=8) + theme(legend.position="none") +
+validPlot <- validPlot + geom_text(data=NULL, x=.695, y=.1, label=paste("AUC        = ", round(auc(roc.valid), digits=2)),size=8) + theme(legend.position="none") +
 theme(legend.justification=c(1,0)) +
 theme(legend.title=element_blank())
 
