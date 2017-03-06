@@ -169,7 +169,7 @@ roc.train <- roc(trainValues ~ trainOutcome)
 trainPlot <- rocplot.single(trainValues, trainOutcome, title="Training")
 
 # Now we need to append the accuracy of the graph
-trainPlot <- trainPlot + geom_text(data=NULL, x=.62, y=.15, label=paste("AUC        =", round(auc(roc.train), digits=2)), size=8) + theme(legend.position="none") +
+trainPlot <- trainPlot + geom_text(data=NULL, x=.62, y=.15, label=paste("AUC        = ", round(auc(roc.train), digits=2), '0', sep=''), size=8) + theme(legend.position="none") +
 theme(legend.justification=c(1,0)) +
 theme(legend.title=element_blank())
 
