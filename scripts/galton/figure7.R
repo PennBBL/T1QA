@@ -1,217 +1,274 @@
 # AFGR June 13 2016
-# This script is oging to be used to produce the bivariate AUC 
-# for the 0 vs !0 prediction models
-
-
+# This script is going to be used to plot the p cor between the 1 vs 2 model and our average imaging metrics 
 ## Load the data
-source('/home/adrose/qapQA/scripts/loadGo1Data.R')
+source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 detachAllPackages()
 set.seed(16)
+load('/home/adrose/qapQA/data/1vs28variableModel.RData')
+oneVsTwoModel <- mod8
+rm(mod8)
 
-## Declare any functions
-rocdata <- function(grp, pred){
-  # Produces x and y co-ordinates for ROC curve plot
-  # Arguments: grp - labels classifying subject status
-  #            pred - values of each observation
-  # Output: List with 2 components:
-  #         roc = data.frame with x and y co-ordinates of plot
-  #         stats = data.frame containing: area under ROC curve, p value, upper and lower 95% confidence interval
- 
-  grp <- as.factor(grp)
-  if (length(pred) != length(grp)) {
-    stop("The number of classifiers must match the number of data points")
-  } 
- 
-  if (length(levels(grp)) != 2) {
-    stop("There must only be 2 values for the classifier")
-  }
- 
-  cut <- unique(pred)
-  tp <- sapply(cut, function(x) length(which(pred > x & grp == levels(grp)[2])))
-  fn <- sapply(cut, function(x) length(which(pred < x & grp == levels(grp)[2])))
-  fp <- sapply(cut, function(x) length(which(pred > x & grp == levels(grp)[1])))
-  tn <- sapply(cut, function(x) length(which(pred < x & grp == levels(grp)[1])))
-  tpr <- tp / (tp + fn)
-  fpr <- fp / (fp + tn)
-  roc = data.frame(x = fpr, y = tpr)
-  roc <- roc[order(roc$x, roc$y),]
- 
-  i <- 2:nrow(roc)
-  auc <- (roc$x[i] - roc$x[i - 1]) %*% (roc$y[i] + roc$y[i - 1])/2
- 
-  pos <- pred[grp == levels(grp)[2]]
-  neg <- pred[grp == levels(grp)[1]]
-  q1 <- auc/(2-auc)
-  q2 <- (2*auc^2)/(1+auc)
-  se.auc <- sqrt(((auc * (1 - auc)) + ((length(pos) -1)*(q1 - auc^2)) + ((length(neg) -1)*(q2 - auc^2)))/(length(pos)*length(neg)))
-  ci.upper <- auc + (se.auc * 0.96)
-  ci.lower <- auc - (se.auc * 0.96)
- 
-  se.auc.null <- sqrt((1 + length(pos) + length(neg))/(12*length(pos)*length(neg)))
-  z <- (auc - 0.5)/se.auc.null
-  p <- 2*pnorm(-abs(z))
- 
-  stats <- data.frame (auc = auc,
-                       p.value = p,
-                       ci.upper = ci.upper,
-                       ci.lower = ci.lower
-                       )
- 
-  return (list(roc = roc, stats = stats))
-}
-
-
-rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
-  require(ggplot2)
-  plotdata <- rocdata(grp, pred)
- 
-  if (p.value == TRUE){
-    annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (P=", signif(p.value, 2), ")", sep=""))
-  } else {
-    annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (95%CI ", signif(ci.upper, 2), " - ", signif(ci.lower, 2), ")", sep=""))
-  }
- 
-  p <- ggplot(plotdata$roc, aes(x = x, y = y)) +
-      geom_line(aes(colour = "")) +
-      geom_abline (intercept = 0, slope = 1) +
-      theme_bw() +
-      scale_x_continuous("False Positive Rate (1-Specificity)") +
-      scale_y_continuous("True Positive Rate (Sensitivity)") +
-      scale_colour_manual(labels = annotation, values = "#000000") +
-      ggtitle(title) +
-      theme_bw() + 
-      #theme(axis.title.x = theme_text(face="bold", size=12)) +
-      #theme(axis.title.y = theme_text(face="bold", size=12, angle=90)) +
-      theme(legend.position=c(1,0)) +
-      theme(legend.justification=c(1,0)) +
-      theme(legend.title=element_blank())
-      
-
-     #theme(title = title,
-           #plot.title = theme_text(face="bold", size=14), 
-           #axis.title.x = theme_text(face="bold", size=12),
-           #axis.title.y = theme_text(face="bold", size=12, angle=90),
-           #panel.grid.major = theme_blank(),
-           #panel.grid.minor = theme_blank(),
-           #legend.justification=c(1,0), 
-           #legend.position=c(1,0),
-           #legend.title=theme_blank(),
-           #legend.key = theme_blank()
-           #)
-  return(p)
-}
-
-
+# Now work with the data
 ## Load Library(s)
-install_load('pROC', 'ggplot2', 'caret', 'lme4', 'foreach', 'doParallel')
+source("/home/adrose/adroseHelperScripts/R/afgrHelpFunc.R")
+install_load('caret', 'lme4','BaylorEdPsych', 'mgcv', 'ppcor', 'ggplot2')
 
-# Now split data into raw and traning 
+## Now create the training data set and create the outcomes for all of the training data sets
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
 #folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
 load('/home/adrose/qapQA/data/foldsToUse.RData')
-raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
+raw.lme.data[,3:32] <- scale(raw.lme.data[,3:32], center=T, scale=T)
 index <- unlist(folds[1])
-trainingData <- raw.lme.data[index,]
-validationData <- raw.lme.data[-index,] 
+trainingData <- raw.lme.data#[index,]
+validationData <- raw.lme.data#[-index,]
 
-raw.lme.data <- melt(trainingData, id.vars=names(raw.lme.data)[1:32], measure.vars=names(raw.lme.data)[34:36])
-raw.lme.data$value[raw.lme.data$value > 1] <- 1
+## Now create our outcomes
+# First create our zero vs not zero outcome for everyone 
+trainingData$variable <- rep('ratingNULL', nrow(trainingData))
+# Now lets do our 1 vs 2 model for everyone 
+trainingData$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=trainingData,
+					       allow.new.levels=T, type='response')
 
-# Now run through each variable of interest and build an ROC curve for it
-outcome <- raw.lme.data$value
-qapValNames <- qapValNames[-grep('size', qapValNames)]
-qapValNames <- qapValNames[-grep('mean', qapValNames)]
-qapValNames <- qapValNames[-grep('std', qapValNames)]
-qapValNames <- qapValNames[-grep('fwhm_', qapValNames)]
-qapValNames <- qapValNames[-grep('hm.', qapValNames)]
-qapValNames <- qapValNames[-grep('all.', qapValNames)]
-aucVals <- NULL
-for(qapVal in qapValNames){
-  model <- as.formula(paste("value ~", paste(qapVal), paste("+ (1|variable)")))
-  m1 <- glmer(model, data=raw.lme.data, family="binomial")
-  predictor <- predict(m1, type='response')
-  roc.tmp <- roc(outcome ~ predictor)
-  output <- cbind(qapVal, auc(roc.tmp))
-  aucVals <- rbind(aucVals, output)
+## Now merge our scaled data values with the original data values 
+all.train.data <- merge(mergedQAP, trainingData, by='bblid')
+
+## Now create our age regressed variables 
+tmp <- cbind(all.train.data[,grep('mprage_jlf_ct', names(all.train.data))], all.train.data[,grep('mprage_jlf_vol', names(all.train.data))])
+# Now trim non cortical regions
+tmp <- tmp[,-seq(99,136)]
+meanCT <- NULL
+for(i in seq(1, nrow(tmp))){
+  tmpVal <- weighted.mean(x=tmp[i,1:98], w=tmp[i,99:196])
+  meanCT <- append(meanCT, tmpVal)
 }
+tmp <- read.csv('/home/adrose/qapQA/data/averageGMD.csv')
+all.train.data <- merge(all.train.data, tmp, by=c('bblid', 'scanid'))
+rm(tmp)
+all.train.data$meanVOL <- apply(all.train.data[,2630:2727], 1, sum)
 
-# Now order and find the AUC heirarchy 
-aucVals <- as.data.frame(aucVals)
-aucVals$V2 <- as.numeric(as.character(aucVals$V2))
-aucVals <- aucVals[order(aucVals[,2], decreasing =TRUE),]
-aucValsMono <- aucVals
-# Now make a bar plot of all of the 0 vs !0 AUC's
-aucZerovsNotZeroMonovariate <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2)) +
-  geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
+# Now create our scaled age and age squared values
+all.train.data$age <- scale(all.train.data$ageAtGo1Scan)
+all.train.data$ageSq <- (scale(all.train.data$ageAtGo1Scan))^2
+
+# Now produce our age regressed values 
+all.train.data$meanCTAgeReg <- lm(meanCT ~ age + ageSq + sex, data=all.train.data)$residuals
+all.train.data$meanGMDAgeReg <- lm(meanGMD ~ age + ageSq + sex, data=all.train.data)$residuals
+all.train.data$meanVOLAgeReg <- lm(meanVOL ~ age + ageSq + sex, data=all.train.data)$residuals
+all.train.data$meanFSCtAgeReg <- rep('NA', nrow(all.train.data))
+topindex <- as.numeric(names(lm(bh.meanthickness ~ age + ageSq + sex, data=all.train.data)$residuals))
+all.train.data$meanFSCtAgeReg[topindex] <- as.numeric(lm(bh.meanthickness ~ age + ageSq + sex, data=all.train.data)$residuals)
+all.train.data$meanFSAreaAgeReg <- as.numeric(lm(bh.totalarea ~ age + ageSq + sex, data=all.train.data)$residuals)
+all.train.data$TotalGrayVolAgeReg <- 'NA'
+all.train.data$TotalGrayVolAgeReg[topindex] <- as.numeric(residuals(lm(TotalGrayVol ~ age + ageSq + sex, data=all.train.data)))
+
+# Now do the age regressed quality metrics
+all.train.data$pcaslAgeReg <- residuals(lm(aslEpi10qaMeanrelrms ~ age + ageSq + sex, data=all.train.data, na.action=na.exclude))
+all.train.data$idemoAgeReg <- residuals(lm(idemoEpi10qaMeanrelrms ~ age + ageSq + sex, data=all.train.data, na.action=na.exclude))
+all.train.data$nbackAgeReg <- residuals(lm(nbackEpi10qaMeanrelrms ~ age + ageSq + sex, data=all.train.data, na.action=na.exclude))
+all.train.data$restAgeReg <- residuals(lm(restEpi10qaMeanrelrms ~ age + ageSq + sex, data=all.train.data, na.action=na.exclude))
+all.train.data$oneVsTwoOutcomeAgeReg <- lm(oneVsTwoOutcome ~ age + ageSq + sex, data=all.train.data)$residuals
+all.train.data$averageRatingAgeReg <- lm(averageRating ~ age + ageSq + sex, data=all.train.data)$residuals
+all.train.data$ratingJBAgeReg <- lm(ratingJB.x ~ age + ageSq + sex, data=all.train.data)$residuals
+all.train.data$ratingKSAgeReg <- lm(ratingKS.x ~ age + ageSq + sex, data=all.train.data)$residuals
+all.train.data$ratingLVAgeReg <- lm(ratingLV.x ~ age + ageSq + sex, data=all.train.data)$residuals
+
+
+# Now split into our train and validation data sets
+tmp <- all.train.data
+all.train.data <- tmp[index,]
+all.valid.data <- tmp[-index,]
+rm(tmp)
+
+all.train.data <- all.train.data[which(all.train.data$averageRating.x != 0),]
+attach(all.train.data)
+# Lets do the training data first
+meanValsAgeRegAverageRating <- cbind(cor(meanCTAgeReg, averageRatingAgeReg, method='spearman'),
+                                       cor(meanGMDAgeReg, averageRatingAgeReg, method='spearman'),
+                                       cor(meanVOLAgeReg, averageRatingAgeReg, method='spearman'),
+                                       cor(as.numeric(meanFSCtAgeReg), averageRatingAgeReg, method='spearman'),
+                                       cor(as.numeric(TotalGrayVolAgeReg), averageRatingAgeReg, method='spearman'))
+
+meanValsAgeRegOneVsTwo <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                       cor(meanGMDAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                       cor(meanVOLAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                       cor(as.numeric(meanFSCtAgeReg), oneVsTwoOutcomeAgeReg, method='spearman'),
+                                       cor(as.numeric(TotalGrayVolAgeReg), oneVsTwoOutcomeAgeReg, method='spearman'))
+
+meanValsAgeRegAverageRatingPVal <- cbind(cor.test(meanCTAgeReg, averageRatingAgeReg, method='spearman')$p.value,
+                                       cor.test(meanGMDAgeReg, averageRatingAgeReg, method='spearman')$p.value,
+                                       cor.test(meanVOLAgeReg, averageRatingAgeReg, method='spearman')$p.value,
+                                       cor.test(as.numeric(meanFSCtAgeReg), averageRatingAgeReg, method='spearman')$p.value,
+                                       cor.test(as.numeric(TotalGrayVolAgeReg), averageRatingAgeReg, method='spearman')$p.value)
+
+meanValsAgeRegOneVsTwoPVal <- cbind(cor.test(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method='spearman')$p.value,
+                                       cor.test(meanGMDAgeReg, oneVsTwoOutcomeAgeReg, method='spearman')$p.value,
+                                       cor.test(meanVOLAgeReg, oneVsTwoOutcomeAgeReg, method='spearman')$p.value,
+                                       cor.test(as.numeric(meanFSCtAgeReg), oneVsTwoOutcomeAgeReg, method='spearman')$p.value,
+                                       cor.test(as.numeric(TotalGrayVolAgeReg), oneVsTwoOutcomeAgeReg, method='spearman')$p.value)
+
+detach(all.train.data)
+# Now run through the validation data cor values
+all.valid.data <- all.valid.data[which(all.valid.data$averageRating.x!=0),]
+attach(all.valid.data)
+
+meanValsAgeRegAverageRatingValid <- cbind(cor(meanCTAgeReg, averageRatingAgeReg, method='spearman'),
+                                          cor(meanGMDAgeReg, averageRatingAgeReg, method='spearman'),
+                                          cor(meanVOLAgeReg, averageRatingAgeReg, method='spearman'),
+                                          cor(as.numeric(meanFSCtAgeReg), averageRatingAgeReg, method='spearman'),
+                                          cor(as.numeric(TotalGrayVolAgeReg), averageRatingAgeReg, method='spearman'))
+
+meanValsAgeRegOneVsTwoValid <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                          cor(meanGMDAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                          cor(meanVOLAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                          cor(as.numeric(meanFSCtAgeReg), oneVsTwoOutcomeAgeReg, method='spearman'),
+                                          cor(as.numeric(TotalGrayVolAgeReg), oneVsTwoOutcomeAgeReg, method='spearman'))
+
+meanValsAgeRegAverageRatingPValValid <- cbind(cor.test(meanCTAgeReg, averageRatingAgeReg, method='spearman')$p.value,
+                                       cor.test(meanGMDAgeReg, averageRatingAgeReg, method='spearman')$p.value,
+                                       cor.test(meanVOLAgeReg, averageRatingAgeReg, method='spearman')$p.value,
+                                       cor.test(as.numeric(meanFSCtAgeReg), averageRatingAgeReg, method='spearman')$p.value,
+                                       cor.test(as.numeric(TotalGrayVolAgeReg), averageRatingAgeReg, method='spearman')$p.value)
+
+meanValsAgeRegOneVsTwoPValValid <- cbind(cor.test(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method='spearman')$p.value,
+                                       cor.test(meanGMDAgeReg, oneVsTwoOutcomeAgeReg, method='spearman')$p.value,
+                                       cor.test(meanVOLAgeReg, oneVsTwoOutcomeAgeReg, method='spearman')$p.value,
+                                       cor.test(as.numeric(meanFSCtAgeReg), oneVsTwoOutcomeAgeReg, method='spearman')$p.value,
+                                       cor.test(as.numeric(TotalGrayVolAgeReg), oneVsTwoOutcomeAgeReg, method='spearman')$p.value)
+detach(all.valid.data)
+
+# Now prepare our values to graph
+trainData <- rbind(meanValsAgeRegAverageRating, meanValsAgeRegOneVsTwo)
+trainDataSig <- rbind(meanValsAgeRegAverageRatingPVal, meanValsAgeRegOneVsTwoPVal)
+colnames(trainData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol', 'FS CT', 'FS Vol')
+colnames(trainDataSig) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol', 'FS CT', 'FS Vol')
+rownames(trainData) <- c('Average Rating', 'Quantification Model')
+rownames(trainDataSig) <- c('Average Rating PVal', 'Quantification Model PVal')
+trainData <- melt(trainData)
+trainDataSig <- melt(trainDataSig)
+trainData$Var3 <- rep('Training', nrow(trainData))
+trainDataSig$Var3 <- rep('Training', nrow(trainDataSig))
+# Now add a fourth variable to denote signifiacne to train data
+trainData$Var4 <- ''
+trainData$Var4[which(trainDataSig$value<.05)] <- '*'
+trainData$Var4[which(trainDataSig$value<.01)] <- '**'
+trainData$Var4[which(trainDataSig$value<.001)] <- '***'
+
+validData <- rbind(meanValsAgeRegAverageRating, meanValsAgeRegOneVsTwo)
+validDataSig <- rbind(meanValsAgeRegAverageRatingPVal, meanValsAgeRegOneVsTwoPVal)
+colnames(validData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol', 'FS CT', 'FS Vol')
+colnames(validDataSig) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol', 'FS CT', 'FS Vol')
+rownames(validData) <- c('Average Rating', 'Quantification Model')
+rownames(validDataSig) <- c('Average Rating PVal', 'Quantification Model PVal')
+validData <- melt(validData)
+validDataSig <- melt(validDataSig)
+validData$Var3 <- rep('Validation', nrow(validData))
+validDataSig$Var3 <- rep('Validation', nrow(validDataSig))
+# Now add a fourth variable to denote signifiacne to our valid data
+validData$Var4 <- ''
+validData$Var4[which(validDataSig$value<.05)] <- '*'
+validData$Var4[which(validDataSig$value<.01)] <- '**'
+validData$Var4[which(validDataSig$value<.001)] <- '***'
+
+allData <- as.data.frame(rbind(trainData, validData))
+allData$Var1 <- as.factor(allData$Var1)
+allData$Var2 <- as.factor(allData$Var2)
+allData$value <- as.numeric(as.character(allData$value))
+allData$Var3 <- as.factor(allData$Var3)
+allData$Var2 <- factor(allData$Var2, levels=c('ANTs CT','FS Vol', 'ANTs Vol', 'FS CT', 'ANTs GMD'))
+
+
+# Now graph our data
+thing1 <- ggplot(allData, aes(x=Var2, y=value, color=Var2, fill=Var1,label=Var4)) +
+  geom_bar(stat='identity', position=position_dodge(), color='black', size=.1) +
+  geom_text(aes(y=value+.02), color='black', size=10, angle=90, position=position_dodge(1), vjust=0) + 
+  theme(legend.position="right") +
+  labs(title='', x='Structural Imaging Metric', y='Correlation Between \nQuality Measure and Imaging Metric') +
   theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
         axis.title.x = element_text(size=36),
         axis.title.y = element_text(size=36),
-        text = element_text(size=30)) +
-  coord_cartesian(ylim=c(.6,.95)) +
-  ggtitle("") + 
-  xlab("QAP Variables") +
-  ylab("AUC")
+        text = element_text(size=30),
+        legend.text = element_text(size=20)) +
+  facet_grid(. ~ Var3, space="free_x") +
+  guides(fill = guide_legend(title = "Quality Measure"))
+
+png('figure7-partialCorBtn1vs2andAvgRating-withFS.png', width=18, height=12, units='in', res=300)
+thing1
+dev.off()
+
+## Now comapre individual raters down here
+attach(all.train.data)
+# Lets do the training data first
+meanValsAgeRegJBRating <- cbind(cor(meanCTAgeReg, ratingJBAgeReg, method='spearman'),
+                                       cor(meanGMDAgeReg, ratingJBAgeReg , method='spearman'),
+                                       cor(meanVOLAgeReg, ratingJBAgeReg , method='spearman'))
+
+meanValsAgeRegKSRating <- cbind(cor(meanCTAgeReg, ratingKSAgeReg , method='spearman'),
+                                       cor(meanGMDAgeReg, ratingKSAgeReg, method='spearman'),
+                                       cor(meanVOLAgeReg, ratingKSAgeReg , method='spearman'))
+
+meanValsAgeRegLVRating <- cbind(cor(meanCTAgeReg, ratingLVAgeReg, method='spearman'),
+                                       cor(meanGMDAgeReg, ratingLVAgeReg, method='spearman'),
+                                       cor(meanVOLAgeReg, ratingLVAgeReg, method='spearman'))
+
+meanValsAgeRegOneVsTwo <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                       cor(meanGMDAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                       cor(meanVOLAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'))
+detach(all.train.data)
 
 
-# Now order the varaibles based on AUC
-reorderedVals <- reorder(aucVals$qapVal, aucVals$V2)
-aucNamesOrder <- reorderedVals[1:length(reorderedVals)]
+attach(all.valid.data)
+# Now valid data
+meanValsAgeRegJBRatingValid <- cbind(cor(meanCTAgeReg, ratingJBAgeReg, method='spearman'),
+                                       cor(meanGMDAgeReg, ratingJBAgeReg , method='spearman'),
+                                       cor(meanVOLAgeReg, ratingJBAgeReg , method='spearman'))
 
-aucVals <- NULL
-# Now do the bivariate addition
-for(qapVal in aucNamesOrder[2:length(aucNamesOrder)]){
-  model <- as.formula(paste("value ~", paste(aucNamesOrder[1], qapVal, sep='+'), paste("+ (1|variable)")))
-  m1 <- glmer(model, data=raw.lme.data, family="binomial")
-  predictor <- predict(m1)
-  roc.tmp <- roc(outcome ~ predictor)
-  output <- cbind(qapVal, paste(aucNamesOrder[1], qapVal, sep='+'), auc(roc.tmp))
-  aucVals <- rbind(aucVals, output)
-}
+meanValsAgeRegKSRatingValid <- cbind(cor(meanCTAgeReg, ratingKSAgeReg , method='spearman'),
+                                       cor(meanGMDAgeReg, ratingKSAgeReg, method='spearman'),
+                                       cor(meanVOLAgeReg, ratingKSAgeReg , method='spearman'))
 
-aucVals[, 2] <- c("BG Kurtosis + WM kurtosis", "BG Kurtosis + WM Skewness", 
- "BG Kurtosis + GM Skewness", "BG Kurtosis + BG Skewness", 
- "BG Kurtosis + QI1", "BG Kurtosis + CSF Kurtosis", "BG Kurtosis + CSF Skewness", 
- "BG Kurtosis + FBER", "BG Kurtosis + CNR", "BG Kurtosis + FWHM", 
- "BG Kurtosis + SNR", "BG Kurtosis + GM Kurtosis", "BG Kurtosis + EFC")
+meanValsAgeRegLVRatingValid <- cbind(cor(meanCTAgeReg, ratingLVAgeReg, method='spearman'),
+                                       cor(meanGMDAgeReg, ratingLVAgeReg, method='spearman'),
+                                       cor(meanVOLAgeReg, ratingLVAgeReg, method='spearman'))
 
-# Now plot them based on order
-aucVals <- as.data.frame(aucVals)
-aucVals$V3 <- as.numeric(as.character(aucVals$V3))
-aucVals <- aucVals[order(aucVals[,3], decreasing =TRUE),]
-aucValsBi <- aucVals
+meanValsAgeRegOneVsTwoValid <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                       cor(meanGMDAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
+                                       cor(meanVOLAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'))
+detach(all.valid.data)
 
-# Now find where we lose signifiacnt gains in our auc
-static.formula <- as.formula("value ~ bg.kurtosis + (1|variable)")
-best.model <- glmer(static.formula, data = raw.lme.data, family = "binomial")
-predictor <- predict(best.model)
-roc.best <- roc(outcome ~ predictor)
-for (i in aucVals$qapVal) {
-  tmp.form <- as.formula(paste("value ~bg.kurtosis +", paste(i), 
-  paste("+ (1|variable)")))
-  tmp.model <- glmer(tmp.form, data = raw.lme.data, family = "binomial")
-  predictor <- predict(tmp.model)
-  roc.tmp <- roc(outcome ~ predictor)
-  roc.p.val <- roc.test(roc.best, roc.tmp, alternative = "less")$p.value 
-  print(tmp.form)
-  print(roc.p.val)
-}
+# Now prepare our values to graph
+trainData <- rbind(meanValsAgeRegJBRating, meanValsAgeRegKSRating, meanValsAgeRegLVRating, meanValsAgeRegOneVsTwo)
+colnames(trainData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol')
+rownames(trainData) <- c('Rater 1', 'Rater 2', 'Rater 3', '1 vs 2 Model')
+trainData <- melt(trainData)
+trainData$Var3 <- rep('Training', nrow(trainData))
 
-# Now make a bar plot of all of the 0 vs !0 AUC's
-aucZerovsNotZeroBivariate <- ggplot(aucVals, aes(x=reorder(V2, -V3), y=V3)) +
-  geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
+validData <- rbind(meanValsAgeRegJBRatingValid, meanValsAgeRegKSRatingValid, meanValsAgeRegLVRatingValid, meanValsAgeRegOneVsTwoValid)
+colnames(validData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol')
+rownames(validData) <- c('Rater 1', 'Rater 2', 'Rater 3', '1 vs 2 Model')
+validData <- melt(validData)
+validData$Var3 <- rep('Validation', nrow(validData))
+
+allData <- as.data.frame(rbind(trainData, validData))
+allData$Var1 <- as.factor(allData$Var1)
+allData$Var2 <- as.factor(allData$Var2)
+allData$value <- as.numeric(as.character(allData$value))
+allData$Var3 <- as.factor(allData$Var3)
+allData$Var2 <- factor(allData$Var2, levels=c('ANTs CT','ANTs Vol', 'ANTs GMD'))
+
+thing1 <- ggplot(allData, aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1)) +
+  geom_bar(stat='identity', position=position_dodge(), size=.1, colour="black") +
+  theme(legend.position="right") +
+  labs(title='', x='Structural Imaging Metric', y='Correlation Between \nQuality Measure and Imaging Metric') +
   theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
         axis.title.x = element_text(size=36),
         axis.title.y = element_text(size=36),
-        text = element_text(size=30)) +
-  coord_cartesian(ylim=c(.8,1)) +
-  geom_hline(aes(yintercept=.87),linetype="longdash", colour="black", size=0.5) + 
-  ggtitle("") + 
-  xlab("Image Quality Metrics") +
-  ylab("AUC")
+        text = element_text(size=30),
+        legend.text = element_text(size=20)) +
+  facet_grid(. ~ Var3, space="free_x") +
+  guides(fill = guide_legend(title = "Quality Measure"))
 
-# Now print the bar graph
-png('figure7-bivariateAUC0vsNot0s.png', height=16, width=12, units='in', res=300)
-aucZerovsNotZeroBivariate
+png('supp-partialCorBtn1vs2andIndividualRating.png', width=18, height=12, units='in', res=300)
+thing1
 dev.off()
