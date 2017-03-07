@@ -78,8 +78,8 @@ rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
       geom_line(aes(colour = ""), size=3) +
       geom_abline (intercept = 0, slope = 1) +
       theme_bw() +
-      scale_x_continuous("False Positive Rate (1-Specificity)") +
-      scale_y_continuous("True Positive Rate (Sensitivity)") +
+      scale_x_continuous("1-Specificity") +
+      scale_y_continuous("Sensitivity") +
       scale_colour_manual(labels = annotation, values = "#000000") +
       ggtitle(title) +
       theme_bw() +
@@ -129,24 +129,27 @@ for(qapVal in qapValNames){
 
 aucVals[, 1] <- c("CNR", "EFC", "FBER", "FWHM", "QI1", "SNR", 
  "CSF Kurtosis", "CSF Skewness", "GM Kurtosis", "GM Skewness", 
- "WM Kurtosis", "WM Skewness", "BG Kurtosis*", "BG Skewness*")
+ "WM Kurtosis", "WM Skewness", "BG Kurtosis", "BG Skewness")
 
 # Now order and find the AUC heirarchy 
 aucVals <- as.data.frame(aucVals)
 aucVals$V2 <- as.numeric(as.character(aucVals$V2))
 aucVals <- aucVals[order(aucVals[,2], decreasing =TRUE),]
-aucValsMono <- aucVals
+aucVals <- cbind(aucVals, c('*', '', '', '', '*', '', '', '', '', '', '', '', '', ''))
+colnames(aucVals)[3] <- 'Model'
+
 # Now make a bar plot of all of the 0 vs !0 AUC's
-aucZerovsNotZeroMonovariate <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2)) +
+aucZerovsNotZeroMonovariate <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2, label=Model)) +
   geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
   theme(axis.text.x = element_text(angle=90,hjust=1, size=20), 
         axis.title.x = element_text(size=30),
         axis.title.y = element_text(size=30),
         text = element_text(size=30)) +
   coord_cartesian(ylim=c(.6,.95)) +
-  ggtitle("Monovariate AUC Values") + 
+  ggtitle("Mass-univariate AUC Values") + 
   xlab("Image Quality Metrics") +
-  ylab("AUC")
+  ylab("AUC") + 
+  geom_text(aes(y=.9), size=10)
 
 # Now prep our individual data sets
 all.train.data <- merge(trainingData, manualQAData, by='bblid')
@@ -163,14 +166,14 @@ roc.train <- roc(trainValues ~ trainOutcome)
 trainPlot <- rocplot.single(trainValues, trainOutcome, title="Training")
 
 # Now we need to append the accuracy of the graph
-trainPlot <- trainPlot + geom_text(data=NULL, x=.62, y=.15, label=paste("AUC        =", round(auc(roc.train), digits=2)), size=8) + theme(legend.position="none") +
-theme(legend.justification=c(1,0)) +
-theme(legend.title=element_blank())
-
-trainPlot <- trainPlot + geom_text(data=NULL, x=.5, y=.05, label=paste("Classification Accuracy = ", round(coords(roc.train, 'best', ret='accuracy'), digits=2), sep=''), size=8) + theme(legend.position="none") +
+trainText1 <- paste("Classification Accuracy = ", round(coords(roc.train, 'best', ret='accuracy'), digits=2))
+trainText2 <- paste("AUC =  ", round(auc(roc.train), digits=2), sep='')
+trainText <- c(trainText1, trainText2)
+trainPlot <- trainPlot  + theme(legend.position="none") + 
 theme(legend.justification=c(1,0)) +
 theme(legend.title=element_blank(),
-      axis.title=element_text(color='white'))
+axis.title=element_text(color='white')) + 
+annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=trainText, vjust=c(-1,-2.2), hjust="inward", size=8) 
 
 # Now get the cut off value for the accuracy calucalation for the valid data
 cutoff <- coords(roc.train, 'best')[1]
@@ -184,17 +187,17 @@ roc.valid <- roc(validValues ~ validOutcome)
 validPlot <- rocplot.single(validValues, validOutcome, title="Validation")
 
 # Now append the AUC and accuracy as previously performed
-validPlot <- validPlot + geom_text(data=NULL, x=.62, y=.15, label=paste("AUC        =", round(auc(roc.valid), digits=2)),size=8) + theme(legend.position="none") +
+validText1 <- paste("Classification Accuracy = ", round(coords(roc.valid, cutoff, ret='accuracy'), digits=2), '0', sep='')
+validText2 <- paste("AUC = ", round(auc(roc.valid), digits=2))
+validText <- c(validText1, validText2)
+validPlot <- validPlot  + theme(legend.position="none") +
 theme(legend.justification=c(1,0)) +
-theme(legend.title=element_blank())
-
-validPlot <- validPlot + geom_text(data=NULL, x=.5, y=.05, label=paste("Classification Accuracy = ", round(coords(roc.valid, cutoff, ret='accuracy'), digits=2), '0', sep=''),size=8) + theme(legend.position="none") +
-theme(legend.justification=c(1,0)) +
-theme(legend.title=element_blank())
+theme(legend.title=element_blank()) + 
+annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=validText, vjust=c(-1,-2.2), hjust="inward", size=8)
 
 
-png('figure6-monovariateAUC0vsNot0.png', width=21, height=12, units='in', res=300)
+png('figure5-monovariateAUC0vsNot0.png', width=21, height=12, units='in', res=300)
 #multiplot(aucZerovsNotZeroMonovariate, trainPlot, validPlot, cols=3)
-grid.arrange(aucZerovsNotZeroMonovariate, trainPlot, validPlot, ncol = 2, layout_matrix = cbind(c(1,1), c(2,3)))
+grid.arrange(aucZerovsNotZeroMonovariate, trainPlot, validPlot, ncol = 3, layout_matrix = cbind(c(1,1),c(1,1), c(2,3)))
 dev.off()
 
