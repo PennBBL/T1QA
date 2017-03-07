@@ -303,3 +303,22 @@ png('foo.png')
 foo
 dev.off()
 
+# Now run a repeated effects anova down here
+raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
+raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
+raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
+#folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+load('/home/adrose/qapQA/data/foldsToUse.RData')
+raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
+index <- unlist(folds[1])
+trainingData <- raw.lme.data[index,]
+validationData <- raw.lme.data[-index,] 
+
+raw.lme.data.train <- melt(trainingData, id.vars=names(raw.lme.data)[1:32], measure.vars=names(raw.lme.data)[34:36])
+raw.lme.data.valid <- melt(validationData, id.vars=names(raw.lme.data)[1:32], measure.vars=names(raw.lme.data)[34:36])
+
+# Now run the repated effects AOV's
+aov.train <- aov(value ~ variable, data=raw.lme.data.train)
+aov.valid <- aov(value ~ variable, data=raw.lme.data.valid)
+
+
