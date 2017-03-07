@@ -132,7 +132,9 @@ coord_equal()
 
 # Now we need to create our bar graphs
 dataQaDfTrain <- as.data.frame(table(round(all.train.data$rawAverageRating.x, digits=2)))
-trainBG <- ggplot(dataQaDfTrain, aes(x=Var1, y=Freq, fill=Var1)) +
+dataQaDfTrain <- cbind(dataQaDfTrain, c(0,0,0,1,1.33,1.67,2))
+colnames(dataQaDfTrain)[3] <- 'color'
+trainBG <- ggplot(dataQaDfTrain, aes(x=Var1, y=Freq, fill=factor(color))) +
 geom_bar(stat='identity') +
 labs(title='Distribution of Manual Quality Ratings', x='', y='Training') +
 geom_text(data=dataQaDfTrain,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
@@ -143,12 +145,13 @@ axis.text.y=element_text(size=30),
 axis.title.y=element_text(size=40, angle=90),
 axis.title.x=element_text(size=30),
 plot.title=element_text(size=40)) +
-scale_fill_grey() +
 scale_y_continuous(limits=c(0,1000), breaks=round(seq(0, 1000, 200), digits=2))
 
 # Now do the validation data
 dataQaDfValid <- as.data.frame(table(round(all.valid.data$rawAverageRating.x, digits=2)))
-validBG <- ggplot(dataQaDfValid, aes(x=Var1, y=Freq, fill=Var1)) +
+dataQaDfValid <- cbind(dataQaDfValid, c(0,0,0,1,1.33,1.67,2))
+colnames(dataQaDfValid)[3] <- 'color'
+validBG <- ggplot(dataQaDfValid, aes(x=Var1, y=Freq, fill=factor(color))) +
 geom_bar(stat='identity') +
 labs(title='', x='Manual Quality Rating (mean value)', y='Validation') +
 geom_text(data=dataQaDfValid,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
@@ -159,7 +162,6 @@ axis.text.y=element_text(size=30),
 axis.title.x=element_text(size=30),
 axis.title.y=element_text(size=40, angle=90),
 plot.title=element_text(size=40)) +
-scale_fill_grey() +
 scale_y_continuous(limits=c(0,500), breaks=round(seq(0, 500, 100), digits=2))
 
 
@@ -219,6 +221,7 @@ validValueDone <- trainValue
 
 
 # Now create our cor matrices plots
+my_y_title <- expression(paste("Polychoric ", italic("r")))
 trainDataPoly <- melt(trainValueDone)
 trainCorPoly <- ggplot(data = trainDataPoly, aes(x=Var1, y=Var2, fill=value)) +
 geom_tile() +
@@ -241,7 +244,7 @@ axis.text.y=element_text(size=30, color='white')) +
 guides(fill = guide_colorbar(barwidth = 7, barheight = 1,
 title.position = "top", title.hjust = 0.5)) +
 theme(legend.position="none") + 
-labs(title="Polychoric r") + 
+labs(title=my_y_title) + 
 coord_equal()
 
 validDataPoly <- melt(validValueDone)
@@ -264,7 +267,7 @@ plot.title=element_text(size=40, color='white'),
 axis.text.x=element_text(size=30, angle=90),
 axis.text.y=element_text(size=30, color='white')) +
 theme(legend.position="none") + 
-labs(title="Polychoric r") + 
+labs(title=my_y_title) + 
 coord_equal()
 
 foo <- ggplot(data = validDataPoly, aes(x=Var1, y=Var2, fill=value)) +
