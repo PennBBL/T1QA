@@ -11,9 +11,15 @@ load('/home/adrose/qapQA/data/1vs28variableModel.RData')
 oneVsTwoModel <- mod8
 rm(mod8)
 
+## Create a function to get our ggplot2 colors
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+graph.colors <- gg_color_hue(5)
 
 ## Now load the library(s)
-install_load('caret', 'ggplot2')
+install_load('caret', 'ggplot2', 'scales')
 
 # Now load the models
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
@@ -105,9 +111,19 @@ trainMotion <- ggplot(motionValues, aes(x=.id, y=mean, fill=.id)) +
     width = .2, position=position_dodge(.9)) +
     theme_bw() +
     theme(legend.position="none") +
-    labs(title='', x='Time from T1 Scan (min:sec)', y='Mean Relative Displacement (mm)') +
-    coord_cartesian(ylim=c(.1,.15,.2)) +
-    theme(text=element_text(size=20), axis.text.x = element_text(angle = 0))
+    labs(title='Training', x='Time from T1 Scan (min:sec)', y='Mean Relative Displacement (mm)') +
+    coord_cartesian(ylim=c(.1,.2)) +
+    theme(text=element_text(size=20), 
+    axis.text.x = element_text(angle = 0),
+    axis.text.y=element_text(size=20),
+    title=element_text(size=30),
+    axis.title.x=element_text(size=20)) + 
+    scale_fill_manual(name=".id", values=c("PCASL (2:46)"="#F8766D", 
+				    "tfMRI 1 (14:51)"="#A3A500",
+				    "tfMRI 2 (20:19)"="#00BF7D",
+				    "rsfMRI (43:01)"="#00B0F6")) +
+    scale_y_continuous(limits=c(.1, .2), breaks=round(seq(.1, .2, .05), digits=2), oob=rescale_none)
+
 
 # Now do the validation data
 
@@ -131,10 +147,20 @@ validMotion <- ggplot(motionValues, aes(x=.id, y=mean, fill=.id)) +
     width = .2, position=position_dodge(.9)) +
     theme_bw() +
     theme(legend.position="none") +
-    labs(title='', x='Time from T1 Scan (min:sec)', y='Mean Relative Displacement (mm)') +
+    labs(title='Validation', x='Time from T1 Scan (min:sec)', y='Mean Relative Displacement (mm)') +
     coord_cartesian(ylim=c(.1,.15,.2)) +
     theme(text=element_text(size=20), axis.text.x = element_text(angle = 0),
-    axis.title.y=element_text(color="white"))
+    axis.title.y=element_text(color="white", size=20),
+    axis.text.y=element_text(size=20, color="white"), 
+    axis.ticks.y=element_blank(),
+    axis.text.y=element_text(color="white"),
+    title=element_text(size=30),
+    axis.title.x=element_text(size=20)) + 
+    scale_fill_manual(name=".id", values=c("PCASL (2:46)"="#F8766D", 
+				    "tfMRI 1 (14:51)"="#A3A500",
+				    "tfMRI 2 (20:19)"="#00BF7D",
+				    "rsfMRI (43:01)"="#00B0F6")) +
+    scale_y_continuous(limits=c(.1, .2), breaks=round(seq(.1, .2, .05), digits=2), oob=rescale_none)
 
 # Now prepare all of the corellation figures down here
 all.train.data <- all.data.freeze[index,]
@@ -253,13 +279,13 @@ detach(all.valid.data)
 # Now prepare our values to graph
 trainData <- rbind(meanValsAgeRegPcaslT, meanValsAgeRegIdemoT, meanValsAgeRegNbackT, meanValsAgeRegRestT, meanValsAgeRegOneVsTwoT)
 colnames(trainData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol', 'FS CT', 'FS Area', 'FS Vol')
-rownames(trainData) <- c('PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI', '1 vs 2 Model')
+rownames(trainData) <- c('PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI', 'Quantification Model')
 trainData <- melt(trainData)
 trainData$Var3 <- rep('Training', nrow(trainData))
 
 validData <- rbind(meanValsAgeRegPcaslV, meanValsAgeRegIdemoV, meanValsAgeRegNbackV, meanValsAgeRegRestV, meanValsAgeRegOneVsTwoV)
 colnames(validData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol', 'FS CT', 'FS Area', 'FS Vol')
-rownames(validData) <- c('PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI', '1 vs 2 Model')
+rownames(validData) <- c('PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI', 'Quantification Model')
 validData <- melt(validData)
 validData$Var3 <- rep('Validation', nrow(validData))
 
@@ -267,38 +293,51 @@ validData$Var3 <- rep('Validation', nrow(validData))
 
 # Now combine all of our data
 allData <- as.data.frame(rbind(trainData, validData))
-allData$Var1 <- factor(allData$Var1, levels=c('PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI', '1 vs 2 Model'))
+allData$Var1 <- factor(allData$Var1, levels=c('PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI', 'Quantification Model'))
 allData$Var2 <- factor(allData$Var2, levels=c('FS CT', 'ANTs CT', 'FS Vol', 'ANTs Vol', 'ANTs GMD', 'FS Area'))
 allData$value <- abs(as.numeric(as.character(allData$value)))
-allData$value[which(allData$Var2=='ANTs Vol' & allData$Var1=='1 vs 2 Model')] <- allData$value[which(allData$Var2=='ANTs Vol' & allData$Var1=='1 vs 2 Model')] * -1
+allData$value[which(allData$Var2=='ANTs Vol' & allData$Var1=='Quantification Model')] <- allData$value[which(allData$Var2=='ANTs Vol' & allData$Var1=='Quantification Model')] * -1
 allData$Var3 <- as.factor(allData$Var3)
 allData <- allData[-grep('FS', allData$Var2),]
+allData$Var2 <- factor(allData$Var2, levels=c('ANTs CT','FS CT', 'ANTs Vol', 'FS Vol', 'ANTs GMD'))
 
 # Now plot it 
 thing1 <- ggplot(allData[which(allData$Var3=='Training'),], aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1)) +
   geom_bar(stat='identity', position=position_dodge(), size=.1, colour="black") +
   theme(legend.position="right") +
-  labs(title='', x='Structural Imaging Metric', y='Correlation Between \nQuality Measure and Imaging Metric') +
-  theme(text = element_text(size=30),
-        axis.text.x = element_text(angle=90,hjust=1, size=28), 
-        axis.title.x = element_text(size=36),
-        axis.title.y = element_text(size=28),
-        legend.text = element_text(size=20)) +
+  labs(title='', x='Structural Imaging Metric', y='Motion Estimate and Imaging Metric Correlation') +
+  theme_bw() +
+  theme(text = element_text(size=20),
+        axis.text.x = element_text(angle=90,hjust=1, size=20), 
+        axis.title.x = element_text(size=20),
+        axis.title.y = element_text(size=20),
+        axis.text.y = element_text(size=20),
+        legend.text = element_text(size=20),
+        legend.position="none") +
   guides(fill = guide_legend(title = "Quality Measure"))
 
 thing2 <- ggplot(allData[which(allData$Var3=='Validation'),], aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1)) +
   geom_bar(stat='identity', position=position_dodge(), size=.1, colour="black") +
   theme(legend.position="right") +
-  labs(title='', x='Structural Imaging Metric', y='Correlation Between \nQuality Measure and Imaging Metric') +
-  theme(text = element_text(size=30),
-        axis.text.x = element_text(angle=90,hjust=1, size=28), 
-        axis.title.x = element_text(size=36),
-        axis.title.y = element_text(size=28),
-        legend.text = element_text(size=20)) +
-  guides(fill = guide_legend(title = "Quality Measure")) 
+  labs(title='', x='Structural Imaging Metric', y='Motion Estimate and Imaging Metric Correlation') +
+  theme_bw() +
+  theme(text = element_text(size=20),
+        axis.text.x = element_text(angle=90,hjust=1, size=20), 
+        axis.title.x = element_text(size=20),
+        axis.title.y = element_text(size=20, color='white'),
+        axis.text.y = element_text(color='white', size=20),
+        legend.text = element_text(size=20),
+        legend.position="none", 
+        axis.ticks.y=element_blank()) +
+  guides(fill = guide_legend(title = "Quality Measure")) + 
+    scale_fill_manual(name="Var1", values=c("PCASL"="#F8766D", 
+				    "tfMRI 1"="#A3A500",
+				    "tfMRI 2"="#00BF7D",
+				    "rsfMRI"="#00B0F6",
+				    "Quantification Model" = "#E76BF3"))
 
 
 # Now plot our data
-png('figure15-motionCorPlots.png', height=18, width=18, units='in', res=300)
+png('figure10-motionCorPlots.png', height=20, width=20, units='in', res=300)
 multiplot(trainMotion, thing1, validMotion, thing2, cols=2)
 dev.off()
