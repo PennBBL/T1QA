@@ -146,7 +146,7 @@ aucZerovsNotZeroMonovariate <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2,
         axis.title.y = element_text(size=30),
         text = element_text(size=30)) +
   coord_cartesian(ylim=c(.6,.95)) +
-  ggtitle("Mass-univariate AUC Values") + 
+  ggtitle("Inclusion Model Feature Selection") + 
   xlab("Image Quality Metrics") +
   ylab("AUC") + 
   geom_text(aes(y=.9), size=10)
@@ -172,7 +172,7 @@ trainText <- c(trainText1, trainText2)
 trainPlot <- trainPlot  + theme(legend.position="none") + 
 theme(legend.justification=c(1,0)) +
 theme(legend.title=element_blank(),
-axis.title=element_text(color='white')) + 
+axis.title.x=element_text(color='white')) + 
 annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=trainText, vjust=c(-1,-2.2), hjust="inward", size=8) 
 
 # Now get the cut off value for the accuracy calucalation for the valid data
@@ -187,7 +187,7 @@ roc.valid <- roc(validValues ~ validOutcome)
 validPlot <- rocplot.single(validValues, validOutcome, title="Validation")
 
 # Now append the AUC and accuracy as previously performed
-validText1 <- paste("Classification Accuracy = ", round(coords(roc.valid, cutoff, ret='accuracy'), digits=2), '0', sep='')
+validText1 <- paste("Classification Accuracy =  ", round(coords(roc.valid, cutoff, ret='accuracy'), digits=2), '0', sep='')
 validText2 <- paste("AUC = ", round(auc(roc.valid), digits=2))
 validText <- c(validText1, validText2)
 validPlot <- validPlot  + theme(legend.position="none") +

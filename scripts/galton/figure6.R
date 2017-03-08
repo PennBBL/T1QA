@@ -150,7 +150,7 @@ axis.title.x = element_text(size=30),
 axis.title.y = element_text(size=30),
 text = element_text(size=30)) +
 coord_cartesian(ylim=c(.65,.725)) +
-ggtitle("Mass-univariate AUC Values") +
+ggtitle("Quantification Model Feature Selection") +
 xlab("Image Quality Metrics") +
 ylab("AUC") + 
 geom_text(aes(y=.71), size=10)
@@ -176,7 +176,7 @@ trainText <- c(trainText1, trainText2)
 trainPlot <- trainPlot  + theme(legend.position="none") + 
 theme(legend.justification=c(1,0)) +
 theme(legend.title=element_blank(),
-axis.title=element_text(color='white')) + 
+axis.title.x=element_text(color='white')) + 
 annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=trainText, vjust=c(-1,-2.2), hjust="inward", size=8) 
 
 
