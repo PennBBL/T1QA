@@ -176,22 +176,23 @@ allData$Var1 <- as.factor(allData$Var1)
 allData$Var2 <- as.factor(allData$Var2)
 allData$value <- as.numeric(as.character(allData$value))
 allData$Var3 <- as.factor(allData$Var3)
-allData$Var2 <- factor(allData$Var2, levels=c('ANTs CT','FS Vol', 'ANTs Vol', 'FS CT', 'ANTs GMD'))
-
+allData$Var2 <- factor(allData$Var2, levels=c('ANTs CT','FS CT', 'ANTs Vol', 'FS Vol', 'ANTs GMD'))
 
 # Now graph our data
 thing1 <- ggplot(allData, aes(x=Var2, y=value, color=Var2, fill=Var1,label=Var4)) +
   geom_bar(stat='identity', position=position_dodge(), color='black', size=.1) +
-  geom_text(aes(y=value+.02), color='black', size=10, angle=90, position=position_dodge(1), vjust=0) + 
+  geom_text(aes(y=value+.02), color='black', size=10, angle=90, position=position_dodge(1), vjust="middle") + 
+  theme_bw() + 
   theme(legend.position="right") +
-  labs(title='', x='Structural Imaging Metric', y='Correlation Between \nQuality Measure and Imaging Metric') +
-  theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
-        axis.title.x = element_text(size=36),
-        axis.title.y = element_text(size=36),
-        text = element_text(size=30),
-        legend.text = element_text(size=20)) +
+  labs(title='', x='Structural Imaging Metric', y='Motion Estimate and Imaging Metric Correlation') +
+  theme(axis.text.x = element_text(angle=90,hjust=1, size=20), 
+        axis.title.x = element_text(size=20),
+        axis.title.y = element_text(size=20),
+        legend.text = element_text(size=20),
+        axis.text.y = element_text(size=20),
+        strip.text.x = element_text(size = 20)) +
   facet_grid(. ~ Var3, space="free_x") +
-  guides(fill = guide_legend(title = "Quality Measure"))
+  guides(fill = guide_legend(title = "Significance Level", title.theme = element_text(size=20, angle=0)))
 
 png('figure7-partialCorBtn1vs2andAvgRating-withFS.png', width=18, height=12, units='in', res=300)
 thing1
@@ -240,13 +241,13 @@ detach(all.valid.data)
 # Now prepare our values to graph
 trainData <- rbind(meanValsAgeRegJBRating, meanValsAgeRegKSRating, meanValsAgeRegLVRating, meanValsAgeRegOneVsTwo)
 colnames(trainData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol')
-rownames(trainData) <- c('Rater 1', 'Rater 2', 'Rater 3', '1 vs 2 Model')
+rownames(trainData) <- c('p < 0.05', 'p < 0.05', 'p < 0.05', 'p < 0.05')
 trainData <- melt(trainData)
 trainData$Var3 <- rep('Training', nrow(trainData))
 
 validData <- rbind(meanValsAgeRegJBRatingValid, meanValsAgeRegKSRatingValid, meanValsAgeRegLVRatingValid, meanValsAgeRegOneVsTwoValid)
 colnames(validData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol')
-rownames(validData) <- c('Rater 1', 'Rater 2', 'Rater 3', '1 vs 2 Model')
+rownames(validData) <- c('p < 0.05', 'p < 0.05', 'p < 0.05', 'p < 0.05')
 validData <- melt(validData)
 validData$Var3 <- rep('Validation', nrow(validData))
 
@@ -259,13 +260,15 @@ allData$Var2 <- factor(allData$Var2, levels=c('ANTs CT','ANTs Vol', 'ANTs GMD'))
 
 thing1 <- ggplot(allData, aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1)) +
   geom_bar(stat='identity', position=position_dodge(), size=.1, colour="black") +
+  theme_bw() + 
   theme(legend.position="right") +
-  labs(title='', x='Structural Imaging Metric', y='Correlation Between \nQuality Measure and Imaging Metric') +
-  theme(axis.text.x = element_text(angle=90,hjust=1, size=30), 
-        axis.title.x = element_text(size=36),
-        axis.title.y = element_text(size=36),
-        text = element_text(size=30),
-        legend.text = element_text(size=20)) +
+  labs(title='', x='Structural Imaging Metric', y='Motion Estimate and Imaging Metric Correlation') +
+  theme(axis.text.x = element_text(angle=90,hjust=1, size=20), 
+        axis.title.x = element_text(size=20),
+        axis.title.y = element_text(size=20),
+        legend.text = element_text(size=20),
+        text=element_text(size=20),
+        axis.text.y = element_text(size=30)) +
   facet_grid(. ~ Var3, space="free_x") +
   guides(fill = guide_legend(title = "Quality Measure"))
 
