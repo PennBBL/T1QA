@@ -42,7 +42,7 @@ all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 ## Now create our age regressed variables 
 tmp <- cbind(all.train.data[,grep('mprage_jlf_ct', names(all.train.data))], all.train.data[,grep('mprage_jlf_vol', names(all.train.data))])
 # Now trim non cortical regions
-tmp <- tmp[,-seq(99,136)]
+tmp <- tmp[,-seq(99,134)]
 meanCT <- NULL
 for(i in seq(1, nrow(tmp))){
   tmpVal <- weighted.mean(x=tmp[i,1:98], w=tmp[i,99:196])
@@ -51,7 +51,7 @@ for(i in seq(1, nrow(tmp))){
 tmp <- read.csv('/home/adrose/qapQA/data/averageGMD.csv')
 all.train.data <- merge(all.train.data, tmp, by=c('bblid', 'scanid'))
 rm(tmp)
-all.train.data$meanVOL <- apply(all.train.data[,2630:2727], 1, sum)
+all.train.data$meanVOL <- apply(all.train.data[,2628:2725ß], 1, sum)
 
 # Now create our scaled age and age squared values
 all.train.data$age <- scale(all.train.data$ageAtGo1Scan)
