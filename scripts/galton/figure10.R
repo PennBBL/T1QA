@@ -4,9 +4,6 @@ set.seed(16)
 source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 detachAllPackages()
 set.seed(16)
-load('/home/adrose/qapQA/data/0vsNot0FinalData.RData')
-zeroVsNotZeroModel <- m1
-rm(m1)
 load('/home/adrose/qapQA/data/1vs28variableModel.RData')
 oneVsTwoModel <- mod8
 rm(mod8)
@@ -68,6 +65,9 @@ all.train.data$meanFSCtAgeReg <- rep('NA', nrow(all.train.data))
 topindex <- as.numeric(names(lm(bh.meanthickness ~ age + ageSq + sex, data=all.train.data)$residuals))
 all.train.data$meanFSCtAgeReg[topindex] <- as.numeric(lm(bh.meanthickness ~ age + ageSq + sex, data=all.train.data)$residuals)
 all.train.data$meanFSAreaAgeReg <- as.numeric(lm(bh.totalarea ~ age + ageSq + sex, data=all.train.data)$residuals)
+all.train.data$cortexVolumeAgeReg <- 'NA'
+all.train.data$cortexVolumeAgeReg[topindex] <-  as.numeric(residuals(lm(CortexVol ~ age + ageSq + sex, data=all.train.data)))
+all.train.data$cortexVolumeAgeReg <- as.numeric(all.train.data$cortexVolumeAgeReg)
 
 # Now do the age regressed quality metrics
 all.train.data$pcaslAgeReg <- residuals(lm(aslEpi10qaMeanrelrms ~ age + ageSq + sex, data=all.train.data, na.action=na.exclude))
@@ -174,7 +174,7 @@ meanValsAgeRegPcaslT <- cbind(cor(meanCTAgeReg, pcaslAgeReg, method='spearman', 
                                            pcaslAgeReg, use='complete', method='spearman'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
                                            pcaslAgeReg, use='complete', method='spearman'),
-                                       cor(CortexVol, pcaslAgeReg, use='complete', method='spearman'))
+                                       cor(cortexVolumeAgeReg, pcaslAgeReg, use='complete', method='spearman'))
 
 meanValsAgeRegIdemoT <- cbind(cor(meanCTAgeReg, idemoAgeReg, method='spearman', use='complete'),
                                        cor(meanGMDAgeReg, idemoAgeReg, method='spearman', use='complete'),
@@ -183,7 +183,7 @@ meanValsAgeRegIdemoT <- cbind(cor(meanCTAgeReg, idemoAgeReg, method='spearman', 
                                            idemoAgeReg, method='spearman', use='complete'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
                                            idemoAgeReg, method='spearman', use='complete'),
-                                       cor(CortexVol, idemoAgeReg, use='complete', method='spearman'))
+                                       cor(cortexVolumeAgeReg, idemoAgeReg, use='complete', method='spearman'))
 
 meanValsAgeRegNbackT <- cbind(cor(meanCTAgeReg, nbackAgeReg, method='spearman', use='complete'),
                                        cor(meanGMDAgeReg, nbackAgeReg, method='spearman', use='complete'),
@@ -192,7 +192,7 @@ meanValsAgeRegNbackT <- cbind(cor(meanCTAgeReg, nbackAgeReg, method='spearman', 
                                            nbackAgeReg, use='complete', method='spearman'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
                                            nbackAgeReg, use='complete', method='spearman'),
-                                       cor(CortexVol, nbackAgeReg, use='complete', method='spearman'))
+                                       cor(cortexVolumeAgeReg, nbackAgeReg, use='complete', method='spearman'))
 
 meanValsAgeRegRestT <- cbind(cor(meanCTAgeReg, restAgeReg, method='spearman', use='complete'),
                                        cor(meanGMDAgeReg, restAgeReg, method='spearman', use='complete'),
@@ -201,7 +201,7 @@ meanValsAgeRegRestT <- cbind(cor(meanCTAgeReg, restAgeReg, method='spearman', us
                                            restAgeReg, use='complete', method='spearman'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
                                            restAgeReg, use='complete', method='spearman'),
-                                       cor(CortexVol, restAgeReg, use='complete', method='spearman'))
+                                       cor(cortexVolumeAgeReg, restAgeReg, use='complete', method='spearman'))
 
 meanValsAgeRegOneVsTwoT <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
                                        cor(meanGMDAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
@@ -210,7 +210,7 @@ meanValsAgeRegOneVsTwoT <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method
                                            oneVsTwoOutcomeAgeReg, method='spearman', use='complete'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
                                            oneVsTwoOutcomeAgeReg, method='spearman', use='complete'),
-                                       cor(CortexVol, oneVsTwoOutcomeAgeReg, use='complete', method='spearman'))
+                                       cor(cortexVolumeAgeReg, oneVsTwoOutcomeAgeReg, use='complete', method='spearman'))
 
 
 detach(all.train.data)
@@ -228,7 +228,7 @@ meanValsAgeRegPcaslV <- cbind(cor(meanCTAgeReg, pcaslAgeReg, method='spearman', 
                                            pcaslAgeReg, use='complete', method='spearman'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
                                            pcaslAgeReg, use='complete', method='spearman'),
-                                       cor(CortexVol, pcaslAgeReg, use='complete', method='spearman'))
+                                       cor(cortexVolumeAgeReg, pcaslAgeReg, use='complete', method='spearman'))
 
 meanValsAgeRegIdemoV <- cbind(cor(meanCTAgeReg, idemoAgeReg, method='spearman', use='complete'),
                                        cor(meanGMDAgeReg, idemoAgeReg, method='spearman', use='complete'),
@@ -237,7 +237,7 @@ meanValsAgeRegIdemoV <- cbind(cor(meanCTAgeReg, idemoAgeReg, method='spearman', 
                                            idemoAgeReg, method='spearman', use='complete'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
                                            idemoAgeReg, method='spearman', use='complete'),
-                                       cor(CortexVol, idemoAgeReg, use='complete', method='spearman'))
+                                       cor(cortexVolumeAgeReg, idemoAgeReg, use='complete', method='spearman'))
 
 meanValsAgeRegNbackV <- cbind(cor(meanCTAgeReg, nbackAgeReg, method='spearman', use='complete'),
                                        cor(meanGMDAgeReg, nbackAgeReg, method='spearman', use='complete'),
@@ -246,7 +246,7 @@ meanValsAgeRegNbackV <- cbind(cor(meanCTAgeReg, nbackAgeReg, method='spearman', 
                                            nbackAgeReg, use='complete', method='spearman'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
                                            nbackAgeReg, use='complete', method='spearman'),
-                                       cor(CortexVol, nbackAgeReg, use='complete', method='spearman'))
+                                       cor(cortexVolumeAgeReg, nbackAgeReg, use='complete', method='spearman'))
 
 meanValsAgeRegRestV <- cbind(cor(meanCTAgeReg, restAgeReg, method='spearman', use='complete'),
                                        cor(meanGMDAgeReg, restAgeReg, method='spearman', use='complete'),
@@ -255,15 +255,7 @@ meanValsAgeRegRestV <- cbind(cor(meanCTAgeReg, restAgeReg, method='spearman', us
                                            restAgeReg, use='complete', method='spearman'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
                                            restAgeReg, use='complete', method='spearman'),
-                                       cor(CortexVol, restAgeReg, use='complete', method='spearman'))
-meanValsAgeRegOneVsTwo <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
-                                       cor(meanGMDAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
-                                       cor(meanVOLAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
-                                       cor(as.numeric(meanFSCtAgeReg),
-                                           oneVsTwoOutcomeAgeReg, method='spearman', use='complete'),
-                                       cor(as.numeric(meanFSAreaAgeReg), 
-                                           oneVsTwoOutcomeAgeReg, method='spearman', use='complete'),
-                                       cor(CortexVol, oneVsTwoOutcomeAgeReg, use='complete', method='spearman'))
+                                       cor(cortexVolumeAgeReg, restAgeReg, use='complete', method='spearman'))
 
 meanValsAgeRegOneVsTwoV <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
                                        cor(meanGMDAgeReg, oneVsTwoOutcomeAgeReg, method='spearman'),
@@ -272,7 +264,7 @@ meanValsAgeRegOneVsTwoV <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method
                                            oneVsTwoOutcomeAgeReg, method='spearman', use='complete'),
                                        cor(as.numeric(meanFSAreaAgeReg), 
                                            oneVsTwoOutcomeAgeReg, method='spearman', use='complete'),
-                                       cor(CortexVol, oneVsTwoOutcomeAgeReg, use='complete', method='spearman'))
+                                       cor(cortexVolumeAgeReg, oneVsTwoOutcomeAgeReg, use='complete', method='spearman'))
 
 
 detach(all.valid.data)
@@ -298,7 +290,7 @@ allData$Var2 <- factor(allData$Var2, levels=c('FS CT', 'ANTs CT', 'FS Vol', 'ANT
 allData$value <- abs(as.numeric(as.character(allData$value)))
 allData$value[which(allData$Var2=='ANTs Vol' & allData$Var1=='Quantification Model')] <- allData$value[which(allData$Var2=='ANTs Vol' & allData$Var1=='Quantification Model')] * -1
 allData$Var3 <- as.factor(allData$Var3)
-allData <- allData[-grep('FS', allData$Var2),]
+allData <- allData[-grep('FS Area', allData$Var2),]
 allData$Var2 <- factor(allData$Var2, levels=c('ANTs CT','FS CT', 'ANTs Vol', 'FS Vol', 'ANTs GMD'))
 
 # Now plot it 
@@ -314,7 +306,9 @@ thing1 <- ggplot(allData[which(allData$Var3=='Training'),], aes(x=Var2, y=value,
         axis.text.y = element_text(size=20),
         legend.text = element_text(size=20),
         legend.position="none") +
-  guides(fill = guide_legend(title = "Quality Measure"))
+  guides(fill = guide_legend(title = "Quality Measure")) +
+  scale_y_continuous(limits=c(-.05, .3), 
+    breaks=round(seq(-.05, .3, .05), digits=2), oob=rescale_none)
 
 thing2 <- ggplot(allData[which(allData$Var3=='Validation'),], aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1)) +
   geom_bar(stat='identity', position=position_dodge(), size=.1, colour="black") +
@@ -334,7 +328,9 @@ thing2 <- ggplot(allData[which(allData$Var3=='Validation'),], aes(x=Var2, y=valu
 				    "tfMRI 1"="#A3A500",
 				    "tfMRI 2"="#00BF7D",
 				    "rsfMRI"="#00B0F6",
-				    "Quantification Model" = "#E76BF3"))
+				    "Quantification Model" = "#E76BF3")) +
+  scale_y_continuous(limits=c(-.05, .3), 
+    breaks=round(seq(-.05, .3, .05), digits=2), oob=rescale_none)
 
 
 # Now plot our data
