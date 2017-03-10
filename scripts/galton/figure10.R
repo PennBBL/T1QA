@@ -51,7 +51,7 @@ for(i in seq(1, nrow(tmp))){
 tmp <- read.csv('/home/adrose/qapQA/data/averageGMD.csv')
 all.train.data <- merge(all.train.data, tmp, by=c('bblid', 'scanid'))
 rm(tmp)
-all.train.data$meanVOL <- apply(all.train.data[,2628:2725ß], 1, sum)
+all.train.data$meanVOL <- apply(all.train.data[,2628:2725], 1, sum)
 
 # Now create our scaled age and age squared values
 all.train.data$age <- scale(all.train.data$ageAtGo1Scan)
@@ -297,7 +297,7 @@ allData$Var2 <- factor(allData$Var2, levels=c('ANTs CT','FS CT', 'ANTs Vol', 'FS
 thing1 <- ggplot(allData[which(allData$Var3=='Training'),], aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1)) +
   geom_bar(stat='identity', position=position_dodge(), size=.1, colour="black") +
   theme(legend.position="right") +
-  labs(title='', x='Structural Imaging Metric', y='Motion Estimate and Imaging Metric Correlation') +
+  labs(title='', x='Imaging Measure', y='Motion Estimate and Imaging Metric Correlation') +
   theme_bw() +
   theme(text = element_text(size=20),
         axis.text.x = element_text(angle=90,hjust=1, size=20), 
@@ -305,7 +305,7 @@ thing1 <- ggplot(allData[which(allData$Var3=='Training'),], aes(x=Var2, y=value,
         axis.title.y = element_text(size=20),
         axis.text.y = element_text(size=20),
         legend.text = element_text(size=20),
-        legend.position="none") +
+        legend.position="right") +
   guides(fill = guide_legend(title = "Quality Measure")) +
   scale_y_continuous(limits=c(-.05, .3), 
     breaks=round(seq(-.05, .3, .05), digits=2), oob=rescale_none)
@@ -313,7 +313,7 @@ thing1 <- ggplot(allData[which(allData$Var3=='Training'),], aes(x=Var2, y=value,
 thing2 <- ggplot(allData[which(allData$Var3=='Validation'),], aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1)) +
   geom_bar(stat='identity', position=position_dodge(), size=.1, colour="black") +
   theme(legend.position="right") +
-  labs(title='', x='Structural Imaging Metric', y='Motion Estimate and Imaging Metric Correlation') +
+  labs(title='', x='Imaging Measure', y='Motion Estimate and Imaging Metric Correlation') +
   theme_bw() +
   theme(text = element_text(size=20),
         axis.text.x = element_text(angle=90,hjust=1, size=20), 
