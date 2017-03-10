@@ -22,26 +22,26 @@ grep "_L_" /home/arosen/T1QA/data/jlfSigQAPROIvol.csv > /home/arosen/T1QA/data/v
 # Now run through each of the previously created files and make our hemisphere mask
 cd /home/arosen/T1QA/data/ct/
 /home/arosen/T1QA/scripts/chead/makeZScoreJLFPNCTemplateImage.sh /home/arosen/T1QA/data/ct/rightVals 4
-fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 44 -uthr 44 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
+fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 44 -uthr 44 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
 mv /home/arosen/T1QA/data/ct/outputImage.nii.gz /home/arosen/T1QA/data/ct/outputImageRight.nii.gz 
 /home/arosen/T1QA/scripts/chead/makeZScoreJLFPNCTemplateImage.sh /home/arosen/T1QA/data/ct/leftVals 4
-fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 45 -uthr 45 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
+fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 45 -uthr 45 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
 mv /home/arosen/T1QA/data/ct/outputImage.nii.gz /home/arosen/T1QA/data/ct/outputImageLeft.nii.gz 
 
 cd /home/arosen/T1QA/data/gmd/
 /home/arosen/T1QA/scripts/chead/makeZScoreJLFPNCTemplateImage.sh /home/arosen/T1QA/data/gmd/rightVals 4
-fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 44 -uthr 44 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
+fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 44 -uthr 44 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
 mv /home/arosen/T1QA/data/gmd/outputImage.nii.gz /home/arosen/T1QA/data/gmd/outputImageRight.nii.gz
 /home/arosen/T1QA/scripts/chead/makeZScoreJLFPNCTemplateImage.sh /home/arosen/T1QA/data/gmd/leftVals 4
-fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 45 -uthr 45 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
+fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 45 -uthr 45 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
 mv /home/arosen/T1QA/data/gmd/outputImage.nii.gz /home/arosen/T1QA/data/gmd/outputImageLeft.nii.gz
 
 cd /home/arosen/T1QA/data/vol/
 /home/arosen/T1QA/scripts/chead/makeZScoreJLFPNCTemplateImage.sh /home/arosen/T1QA/data/vol/rightVals 4
-fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 44 -uthr 44 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
+fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 44 -uthr 44 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
 mv /home/arosen/T1QA/data/vol/outputImage.nii.gz /home/arosen/T1QA/data/vol/outputImageRight.nii.gz
 /home/arosen/T1QA/scripts/chead/makeZScoreJLFPNCTemplateImage.sh /home/arosen/T1QA/data/vol/leftVals 4
-fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 45 -uthr 45 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
+fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 45 -uthr 45 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
 mv /home/arosen/T1QA/data/vol/outputImage.nii.gz /home/arosen/T1QA/data/vol/outputImageLeft.nii.gz
 
 
@@ -67,25 +67,25 @@ grep "_L_" /home/arosen/T1QA/data/jlfSigQAPROIvolValid.csv > /home/arosen/T1QA/d
 
 cd /home/arosen/T1QA/data/ctValid/
 /home/arosen/T1QA/scripts/chead/makeZScoreJLFPNCTemplateImage.sh /home/arosen/T1QA/data/ctValid/rightValsValid 4
-fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 44 -uthr 44 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
+fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 44 -uthr 44 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
 mv /home/arosen/T1QA/data/ctValid/outputImage.nii.gz /home/arosen/T1QA/data/ctValid/outputImageRightValid.nii.gz 
 /home/arosen/T1QA/scripts/chead/makeZScoreJLFPNCTemplateImage.sh /home/arosen/T1QA/data/ctValid/leftValsValid 4
-fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 45 -uthr 45 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
+fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 45 -uthr 45 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
 mv /home/arosen/T1QA/data/ctValid/outputImage.nii.gz /home/arosen/T1QA/data/ctValid/outputImageLeftValid.nii.gz 
 
 
 cd /home/arosen/T1QA/data/gmdValid/
 /home/arosen/T1QA/scripts/chead/makeZScoreJLFPNCTemplateImage.sh /home/arosen/T1QA/data/gmdValid/rightValsValid 4
-fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 44 -uthr 44 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
+fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 44 -uthr 44 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
 mv /home/arosen/T1QA/data/gmdValid/outputImage.nii.gz /home/arosen/T1QA/data/gmdValid/outputImageRightValid.nii.gz
 /home/arosen/T1QA/scripts/chead/makeZScoreJLFPNCTemplateImage.sh /home/arosen/T1QA/data/gmdValid/leftValsValid 4
-fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 45 -uthr 45 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
+fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 45 -uthr 45 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
 mv /home/arosen/T1QA/data/gmdValid/outputImage.nii.gz /home/arosen/T1QA/data/gmdValid/outputImageLeftValid.nii.gz
 
 cd /home/arosen/T1QA/data/volValid/
 /home/arosen/T1QA/scripts/chead/makeZScoreJLFPNCTemplateImage.sh /home/arosen/T1QA/data/volValid/rightValsValid 4
-fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 44 -uthr 44 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
+fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 44 -uthr 44 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
 mv /home/arosen/T1QA/data/volValid/outputImage.nii.gz /home/arosen/T1QA/data/volValid/outputImageRightValid.nii.gz
 /home/arosen/T1QA/scripts/chead/makeZScoreJLFPNCTemplateImage.sh /home/arosen/T1QA/data/volValid/leftValsValid 4
-fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze2016/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 45 -uthr 45 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
+fslmaths /data/joy/BBL/studies/pnc/n1601_dataFreeze/neuroimaging/pncTemplate/jlf/pncTemplateJLF_Labels.nii.gz -thr 45 -uthr 45 -bin -mul 1616 -add outputImage.nii.gz outputImage.nii.gz
 mv /home/arosen/T1QA/data/volValid/outputImage.nii.gz /home/arosen/T1QA/data/volValid/outputImageLeftValid.nii.gz
