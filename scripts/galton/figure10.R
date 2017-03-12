@@ -80,7 +80,14 @@ all.train.data$oneVsTwoOutcomeAgeReg <- lm(oneVsTwoOutcome ~ age + ageSq + sex, 
 # Now split into our train and validation data sets
 all.data.freeze <- all.train.data
 all.train.data <- all.data.freeze[index,]
+# Now make sure we grab the intersection between subjectw tih all imaging data
+# Now make sure we have subjects with all data
+motionCols <- grep('Meanrelrms', names(all.train.data))
+all.train.data <- all.train.data[complete.cases(all.train.data[,motionCols]),]
+# Now do the same for the validation data set
 all.valid.data <- all.data.freeze[-index,]
+# Now make sure we have subjects with all data
+all.valid.data <- all.valid.data[complete.cases(all.valid.data[,motionCols]),]
 
 # Now get the motion cols
 motionCols <- grep('Meanrelrms', names(all.train.data))
@@ -112,7 +119,6 @@ trainMotion <- ggplot(motionValues, aes(x=.id, y=mean, fill=.id)) +
     theme_bw() +
     theme(legend.position="none") +
     labs(title='Training', x='Time from T1 Scan (min:sec)', y='Mean Relative Displacement (mm)') +
-    coord_cartesian(ylim=c(.1,.2)) +
     theme(text=element_text(size=20), 
     axis.text.x = element_text(angle = 0),
     axis.text.y=element_text(size=20),
@@ -122,7 +128,7 @@ trainMotion <- ggplot(motionValues, aes(x=.id, y=mean, fill=.id)) +
 				    "tfMRI 1 (14:51)"="#A3A500",
 				    "tfMRI 2 (20:19)"="#00BF7D",
 				    "rsfMRI (43:01)"="#00B0F6")) +
-    scale_y_continuous(limits=c(.1, .2), breaks=round(seq(.1, .2, .05), digits=2), oob=rescale_none)
+    scale_y_continuous(limits=c(0, .2), breaks=round(seq(0, .2, .05), digits=2), oob=rescale_none)
 
 
 # Now do the validation data
@@ -148,7 +154,6 @@ validMotion <- ggplot(motionValues, aes(x=.id, y=mean, fill=.id)) +
     theme_bw() +
     theme(legend.position="none") +
     labs(title='Validation', x='Time from T1 Scan (min:sec)', y='Mean Relative Displacement (mm)') +
-    coord_cartesian(ylim=c(.1,.15,.2)) +
     theme(text=element_text(size=20), axis.text.x = element_text(angle = 0),
     axis.title.y=element_text(color="white", size=20),
     axis.text.y=element_text(size=20, color="white"), 
@@ -160,11 +165,12 @@ validMotion <- ggplot(motionValues, aes(x=.id, y=mean, fill=.id)) +
 				    "tfMRI 1 (14:51)"="#A3A500",
 				    "tfMRI 2 (20:19)"="#00BF7D",
 				    "rsfMRI (43:01)"="#00B0F6")) +
-    scale_y_continuous(limits=c(.1, .2), breaks=round(seq(.1, .2, .05), digits=2), oob=rescale_none)
+    scale_y_continuous(limits=c(0, .2), breaks=round(seq(0, .2, .05), digits=2), oob=rescale_none)
 
 # Now prepare all of the corellation figures down here
 all.train.data <- all.data.freeze[index,]
 all.train.data <- all.train.data[which(all.train.data$averageRating.x != 0),]
+all.train.data <- all.train.data[complete.cases(all.train.data[,motionCols]),]
 attach(all.train.data)
 # Lets do the training data first
 meanValsAgeRegPcaslT <- cbind(cor(meanCTAgeReg, pcaslAgeReg, method='spearman', use='complete'),
@@ -305,7 +311,7 @@ thing1 <- ggplot(allData[which(allData$Var3=='Training'),], aes(x=Var2, y=value,
         axis.title.y = element_text(size=20),
         axis.text.y = element_text(size=20),
         legend.text = element_text(size=20),
-        legend.position="right") +
+        legend.position="none") +
   guides(fill = guide_legend(title = "Quality Measure")) +
   scale_y_continuous(limits=c(-.05, .3), 
     breaks=round(seq(-.05, .3, .05), digits=2), oob=rescale_none)
