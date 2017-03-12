@@ -51,10 +51,14 @@ all.valid.data <- merge(mergedQAP, validationData, by='bblid')
 
 # Now create our z scores
 jlfCTVals <- pvalLoop('mprage_jlf_ct', all.train.data)
+# RM cortical non cortical regions from gmd values
+tmp <- all.train.data
+all.train.data <- all.train.data[,-seq(2726,2747)]
 jlfGMDVals <- pvalLoop('mprage_jlf_gmd', all.train.data)
+all.train.data <- tmp
 # Now trim the non cortical regions for our JLF vol regions
 tmp <- all.train.data
-all.train.data <- all.train.data[,-seq(2592,2629,1)]
+all.train.data <- all.train.data[,-seq(2592,2627,1)]
 jlfVOLVals <- pvalLoop('mprage_jlf_vol', all.train.data, TBV=TRUE)
 all.train.data <- tmp
 rm(tmp)
@@ -66,7 +70,7 @@ volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScalePos=c('blue'
 
 # Now we need to create our label into our file which matches our ROI to our label
 jlfCTVals <- cbind(jlfCTVals, ctColors[2:(dim(jlfCTVals)[1]+1),1])
-jlfGMDVals <- cbind(jlfGMDVals, gmdColors[2:(dim(jlfCTVals)[1]+1),1])
+jlfGMDVals <- cbind(jlfGMDVals, gmdColors[2:(dim(jlfGMDVals)[1]+1),1])
 jlfVOLVals <- cbind(jlfVOLVals, volColors[2:(dim(jlfVOLVals)[1]+1),1])
 
 # Now I need to save these color scales and the other thing
@@ -84,10 +88,13 @@ all.train.data <- all.valid.data
 
 # Now create our z scores
 jlfCTVals <- pvalLoop('mprage_jlf_ct', all.train.data)
+tmp <- all.train.data
+all.train.data <- all.train.data[,-seq(2726,2747)]
 jlfGMDVals <- pvalLoop('mprage_jlf_gmd', all.train.data)
+all.train.data <- tmp
 # Now trim the non cortical regions for our JLF vol regions
 tmp <- all.train.data
-all.train.data <- all.train.data[,-seq(2592,2629,1)]
+all.train.data <- all.train.data[,-seq(2592,2627,1)]
 jlfVOLVals <- pvalLoop('mprage_jlf_vol', all.train.data, TBV=TRUE)
 all.train.data <- tmp
 rm(tmp)
@@ -99,7 +106,7 @@ volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScalePos=c('blue'
 
 # Now we need to create our label into our file which matches our ROI to our label
 jlfCTVals <- cbind(jlfCTVals, ctColors[2:(dim(jlfCTVals)[1]+1),1])
-jlfGMDVals <- cbind(jlfGMDVals, gmdColors[2:(dim(jlfCTVals)[1]+1),1])
+jlfGMDVals <- cbind(jlfGMDVals, gmdColors[2:(dim(jlfGMDVals)[1]+1),1])
 jlfVOLVals <- cbind(jlfVOLVals, volColors[2:(dim(jlfVOLVals)[1]+1),1])
 
 

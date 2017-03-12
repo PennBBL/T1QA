@@ -73,7 +73,7 @@ vals <- grep('mprage_jlf_gmd', names(all.train.data))
 # Now rm nonesense ROI's
 zScoreGMD <- NULL
 binVals <- NULL
-for(i in vals[39:136]){
+for(i in vals[23:120]){
     foo <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[1]
     toAppend <- c(names(all.train.data)[i], foo)
     zScoreGMD <- rbind(zScoreGMD, toAppend)
@@ -84,6 +84,10 @@ zScoreGMD <- zScoreGMD[order(as.numeric(zScoreGMD[,2])),]
 ctColors <- returnPosNegAndNeuColorScale(zScoreCT[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
 gmdColors <- returnPosNegAndNeuColorScale(zScoreGMD[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
 
+# Now prepare the key between ROI and intensity
+jlfCTVals <- cbind(zScoreCT, seq(1:nrow(zScoreCT)))
+jlfGMDVals <- cbind(zScoreGMD, seq(1:nrow(zScoreGMD)))
+
 # Now I need to save these color scales and the other thing
 write.table(ctColors, file='ctColorScale.txt', sep="\t", quote=F, row.names=F, col.names=F)
 write.table(gmdColors, file='gmdColorScale.txt', sep="\t", quote=F, row.names=F, col.names=F)
@@ -91,30 +95,47 @@ write.csv(jlfCTVals, 'jlfSigQAPROIct.csv', quote=F)
 write.csv(jlfGMDVals, 'jlfSigQAPROIgmd.csv', quote=F)
 
 # Now do the validation data down here
-
 static <- all.train.data
 all.train.data <- all.valid.data
 
-# Now create our z scores
-jlfCTVals <- pvalLoop('mprage_jlf_ct', all.train.data)
-jlfGMDVals <- pvalLoop('mprage_jlf_gmd', all.train.data)
-# Now trim the non cortical regions for our JLF vol regions
-tmp <- all.train.data
-all.train.data <- all.train.data[,-seq(2592,2629,1)]
-jlfVOLVals <- pvalLoop('mprage_jlf_vol', all.train.data, TBV=TRUE)
-all.train.data <- tmp
-rm(tmp)
+vals <- grep('mprage_jlf_ct', names(all.train.data))
+zScoreCT <- NULL
+binVals <- NULL
+for(i in vals){
+    foo <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[1]
+    bar <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[2]
+    toAppend <- c(names(all.train.data)[i], foo)
+    toAppend2 <- c(names(all.train.data)[i], bar)
+    zScoreCT <- rbind(zScoreCT, toAppend)
+    binVals <- rbind(binVals, toAppend2)
+}
+binValsApply <- rep(0, length(vals))
+binValsApply[which(p.adjust(binVals[,2], method='fdr')<.05)] <- 1
+zScoreCT[,2] <- as.numeric(zScoreCT[,2]) * binValsApply
+zScoreCT <- zScoreCT[order(as.numeric(zScoreCT[,2])),]
+
+vals <- grep('mprage_jlf_gmd', names(all.train.data))
+# Now rm nonesense ROI's
+zScoreGMD <- NULL
+binVals <- NULL
+for(i in vals[23:120]){
+    foo <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[1]
+    toAppend <- c(names(all.train.data)[i], foo)
+    zScoreGMD <- rbind(zScoreGMD, toAppend)
+}
+zScoreGMD <- zScoreGMD[order(as.numeric(zScoreGMD[,2])),]
 
 ## Now create our color values to export to ITK snap
 ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
 gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
-volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
+
+# Now prepare the key between ROI and intensity
+jlfCTVals <- cbind(zScoreCT, seq(1:nrow(zScoreCT)))
+jlfGMDVals <- cbind(zScoreGMD, seq(1:nrow(zScoreGMD)))
 
 # Now I need to save these color scales and the other thing
 write.table(ctColors, file='ctColorScaleValid.txt', sep="\t", quote=F, row.names=F, col.names=F)
 write.table(gmdColors, file='gmdColorScaleValid.txt', sep="\t", quote=F, row.names=F, col.names=F)
-write.table(volColors, file='volColorScaleValid.txt', sep="\t", quote=F, row.names=F, col.names=F)
 write.csv(jlfCTVals, 'jlfSigQAPROIctValid.csv', quote=F)
 write.csv(jlfGMDVals, 'jlfSigQAPROIgmdValid.csv', quote=F)
-write.csv(jlfVOLVals, 'jlfSigQAPROIvolValid.csv', quote=F)
 
