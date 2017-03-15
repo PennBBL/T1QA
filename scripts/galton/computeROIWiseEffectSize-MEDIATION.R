@@ -97,16 +97,16 @@ write.csv(jlfGMDVals, 'jlfSigQAPROIgmd.csv', quote=F)
 # Now produce a figure which will display the differences between wioth and without mediation
 # I am going to do this for the anterior cingulate cortex - which has the largest positive mediation effect
 # To do this I am going to produce the models and then predict the values then model them.
-m1 <- lm(scale(ageAtGo1Scan) ~ scale(mprage_jlf_ct_R_ACgG), data = all.train.data)
-m2 <- lm(scale(ageAtGo1Scan) ~ scale(mprage_jlf_ct_R_ACgG) + scale(oneVsTwoOutcome), data = all.train.data)
+m1 <- lm(mprage_jlf_gmd_R_MFC ~ sex, data = all.train.data)
+m2 <- lm(mprage_jlf_gmd_R_MFC ~ sex + oneVsTwoOutcome, data = all.train.data)
 m3 <- lm(mprage_jlf_ct_R_ACgG ~ ageAtGo1Scan + averageRating.y, data = all.train.data)
-all.train.data$justAge <- predict(m1)
-all.train.data$ageAndQuality <- predict(m2)
+all.train.data$justAge <- residuals(m1)
+all.train.data$ageAndQuality <- residuals(m2)
 
-mediationPlot <- ggplot(all.train.data, aes(x=scale(ageAtGo1Scan))) +
+mediationPlot <- ggplot(all.train.data, aes(x=ageAtGo1Scan)) +
   geom_smooth(method=lm, aes(y=justAge), color='red') +
   geom_smooth(method=lm, aes(y=ageAndQuality), color='blue') +
-  labs(title='Mediation Effect in ACgG CT', x='Age (z-score)', y='Predicted CT (z-score)') +
+  labs(title='Mediation Effect in TMP CT', x='Age', y='Predicted CT') +
   theme_bw()
 
 

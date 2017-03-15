@@ -274,6 +274,7 @@ meanValsAgeRegOneVsTwoV <- cbind(cor(meanCTAgeReg, oneVsTwoOutcomeAgeReg, method
 
 
 detach(all.valid.data)
+
 # Now prepare our values to graph
 trainData <- rbind(meanValsAgeRegPcaslT, meanValsAgeRegIdemoT, meanValsAgeRegNbackT, meanValsAgeRegRestT, meanValsAgeRegOneVsTwoT)
 colnames(trainData) <- c('ANTs CT', 'ANTs GMD', 'ANTs Vol', 'FS CT', 'FS Area', 'FS Vol')
@@ -288,7 +289,6 @@ validData <- melt(validData)
 validData$Var3 <- rep('Validation', nrow(validData))
 
 
-
 # Now combine all of our data
 allData <- as.data.frame(rbind(trainData, validData))
 allData$Var1 <- factor(allData$Var1, levels=c('PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI', 'Quantification Model'))
@@ -298,6 +298,11 @@ allData$value[which(allData$Var2=='ANTs Vol' & allData$Var1=='Quantification Mod
 allData$Var3 <- as.factor(allData$Var3)
 allData <- allData[-grep('FS Area', allData$Var2),]
 allData$Var2 <- factor(allData$Var2, levels=c('ANTs CT','FS CT', 'ANTs Vol', 'FS Vol', 'ANTs GMD'))
+
+# Now get sample sizes so we can compute the minimum r needed for signifiance
+trainValue <- getRVal(nrow(all.train.data))
+validValue <- getRVal(nrow(all.valid.data))
+
 
 # Now plot it 
 thing1 <- ggplot(allData[which(allData$Var3=='Training'),], aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1)) +
@@ -314,7 +319,8 @@ thing1 <- ggplot(allData[which(allData$Var3=='Training'),], aes(x=Var2, y=value,
         legend.position="none") +
   guides(fill = guide_legend(title = "Quality Measure")) +
   scale_y_continuous(limits=c(-.05, .3), 
-    breaks=round(seq(-.05, .3, .05), digits=2), oob=rescale_none)
+    breaks=round(seq(-.05, .3, .05), digits=2), oob=rescale_none) + 
+ geom_hline(yintercept=trainValue, linetype="longdash", colour="black", size=0.5)
 
 thing2 <- ggplot(allData[which(allData$Var3=='Validation'),], aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1)) +
   geom_bar(stat='identity', position=position_dodge(), size=.1, colour="black") +
@@ -336,7 +342,8 @@ thing2 <- ggplot(allData[which(allData$Var3=='Validation'),], aes(x=Var2, y=valu
 				    "rsfMRI"="#00B0F6",
 				    "Quantification Model" = "#E76BF3")) +
   scale_y_continuous(limits=c(-.05, .3), 
-    breaks=round(seq(-.05, .3, .05), digits=2), oob=rescale_none)
+    breaks=round(seq(-.05, .3, .05), digits=2), oob=rescale_none) + 
+ geom_hline(yintercept=validValue, linetype="longdash", colour="black", size=0.5)
 
 
 # Now plot our data
