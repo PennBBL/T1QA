@@ -110,19 +110,6 @@ mediationPlot <- ggplot(all.train.data, aes(x=ageAtGo1Scan)) +
   theme_bw()
 
 
-
-ggplot(all.train.data, aes(x=rawAverageRating.x, y=age)) +
-geom_smooth(method=lm, color='black') +
-theme_bw() +
-coord_cartesian(ylim=c(7,16)) +
-labs(title='', x='Manual Quality Rating (mean value)', y='Age') +
-theme(
-axis.text=element_text(size=20),
-axis.title=element_text(size=30)) +
-scale_x_continuous(breaks=c(0,.33,.66,1,1.33,1.66,2)) +
-annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=c(as.character(corText2), as.character(corText1)), hjust=c(1, 1), vjust=c(-.5, -2.5), size=8, parse=T)
-
-
 # Now do the validation data down here
 static <- all.train.data
 all.train.data <- all.valid.data
@@ -154,13 +141,14 @@ for(i in vals[23:120]){
 }
 zScoreGMD <- zScoreGMD[order(as.numeric(zScoreGMD[,2])),]
 
+# Now prepare the key between ROI and intensity
+jlfCTVals <- cbind(zScoreCT, seq(1:nrow(zScoreCT)))
+jlfGMDVals <- cbind(zScoreGMD, seq(1:nrow(zScoreGMD)))
+
 ## Now create our color values to export to ITK snap
 ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
 gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
 
-# Now prepare the key between ROI and intensity
-jlfCTVals <- cbind(zScoreCT, seq(1:nrow(zScoreCT)))
-jlfGMDVals <- cbind(zScoreGMD, seq(1:nrow(zScoreGMD)))
 
 # Now I need to save these color scales and the other thing
 write.table(ctColors, file='ctColorScaleValid.txt', sep="\t", quote=F, row.names=F, col.names=F)
