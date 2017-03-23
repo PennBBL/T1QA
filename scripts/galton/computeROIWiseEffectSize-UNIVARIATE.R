@@ -50,10 +50,12 @@ all.valid.data <- merge(mergedQAP, validationData, by='bblid')
 
 
 # Now create our z scores
-jlfCTVals <- pvalLoop('mprage_jlf_ct', all.train.data)
+tmp <- all.train.data[,-seq(2862, 2997)[1:38]]
+jlfCTVals <- pvalLoop('mprage_jlf_ct', tmp)
+rm(tmp)
 # RM cortical non cortical regions from gmd values
 tmp <- all.train.data
-all.train.data <- all.train.data[,-seq(2726,2747)]
+all.train.data <- all.train.data[,-seq(2726,2763)]
 jlfGMDVals <- pvalLoop('mprage_jlf_gmd', all.train.data)
 all.train.data <- tmp
 # Now trim the non cortical regions for our JLF vol regions
@@ -64,9 +66,9 @@ all.train.data <- tmp
 rm(tmp)
 
 ## Now create our color values to export to ITK snap
-ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
-gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
-volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
+ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScaleNeg=c('light blue', 'blue'),colorScalePos=c('red', 'yellow'))
+gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScaleNeg=c('light blue', 'blue'), colorScalePos=c('red','yellow'))
+volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScaleNeg=c('light blue', 'blue'), colorScalePos=c('red','yellow'))
 
 # Now we need to create our label into our file which matches our ROI to our label
 jlfCTVals <- cbind(jlfCTVals, ctColors[2:(dim(jlfCTVals)[1]+1),1])
@@ -86,10 +88,12 @@ write.csv(jlfVOLVals, 'jlfSigQAPROIvol.csv', quote=F)
 static <- all.train.data
 all.train.data <- all.valid.data
 
-# Now create our z scores
-jlfCTVals <- pvalLoop('mprage_jlf_ct', all.train.data)
+tmp <- all.train.data[,-seq(2862, 2997)[1:38]]
+jlfCTVals <- pvalLoop('mprage_jlf_ct', tmp)
+rm(tmp)
+# RM cortical non cortical regions from gmd values
 tmp <- all.train.data
-all.train.data <- all.train.data[,-seq(2726,2747)]
+all.train.data <- all.train.data[,-seq(2726,2763)]
 jlfGMDVals <- pvalLoop('mprage_jlf_gmd', all.train.data)
 all.train.data <- tmp
 # Now trim the non cortical regions for our JLF vol regions
@@ -100,9 +104,9 @@ all.train.data <- tmp
 rm(tmp)
 
 ## Now create our color values to export to ITK snap
-ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
-gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
-volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
+ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScaleNeg=c('light blue', 'blue'), colorScalePos=c('red', 'yellow'))
+gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScaleNeg=c('light blue', 'blue'), colorScalePos=c('red','yellow'))
+volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScaleNeg=c('light blue', 'blue'), colorScalePos=c('red','yellow'))
 
 # Now we need to create our label into our file which matches our ROI to our label
 jlfCTVals <- cbind(jlfCTVals, ctColors[2:(dim(jlfCTVals)[1]+1),1])
