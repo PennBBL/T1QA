@@ -48,6 +48,10 @@ allow.new.levels=T, type='response')
 all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 all.valid.data <- merge(mergedQAP, validationData, by='bblid')
 
+# Remove 0 scans 
+all.train.data <- all.train.data[which(all.train.data$averageRating!=0),]
+all.valid.data <- all.valid.data[which(all.valid.data$averageRating!=0),]
+
 
 # Now create our z scores
 tmp <- all.train.data[,-seq(2862, 2997)[1:38]]
@@ -66,9 +70,9 @@ all.train.data <- tmp
 rm(tmp)
 
 ## Now create our color values to export to ITK snap
-ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScaleNeg=c('light blue', 'blue'),colorScalePos=c('red', 'yellow'))
-gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScaleNeg=c('light blue', 'blue'), colorScalePos=c('red','yellow'))
-volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScaleNeg=c('light blue', 'blue'), colorScalePos=c('red','yellow'))
+ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))
+gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))
+volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))
 
 # Now we need to create our label into our file which matches our ROI to our label
 jlfCTVals <- cbind(jlfCTVals, ctColors[2:(dim(jlfCTVals)[1]+1),1])
@@ -104,9 +108,9 @@ all.train.data <- tmp
 rm(tmp)
 
 ## Now create our color values to export to ITK snap
-ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScaleNeg=c('light blue', 'blue'), colorScalePos=c('red', 'yellow'))
-gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScaleNeg=c('light blue', 'blue'), colorScalePos=c('red','yellow'))
-volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScaleNeg=c('light blue', 'blue'), colorScalePos=c('red','yellow'))
+ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))
+gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))
+volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))
 
 # Now we need to create our label into our file which matches our ROI to our label
 jlfCTVals <- cbind(jlfCTVals, ctColors[2:(dim(jlfCTVals)[1]+1),1])
