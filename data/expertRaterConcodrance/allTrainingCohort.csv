@@ -1,0 +1,101 @@
+bblid,scanid,TS RATING,TS RINGING,DR RATING,DR RINGING,DR COMMENTS,TS COMMENTS
+97271,6221,1,1,1,1,low contrast,"poor contrast, some ringing"
+97339,4252,2,0,2,1,"good contrast, slight ringing, pulsation left frontal",
+97342,4897,2,0,2,0,pulsation left,
+97383,3957,2,0,2,0,,
+97395,4414,2,0,2,0,,
+97415,3793,2,0,2,0,pulsation left,
+97456,5226,2,0,2,0,wrap in superior backgroond,
+97485,4996,2,1,1,1,"inferior ringing, pulsation left",this image has some more ringing than I would expect despite the good contrast
+97513,4558,2,0,2,0,pulsation left,
+97562,3825,2,0,2,0,,
+97565,3583,1,1,1,1,ringing,
+97573,6397,2,0,2,0,,
+97597,6844,1,0,2,1,slight ringing,Could be a 2   Some pulsation artifact 
+97600,4279,2,0,2,0,,
+97646,6875,2,0,2,0,pulsation left,
+97694,4637,0,0,0,1,motion,could be a 1.  but marked motion
+97851,3912,2,0,2,0,,
+97857,5193,2,0,2,0,,
+97904,4686,1,1,2,0,,"Some ringing, some loss of contrast"
+97975,4125,2,0,2,0,,
+97991,4443,2,0,2,0,,
+97994,3846,2,0,2,0,pulsation,
+98092,4277,2,0,2,0,pulsation left,
+98253,3675,2,0,2,0,pulsation left,
+98277,3569,2,0,2,0,pulsation left,
+98311,3738,2,0,2,0,,
+98314,3637,2,0,2,0,pulsation left,
+98319,4567,2,0,2,0,pulsation left,
+98320,3614,2,1,2,0,pulsation left,"Some more ringing superiorly than would expect, but remains ok given good contrast and definition overall"
+98366,3966,2,0,2,0,pulsation left,
+98368,4048,1,1,1,1,ringing,"Ringing, pulsation"
+98394,6578,2,0,2,0,pulsation left,
+98425,4710,1,0,1,0,noise in genu,"Poor contrast, bad inhomogeneity-- seems like some scanner artifact around CC also"
+98450,3599,2,0,2,0,pulsation left,But not the best contrast in ventral striatum
+98488,4212,2,0,2,0,pulsation left,
+98529,4101,2,0,2,0,,
+98532,3708,2,0,2,0,,
+98535,5222,2,0,2,0,pulsation left,
+98567,3710,0,1,0,1,major ringing,could be a 1.  but marked motion
+98672,6665,2,0,2,0,,
+98751,6649,2,0,2,0,,"could be a 1, not great frontal and L side contrast"
+98831,4624,2,0,2,0,,
+98849,4688,2,0,2,0,pulsation left,
+98871,6246,2,0,2,0,pulsation left,
+98879,6159,2,0,2,0,,
+98882,3910,1,0,1,1,ringing; pulsation genu,"Ventral ringing, pulsation, loss of contrast"
+98902,4114,2,0,2,0,,
+98908,6739,2,0,2,0,,
+98975,5119,2,0,2,0,pulsation genu & left,
+98999,3933,2,0,2,0,pulsation left,
+99079,6476,2,0,2,0,,
+99091,6043,2,0,2,0,pulsation left,Not best thalamic/striatal contrast but still a good image
+99244,6085,2,0,2,0,pulsation subcortical,
+99259,6277,2,0,2,0,,
+99268,3950,2,0,2,0,,
+99274,5676,2,0,2,0,pulsation,
+99340,6495,2,0,2,0,,
+99352,4967,2,0,2,0,,
+99399,4620,2,0,2,0,wrap,But some superior to inferior wrap as vertex cut off
+99408,3815,1,1,1,1,motion,"ringing, loss of contrast"
+99410,3726,2,0,2,0,septum pelucidum ,
+99419,5597,2,0,2,0,pulsation,
+99428,3700,2,0,2,0,lower contrast,but more background artifact than typical
+99433,3701,2,0,2,0,wrap,
+99436,3649,2,0,2,0,pulsation left,
+99503,4103,2,0,2,0,pulsation left,
+99518,5184,2,0,2,0,lower contrast,
+99538,5887,2,0,2,0,,
+99578,4462,2,0,2,0,pulsation left,
+99604,6454,2,0,2,1,ringing,
+99610,5425,2,0,2,0,,
+99637,5761,1,0,1,0,backgroud?/contrast,"Notable background artifact-- good example, some loss of gm/wm"
+99648,4137,2,0,2,0,"wrap, left pulsatin",
+99771,5505,0,0,0,0,horrible motion,Different image dimensions??
+99791,6572,1,1,1,0,low contrast,Loss of contrast
+99838,5925,2,0,2,0,,
+99844,4223,1,0,1,1,significant motion,"Not that sharp, some pulsation, could be a 1"
+99862,3972,2,0,2,0,pulsation left,
+99920,6191,1,1,1,1,significant motion,"Ringing, loss of contrast"
+99991,6217,1,1,1,1,significant motion,Ringing
+101098,4445,1,0,1,0,,
+107366,5591,2,0,2,0,,
+109731,4047,0,0,0,0,,
+114785,4981,0,0,0,0,,
+115051,4618,0,0,0,0,,
+115320,4806,1,0,1,0,,
+118987,6114,2,0,2,0,,
+118990,7292,2,0,2,0,,
+126903,5511,2,0,2,0,,
+130088,5982,2,0,2,0,,
+130639,6036,0,0,0,0,,
+138875,8434,0,0,0,0,,
+80179,2643,2,0,2,0,,
+84002,8415,2,0,2,0,,
+84525,2964,0,0,0,0,,
+88425,7082,2,0,2,0,,
+88677,6852,0,0,0,0,,
+95992,4449,0,0,0,0,,
+96213,5748,2,0,2,0,,
+99920,6191,1,0,1,0,,
