@@ -210,15 +210,15 @@ pvalLoop <- function(grepPattern, dataFrame, TBV=FALSE){
     colVals <- grep(grepPattern, names(dataFrame))
     
     # Now lets compute our p vals
-    outputPVals <- apply(dataFrame[,colVals], 2, function(x) returnPVal(x ,dataFrame$averageRating, '+df$ageAtGo1Scan+df$sex+df$ageAtGo1Scan^2', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE))
+    outputPVals <- apply(dataFrame[,colVals], 2, function(x) returnPVal(x ,dataFrame$oneVsTwoOutcome, '+df$ageAtGo1Scan+df$sex+df$ageAtGo1Scan^2', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE))
     if(TBV=='TRUE'){
-        outputPVals <- apply(dataFrame[,colVals], 2, function(x) returnPVal(x ,dataFrame$averageRating, '+df$ageAtGo1Scan+df$sex+df$ageAtGo1Scan^2', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE, regressTBV=TRUE))
+        outputPVals <- apply(dataFrame[,colVals], 2, function(x) returnPVal(x ,dataFrame$oneVsTwoOutcome, '+df$ageAtGo1Scan+df$sex+df$ageAtGo1Scan^2', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE, regressTBV=TRUE))
     }
     # Now fdr correct these suckers
     outputPVals.fdr <- p.adjust(outputPVals, method='fdr')
     
     # Now append the T values to the output
-    outputTVals <- apply(dataFrame[,colVals], 2, function(x) returnTVal(x ,dataFrame$averageRating, '+df$ageAtGo1Scan+df$sex+df$ageAtGo1Scan^2', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE))
+    outputTVals <- apply(dataFrame[,colVals], 2, function(x) returnTVal(x ,dataFrame$oneVsTwoOutcome, '+df$ageAtGo1Scan+df$sex+df$ageAtGo1Scan^2', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE))
     
     # I need to add some direction to my z scores
     # These directions will come from the t values
