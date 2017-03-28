@@ -53,7 +53,7 @@ all.valid.data <- merge(mergedQAP, validationData, by='bblid')
 ## to our ants values
 all.train.data <- all.train.data[which(all.train.data$averageRating!=0),]
 all.valid.data <- all.valid.data[which(all.valid.data$averageRating!=0),]
-vals <- grep('mprage_jlf_ct', names(all.train.data))
+vals <- grep('mprage_jlf_ct', names(all.train.data))[39:136]
 zScoreCT <- NULL
 binVals <- NULL
 for(i in vals){
@@ -69,11 +69,11 @@ binValsApply[which(p.adjust(binVals[,2], method='fdr')<.05)] <- 1
 zScoreCT[,2] <- as.numeric(zScoreCT[,2]) * binValsApply
 zScoreCT <- zScoreCT[order(as.numeric(zScoreCT[,2])),]
 
-vals <- grep('mprage_jlf_gmd', names(all.train.data))
+vals <- grep('mprage_jlf_gmd', names(all.train.data))[39:136]
 # Now rm nonesense ROI's
 zScoreGMD <- NULL
 binVals <- NULL
-for(i in vals[23:120]){
+for(i in vals){
     foo <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[1]
     toAppend <- c(names(all.train.data)[i], foo)
     zScoreGMD <- rbind(zScoreGMD, toAppend)
@@ -114,7 +114,7 @@ mediationPlot <- ggplot(all.train.data, aes(x=ageAtGo1Scan)) +
 static <- all.train.data
 all.train.data <- all.valid.data
 
-vals <- grep('mprage_jlf_ct', names(all.train.data))
+vals <- grep('mprage_jlf_ct', names(all.train.data))[39:136]
 zScoreCT <- NULL
 binVals <- NULL
 for(i in vals){
@@ -130,7 +130,7 @@ binValsApply[which(p.adjust(binVals[,2], method='fdr')<.05)] <- 1
 zScoreCT[,2] <- as.numeric(zScoreCT[,2]) * binValsApply
 zScoreCT <- zScoreCT[order(as.numeric(zScoreCT[,2])),]
 
-vals <- grep('mprage_jlf_gmd', names(all.train.data))
+vals <- grep('mprage_jlf_gmd', names(all.train.data))[39:136]
 # Now rm nonesense ROI's
 zScoreGMD <- NULL
 binVals <- NULL
