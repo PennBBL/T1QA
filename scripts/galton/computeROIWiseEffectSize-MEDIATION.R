@@ -81,8 +81,8 @@ for(i in vals[23:120]){
 zScoreGMD <- zScoreGMD[order(as.numeric(zScoreGMD[,2])),]
 
 ## Now create our color values to export to ITK snap
-ctColors <- returnPosNegAndNeuColorScale(zScoreCT[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
-gmdColors <- returnPosNegAndNeuColorScale(zScoreGMD[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
+ctColors <- returnPosNegAndNeuColorScale(zScoreCT[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))
+gmdColors <- returnPosNegAndNeuColorScale(zScoreGMD[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))
 
 # Now prepare the key between ROI and intensity
 jlfCTVals <- cbind(zScoreCT, seq(1:nrow(zScoreCT)))
@@ -146,8 +146,8 @@ jlfCTVals <- cbind(zScoreCT, seq(1:nrow(zScoreCT)))
 jlfGMDVals <- cbind(zScoreGMD, seq(1:nrow(zScoreGMD)))
 
 ## Now create our color values to export to ITK snap
-ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red', 'yellow'))
-gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScalePos=c('blue', 'light blue'), colorScaleNeg=c('red','yellow'))
+ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))
+gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))
 
 
 # Now I need to save these color scales and the other thing
