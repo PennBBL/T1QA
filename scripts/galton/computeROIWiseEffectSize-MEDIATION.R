@@ -134,7 +134,7 @@ vals <- grep('mprage_jlf_gmd', names(all.train.data))[39:136]
 # Now rm nonesense ROI's
 zScoreGMD <- NULL
 binVals <- NULL
-for(i in vals[23:120]){
+for(i in vals){
     foo <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[1]
     toAppend <- c(names(all.train.data)[i], foo)
     zScoreGMD <- rbind(zScoreGMD, toAppend)
