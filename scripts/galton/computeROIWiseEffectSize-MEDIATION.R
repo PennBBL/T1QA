@@ -106,7 +106,7 @@ all.train.data$ageAndQuality <- residuals(m2)
 mediationPlot <- ggplot(all.train.data, aes(x=ageAtGo1Scan)) +
   geom_smooth(method=lm, aes(y=justAge), color='red') +
   geom_smooth(method=lm, aes(y=ageAndQuality), color='blue') +
-  labs(title='Mediation Effect in TMP CT', x='Age', y='Predicted CT') +
+  labs(title='Mediation Effect in MFC GMD', x='Age', y='Predicted CT') +
   theme_bw()
 
 
@@ -155,4 +155,92 @@ write.table(ctColors, file='ctColorScaleValid.txt', sep="\t", quote=F, row.names
 write.table(gmdColors, file='gmdColorScaleValid.txt', sep="\t", quote=F, row.names=F, col.names=F)
 write.csv(jlfCTVals, 'jlfSigQAPROIctValid.csv', quote=F)
 write.csv(jlfGMDVals, 'jlfSigQAPROIgmdValid.csv', quote=F)
+# This section is going to be used to compare the raw age corellations vs the partial corellations of CT values
+# This si going to be done for each cortical thickness ROI
+all.train.data <- static
+vals <- grep('mprage_jlf_ct', names(all.train.data))[39:136]
+rValCT <- NULL
+regressedQaulityVals <- lm(oneVsTwoOutcome ~ ageAtGo1Scan + ageAtGo1Scan^2 + sex, data=all.train.data)$residuals
+regressedAgeVal <- lm(ageAtGo1Scan ~ sex + oneVsTwoOutcome, data=all.train.data)$residuals
+for(i in vals){
+    # First we need to create our regressed values
+    tmpRegVals <- lm(all.train.data[,i] ~ oneVsTwoOutcome + sex, data=all.train.data)$residuals
+    # Now find our cor value and our partial cor value
+    corVal <- cor(all.train.data$ageAtGo1Scan, all.train.data[,i])
+    pCorVal <- cor(tmpRegVals, regressedAgeVal)
+    toAppend <- c(names(all.train.data)[i], corVal, 'Raw')
+    toAppend <- rbind(toAppend, c(names(all.train.data)[i], pCorVal, 'Partial'))
+    toAppend <- rbind(toAppend, c(names(all.train.data)[i], corVal - pCorVal, 'Diff'))
+    rValCT <- rbind(rValCT, toAppend)
+}
+# Now plot these values
+rValDiff <- rValCT[grep('Diff', rValCT[,3]),]
+rValCT <- rValCT[-grep('Diff', rValCT[,3]),]
+rValCT[,1] <-gsub(rValCT[,1], pattern='mprage_jlf_ct_', replacement='')
+rValCT <- as.data.frame(rValCT)
+rValCT$V1 <- as.factor(rValCT$V1)
+rValCT$V2 <- as.numeric(as.character(rValCT$V2))
+rValCT$V3 <- as.factor(rValCT$V3)
+tmp <- rValCT
+rValCT <- rValCT[seq(1,98),]
+barPlot <- ggplot(rValCT, aes(x=V1, y=V2, group=V3, fill=V3)) +
+  geom_bar(stat='identity', position=position_dodge(), size=.1) +
+theme(legend.position="right") +
+labs(title='', x='ROI', y='Cor and PCor BTN CT and Age') +
+theme(text = element_text(size=30),
+axis.text.x = element_text(angle=90,hjust=1, size=16),
+axis.title.x = element_text(size=26),
+axis.title.y = element_text(size=26),
+legend.text = element_text(size=20))
+
+rValCT <- tmp[seq(99,198),]
+barPlot2 <- ggplot(rValCT, aes(x=V1, y=V2, group=V3, fill=V3)) +
+geom_bar(stat='identity', position=position_dodge(), size=.1) +
+theme(legend.position="right") +
+labs(title='', x='ROI', y='Cor and PCor BTN CT and Age') +
+theme(text = element_text(size=30),
+axis.text.x = element_text(angle=90,hjust=1, size=16),
+axis.title.x = element_text(size=26),
+axis.title.y = element_text(size=26),
+legend.text = element_text(size=20))
+
+rValCT <- rValDiff
+rValCT[,1] <-gsub(rValCT[,1], pattern='mprage_jlf_ct_', replacement='')
+rValCT <- as.data.frame(rValCT)
+rValCT$V1 <- as.factor(rValCT$V1)
+rValCT$V2 <- as.numeric(as.character(rValCT$V2))
+rValCT$V3 <- as.factor(rValCT$V3)
+
+barPlot3 <- ggplot(rValCT[seq(1,49),], aes(x=V1, y=V2, group=V3, fill=V3)) +
+geom_bar(stat='identity', position=position_dodge(), size=.1) +
+theme(legend.position="right") +
+labs(title='', x='ROI', y='Cor and PCor BTN CT and Age') +
+theme(text = element_text(size=30),
+axis.text.x = element_text(angle=90,hjust=1, size=16),
+axis.title.x = element_text(size=26),
+axis.title.y = element_text(size=26),
+legend.text = element_text(size=20))
+
+
+barPlot4 <- ggplot(rValCT[seq(50,98),], aes(x=V1, y=V2, group=V3, fill=V3)) +
+geom_bar(stat='identity', position=position_dodge(), size=.1) +
+theme(legend.position="right") +
+labs(title='', x='ROI', y='Cor and PCor BTN CT and Age') +
+theme(text = element_text(size=30),
+axis.text.x = element_text(angle=90,hjust=1, size=16),
+axis.title.x = element_text(size=26),
+axis.title.y = element_text(size=26),
+legend.text = element_text(size=20))
+
+
+pdf('gmdCorVsPCor.pdf', height=16, width=24)
+barPlot
+barPlot2
+barPlot3
+barPlot4
+dev.off()
+
+
+
+
 

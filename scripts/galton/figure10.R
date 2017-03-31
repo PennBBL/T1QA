@@ -42,7 +42,7 @@ all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 ## Now create our age regressed variables 
 tmp <- cbind(all.train.data[,grep('mprage_jlf_ct', names(all.train.data))], all.train.data[,grep('mprage_jlf_vol', names(all.train.data))])
 # Now trim non cortical regions
-tmp <- tmp[,-seq(99,134)]
+tmp <- tmp[,-c(seq(1, 38), seq(137,172))]
 meanCT <- NULL
 for(i in seq(1, nrow(tmp))){
   tmpVal <- weighted.mean(x=tmp[i,1:98], w=tmp[i,99:196])

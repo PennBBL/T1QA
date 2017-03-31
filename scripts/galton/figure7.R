@@ -37,7 +37,7 @@ all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 ## Now create our age regressed variables 
 tmp <- cbind(all.train.data[,grep('mprage_jlf_ct', names(all.train.data))], all.train.data[,grep('mprage_jlf_vol', names(all.train.data))])
 # Now trim non cortical regions
-tmp <- tmp[,-seq(99,134)]
+tmp <- tmp[,-c(seq(1, 38), seq(137,172))]
 meanCT <- NULL
 for(i in seq(1, nrow(tmp))){
   tmpVal <- weighted.mean(x=tmp[i,1:98], w=tmp[i,99:196])
@@ -150,6 +150,7 @@ trainData <- melt(trainData)
 trainDataSig <- melt(trainDataSig)
 trainData$Var3 <- rep('Training', nrow(trainData))
 trainDataSig$Var3 <- rep('Training', nrow(trainDataSig))
+trainDataSig[3] <- p.adjust(trainDataSig[,3], method='fdr')
 # Now add a fourth variable to denote signifiacne to train data
 trainData$Var4 <- ''
 trainData$Var4[which(trainDataSig$value<.05)] <- '*'
@@ -166,6 +167,7 @@ validData <- melt(validData)
 validDataSig <- melt(validDataSig)
 validData$Var3 <- rep('Validation', nrow(validData))
 validDataSig$Var3 <- rep('Validation', nrow(validDataSig))
+validDataSig[3] <- p.adjust(validDataSig[,3], method='fdr')
 # Now add a fourth variable to denote signifiacne to our valid data
 validData$Var4 <- ''
 validData$Var4[which(validDataSig$value<.05)] <- '*'
@@ -262,7 +264,7 @@ allData$Var2 <- factor(allData$Var2, levels=c('ANTs CT','ANTs Vol', 'ANTs GMD'))
 thing1 <- ggplot(allData, aes(x=Var2, y=value, color=Var2, fill=Var1, group=Var1)) +
   geom_bar(stat='identity', position=position_dodge(), size=.1, colour="black") +
   theme_bw() + 
-  theme(legend.position="right") +
+  theme(legend.position="none") +
   labs(title='', x='Imaging Measure', y='Association Between Quality Metric and Imaging Measure') +
   theme(axis.text.x = element_text(angle=90,hjust=1, size=20), 
         axis.title.x = element_text(size=20),
