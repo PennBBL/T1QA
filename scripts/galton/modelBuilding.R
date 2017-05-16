@@ -119,7 +119,7 @@ validationData <- raw.lme.data[-index,]
 
 raw.lme.data <- melt(trainingData, id.vars=names(raw.lme.data)[1:32], measure.vars=names(raw.lme.data)[34:36])
 raw.lme.data$value[raw.lme.data$value > 1] <- 1
-raw.lme.data$value <- binary.flip(raw.lme.data$value)
+#raw.lme.data$value <- binary.flip(raw.lme.data$value)
 
 # Now run through each variable of interest and build an ROC curve for it
 outcome <- raw.lme.data$value
