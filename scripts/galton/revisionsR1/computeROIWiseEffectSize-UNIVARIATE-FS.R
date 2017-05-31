@@ -61,6 +61,7 @@ all.valid.data <- all.valid.data[which(all.valid.data$averageRating!=0),]
 # Now create our z scores
 tmp <- all.train.data[,-seq(2862, 2997)[1:38]]
 fsCTVals <- pvalLoop('_thickness', tmp)
+fsCTVals <- fsCTVals[-grep('ean', fsCTVals[,1]),]
 rm(tmp)
 # Now trim the non cortical regions for our JLF vol regions
 tmp <- all.train.data
@@ -70,21 +71,18 @@ all.train.data <- tmp
 rm(tmp)
 
 ## Now create our color values to export to ITK snap
-ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))
-gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))
-volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))
+ctColors <- returnPosNegAndNeuColorScale(fsCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))
+volColors <- returnPosNegAndNeuColorScale(fsVOLVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))
 
 # Now we need to create our label into our file which matches our ROI to our label
-fsCTVals <- cbind(jlfCTVals, ctColors[2:(dim(jlfCTVals)[1]+1),1])
-fsVOLVals <- cbind(jlfVOLVals, volColors[2:(dim(jlfVOLVals)[1]+1),1])
+fsCTVals <- cbind(fsCTVals, ctColors[2:(dim(fsCTVals)[1]+1),1])
+fsVOLVals <- cbind(fsVOLVals, volColors[2:(dim(fsVOLVals)[1]+1),1])
 
 # Now I need to save these color scales and the other thing
-write.table(ctColors, file='ctColorScale.txt', sep="\t", quote=F, row.names=F, col.names=F)
-write.table(gmdColors, file='gmdColorScale.txt', sep="\t", quote=F, row.names=F, col.names=F)
-write.table(volColors, file='volColorScale.txt', sep="\t", quote=F, row.names=F, col.names=F)
-write.csv(jlfCTVals, 'jlfSigQAPROIct.csv', quote=F)
-write.csv(jlfGMDVals, 'jlfSigQAPROIgmd.csv', quote=F)
-write.csv(jlfVOLVals, 'jlfSigQAPROIvol.csv', quote=F)
+write.table(ctColors, file='fsctColorScale.txt', sep="\t", quote=F, row.names=F, col.names=F)
+write.table(volColors, file='fsvolColorScale.txt', sep="\t", quote=F, row.names=F, col.names=F)
+write.csv(fsCTVals, 'fsSigQAPROIct.csv', quote=F)
+write.csv(fsVOLVals, 'fsSigQAPROIvol.csv', quote=F)
 
 # Now do the validation data down here
 static <- all.train.data
@@ -96,26 +94,21 @@ rm(tmp)
 # Now trim the non cortical regions for our JLF vol regions
 tmp <- all.train.data
 all.train.data <- all.train.data[,-seq(2592,2627,1)]
-jlfVOLVals <- pvalLoop('_volume', all.train.data, TBV=TRUE)
+fsVOLVals <- pvalLoop('_volume', all.train.data, TBV=TRUE)
 all.train.data <- tmp
 rm(tmp)
 
 ## Now create our color values to export to ITK snap
-ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))
-gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))
-volColors <- returnPosNegAndNeuColorScale(jlfVOLVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))
+ctColors <- returnPosNegAndNeuColorScale(fsCTVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))
+volColors <- returnPosNegAndNeuColorScale(fsVOLVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))
 
 # Now we need to create our label into our file which matches our ROI to our label
-jlfCTVals <- cbind(jlfCTVals, ctColors[2:(dim(jlfCTVals)[1]+1),1])
-jlfGMDVals <- cbind(jlfGMDVals, gmdColors[2:(dim(jlfGMDVals)[1]+1),1])
-jlfVOLVals <- cbind(jlfVOLVals, volColors[2:(dim(jlfVOLVals)[1]+1),1])
+fsCTVals <- cbind(fsCTVals, ctColors[2:(dim(fsCTVals)[1]+1),1])
+fsVOLVals <- cbind(fsVOLVals, volColors[2:(dim(fsVOLVals)[1]+1),1])
 
 
 # Now I need to save these color scales and the other thing
 write.table(ctColors, file='ctColorScaleValid.txt', sep="\t", quote=F, row.names=F, col.names=F)
-write.table(gmdColors, file='gmdColorScaleValid.txt', sep="\t", quote=F, row.names=F, col.names=F)
 write.table(volColors, file='volColorScaleValid.txt', sep="\t", quote=F, row.names=F, col.names=F)
-write.csv(jlfCTVals, 'jlfSigQAPROIctValid.csv', quote=F)
-write.csv(jlfGMDVals, 'jlfSigQAPROIgmdValid.csv', quote=F)
-write.csv(jlfVOLVals, 'jlfSigQAPROIvolValid.csv', quote=F)
-
+write.csv(fsCTVals, 'jlfSigQAPROIctValid.csv', quote=F)
+write.csv(fsVOLVals, 'jlfSigQAPROIvolValid.csv', quote=F)
