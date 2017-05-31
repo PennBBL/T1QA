@@ -8,14 +8,11 @@
 # Start with Go1
 source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 set.seed(16)
-load('/home/adrose/qapQA/data/0vsNot0FinalData.RData')
-zeroVsNotZeroModel <- m1
-rm(m1)
 load('/home/adrose/qapQA/data/1vs28variableModel.RData')
 oneVsTwoModel <- mod8
 rm(mod8)
 # load library(s)
-install_load('caret', 'ggplot2', 'lme4', 'car', 'visreg', 'scales', 'MASS')
+install_load('ggplot2', 'lme4', 'car', 'visreg', 'scales', 'MASS')
 
 # Now lets create our train and validation sets
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
@@ -141,20 +138,10 @@ png('figure3-demographicsvs1vs2QAPPaper.png', width=16, height=16, units='in', r
 multiplot(bg1, mod1, bg2, mod2, cols=2)
 dev.off()
 
-# Now build a lme model in the training data
-raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
-raw.lme.data <- melt(trainingData, id.vars = names(raw.lme.data)[1:32], measure.vars = names(raw.lme.data)[34:36])
-raw.lme.data$value[raw.lme.data$value > 1] <- 1
-train.data <- merge(raw.lme.data, all.train.data, by = "bblid")
-train.data$age <- as.numeric(as.character(train.data$age))
-m1 <- lmer(rawAverageRating.y ~ age + sex + (1|variable), data = train.data)
+# Now build a lm model in the training data
+m1 <- lm(oneVsTwoOutcome ~ age + sex, data = all.train.data)
 sigValsTrain <- Anova(m1)
 
 # Now do the same for the validation data
-raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
-raw.lme.data <- melt(validationData, id.vars = names(raw.lme.data)[1:32], measure.vars = names(raw.lme.data)[34:36])
-raw.lme.data$value[raw.lme.data$value > 1] <- 1
-train.data <- merge(raw.lme.data, all.valid.data, by = "bblid")
-train.data$age <- as.numeric(as.character(train.data$age))
-m1 <- lmer(rawAverageRating.y ~ age + sex  + (1|variable), data = train.data)
+m1 <- lm(oneVsTwoOutcome ~ age + sex, data = all.valid.data)
 sigValsValid <- Anova(m1)
