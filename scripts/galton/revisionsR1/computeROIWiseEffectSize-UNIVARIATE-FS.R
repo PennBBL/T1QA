@@ -24,7 +24,7 @@ fsVals <- merge(fsVol, fsCt, by=c('bblid', 'scanid'))
 source('/home/adrose/T1QA/scripts/galton/computeROIWiseEffectSizeFucntions.R')
 
 ## Load library(s) we will need
-install_load('caret', 'lme4', 'bda', 'ggplot2')
+install_load('caret', 'lme4', 'bda', 'ggplot2', 'R.matlab')
 
 ## Now lets prep the data
 ## Now create the training data set and create the outcomes for all of the training data sets
@@ -71,18 +71,14 @@ all.train.data <- tmp
 rm(tmp)
 
 ## Now create our color values to export to ITK snap
-ctColors <- returnPosNegAndNeuColorScale(fsCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))
-volColors <- returnPosNegAndNeuColorScale(fsVOLVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))
-
-# Now we need to create our label into our file which matches our ROI to our label
-fsCTVals <- cbind(fsCTVals, ctColors[2:(dim(fsCTVals)[1]+1),1])
-fsVOLVals <- cbind(fsVOLVals, volColors[2:(dim(fsVOLVals)[1]+1),1])
+ctColors <- returnPosNegAndNeuColorScale(fsCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))[-1,]
+ctColors[,8] <- fsCTVals[,1]
+volColors <- returnPosNegAndNeuColorScale(fsVOLVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))[-1,]
+volColors[,8] <- fsVOLVals[,1]
 
 # Now I need to save these color scales and the other thing
-write.table(ctColors, file='fsctColorScale.txt', sep="\t", quote=F, row.names=F, col.names=F)
-write.table(volColors, file='fsvolColorScale.txt', sep="\t", quote=F, row.names=F, col.names=F)
-write.csv(fsCTVals, 'fsSigQAPROIct.csv', quote=F)
-write.csv(fsVOLVals, 'fsSigQAPROIvol.csv', quote=F)
+writeMat('fsctColorscale.mat', vals=ctColors)
+writeMat('fsvolColorScale.mat', vals=volColors)
 
 # Now do the validation data down here
 static <- all.train.data
@@ -90,6 +86,7 @@ all.train.data <- all.valid.data
 
 tmp <- all.train.data[,-seq(2862, 2997)[1:38]]
 fsCTVals <- pvalLoop('_thickness', tmp)
+fsCTVals <- fsCTVals[-grep('ean', fsCTVals[,1]),]
 rm(tmp)
 # Now trim the non cortical regions for our JLF vol regions
 tmp <- all.train.data
@@ -99,16 +96,11 @@ all.train.data <- tmp
 rm(tmp)
 
 ## Now create our color values to export to ITK snap
-ctColors <- returnPosNegAndNeuColorScale(fsCTVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))
-volColors <- returnPosNegAndNeuColorScale(fsVOLVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))
-
-# Now we need to create our label into our file which matches our ROI to our label
-fsCTVals <- cbind(fsCTVals, ctColors[2:(dim(fsCTVals)[1]+1),1])
-fsVOLVals <- cbind(fsVOLVals, volColors[2:(dim(fsVOLVals)[1]+1),1])
-
+ctColors <- returnPosNegAndNeuColorScale(fsCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))[-1,]
+ctColors[,8] <- fsCTVals[,1]
+volColors <- returnPosNegAndNeuColorScale(fsVOLVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))[-1,]
+volColors[,8] <- fsVOLVals[,1]
 
 # Now I need to save these color scales and the other thing
-write.table(ctColors, file='ctColorScaleValid.txt', sep="\t", quote=F, row.names=F, col.names=F)
-write.table(volColors, file='volColorScaleValid.txt', sep="\t", quote=F, row.names=F, col.names=F)
-write.csv(fsCTVals, 'jlfSigQAPROIctValid.csv', quote=F)
-write.csv(fsVOLVals, 'jlfSigQAPROIvolValid.csv', quote=F)
+writeMat('fsctColorscaleValid.mat', vals=ctColors)
+writeMat('fsvolColorScaleValid.mat', vals=volColors)
