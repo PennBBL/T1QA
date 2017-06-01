@@ -23,7 +23,7 @@ load(inputColorTable);
 %% Start with the right hemisphere data 
 [verts,faces] = freesurfer_read_surf(surf_r);
 [verts2,labels,colortable] = read_annotation(annot_r);
-
+label_col = zeros(size(labels));
 %% Now loop through each region name 
 loopLength=size(vals);
 loopLength=loopLength(1);
@@ -37,41 +37,113 @@ for i=1:loopLength;
     grepString=strrep(grepString, '_volume','');
     % Now find the respective row in the colortable for this roi
     roiValue=strmatch(grepString, colortable.struct_names);
-    % now change the color values for this roi
-    colortable.table(roiValue, 1) = str2double(vals{i, 2});
-    colortable.table(roiValue, 2) = str2double(vals{i, 3});
-    colortable.table(roiValue, 3) = str2double(vals{i, 4});
+    % Now find the original label value
+    origLabelValue=colortable.table(roiValue,5);
+    % Now find the new value that should be assigned to this value
+    % we are going to scale the data between 0 and 1
+    % and this range value will be the new label value
+    % careful steps will have to be made to ensure that all
+    % non significant ROI's are greyed out 
+    newValues=(str2double(vals(:,9))-min(str2double(vals(:,9))))/range(str2double(vals(:,9)));
+    newValue=str2double(vals(i,9));
+    % now change all of the corresponding label values to our new value 
+    indx = labels == origLabelValue;
+    label_col(indx) = newValue;
   end
 end
 
-%%% Right hemi %%%%
+% Create a custom color map 
+% This will be a little bit tricky as I need to accomplish a couple of things here:
+% 1.) Gray out the non signifianct relationships 
+% 2.) Ensure that the colors indicate the correct directions of relationships:
+%    a. Hot must be larger 
+%    b. blue must be smaller 
+tmp_cmp=jet(loopLength);
+% Now find which rows have been greyed out in the input 
+indx=find(ismember(str2double(vals(:,2:4)), [190 190 190], 'rows'));
+% Now grey out the corresponding values
+tmp_cmp(min(indx):max(indx),:)=repmat(0.7, range(indx)+1, 3);
+% Now remove the green from the color map
+newMapLength=loopLength-max(indx);
+subtmpcolmap=autumn(newMapLength);
+tmp_cmp(max(indx)+1:end,:)=subtmpcolmap;
 
-th = trisurf(faces,verts(:,1),verts(:,2),verts(:,3),labels);
-set(th,'edgecolor','none');
-camlight headlight
+% Now plot the surfaces
+hFig = trisurf(faces,verts(:,1),verts(:,2),verts(:,3),label_col);
+set(hFig,'edgecolor','none');
+camlight left
 axis image;
 material shiny
 axis off
+colormap(tmp_cmp);
 view(-90,0)
-set(gcf,'color','white')
-view(0,90)
+print('rhMedial', '-dpng')
 
-%%% Left hemi %%%
+hFig=figure();
+set(hFig, 'Visible', 'off')
+hFig = trisurf(faces,verts(:,1),verts(:,2),verts(:,3),label_col);
+set(hFig,'edgecolor','none');
+camlight right
+axis image;
+material shiny
+axis off
+colormap(tmp_cmp);
+view(-280,0)
+print('rhLateral', '-dpng')
+
+% Now replicate this whole procedure for the left hemisphere 
+% There is a better more line efficent manner to perform this but I am not pursuing that atm.
+%% Start with the right hemisphere data 
 [verts,faces] = freesurfer_read_surf(surf_l);
 [verts2,labels,colortable] = read_annotation(annot_l);
-th= trisurf(faces,verts(:,1),verts(:,2),verts(:,3),labels);
-set(th,'edgecolor','none');
-camlight headlight
+label_col = zeros(size(labels));
+%% Now loop through each region name 
+loopLength=size(vals);
+loopLength=loopLength(1);
+for i=1:loopLength;
+  indexToSearch=vals(i,8);
+  hemiIndex=indexToSearch{1}(1:3);
+  if hemiIndex == 'lh_'
+    % First vreate the string that we are going to grep for
+    grepString=indexToSearch{1}(4:end);
+    grepString=strrep(grepString, '_thickness','');
+    grepString=strrep(grepString, '_volume','');
+    % Now find the respective row in the colortable for this roi
+    roiValue=strmatch(grepString, colortable.struct_names);
+    % Now find the original label value
+    origLabelValue=colortable.table(roiValue,5);
+    % Now find the new value that should be assigned to this value
+    % we are going to scale the data between 0 and 1
+    % and this range value will be the new label value
+    % careful steps will have to be made to ensure that all
+    % non significant ROI's are greyed out 
+    newValues=(str2double(vals(:,9))-min(str2double(vals(:,9))))/range(str2double(vals(:,9)));
+    newValue=str2double(vals(i,9));
+    % now change all of the corresponding label values to our new value 
+    indx = labels == origLabelValue;
+    label_col(indx) = newValue;
+  end
+end
+
+% Now plot the surfaces
+hFig = trisurf(faces,verts(:,1),verts(:,2),verts(:,3),label_col);
+set(hFig,'edgecolor','none');
+camlight left
 axis image;
-colormap(jet)
 material shiny
 axis off
+colormap(tmp_cmp);
 view(-90,0)
-set(gcf,'color','white')
+print('lhMedial', '-dpng')
 
-h = camlight('left');
-for i = 1:20;
-   camorbit(10,0)
-   camlight(h,'left')
-   pause(.1)
-end
+hFig=figure();
+set(hFig, 'Visible', 'off')
+hFig = trisurf(faces,verts(:,1),verts(:,2),verts(:,3),label_col);
+set(hFig,'edgecolor','none');
+camlight right
+axis image;
+material shiny
+axis off
+colormap(tmp_cmp);
+view(-280,0)
+print('lhLateral', '-dpng')
