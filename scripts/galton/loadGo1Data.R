@@ -17,9 +17,9 @@ allFSDataVol$scanid <- strSplitMatrixReturn( strSplitMatrixReturn(allFSDataVol$M
 allFSDataVol <- allFSDataVol[,-1]
 allFSData <- merge(allFSData, allFSDataVol, by=c('bblid', 'scanid'))
 allFSData <- allFSData[! duplicated(allFSData),]
-allJLFData <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw2017/n1601_jlfAntsCTIntersectionVol.csv')
-allJLFDataGMD <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw2017/n1601_jlfAtroposIntersectionGMD.csv')
-allJLFDataCT <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw2017/n1601_jlfAntsCTIntersectionCt.csv')
+allJLFData <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw2017/n1601_jlfAntsCTIntersectionVol_20170323.csv')
+allJLFDataGMD <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw2017/n1601_jlfAtroposIntersectionGMD_20170410.csv')
+allJLFDataCT <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw2017/n1601_jlfAtroposIntersectionCT_20170331.csv')
 allJLFData <- merge(allJLFData, allJLFDataGMD, by=c('bblid', 'scanid'))
 allJLFData <- merge(allJLFData, allJLFDataCT, by=c('bblid', 'scanid'))
 
