@@ -57,7 +57,6 @@ all.valid.data <- merge(all.valid.data, fsVals, by='bblid')
 all.train.data <- all.train.data[which(all.train.data$averageRating!=0),]
 all.valid.data <- all.valid.data[which(all.valid.data$averageRating!=0),]
 
-
 # Now create our z scores
 tmp <- all.train.data[,-seq(2862, 2997)[1:38]]
 fsCTVals <- pvalLoop('_thickness', tmp)
@@ -73,11 +72,13 @@ rm(tmp)
 ## Now create our color values to export to ITK snap
 ctColors <- returnPosNegAndNeuColorScale(fsCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))[-1,]
 ctColors[,8] <- fsCTVals[,1]
+ctColors <- cbind(ctColors, fsCTVals[,2])
 volColors <- returnPosNegAndNeuColorScale(fsVOLVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))[-1,]
 volColors[,8] <- fsVOLVals[,1]
+volColors <- cbind(volColors, fsVOLVals[,2])
 
 # Now I need to save these color scales and the other thing
-writeMat('fsctColorscale.mat', vals=ctColors)
+writeMat('fsctColorScale.mat', vals=ctColors)
 writeMat('fsvolColorScale.mat', vals=volColors)
 
 # Now do the validation data down here
@@ -98,9 +99,11 @@ rm(tmp)
 ## Now create our color values to export to ITK snap
 ctColors <- returnPosNegAndNeuColorScale(fsCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))[-1,]
 ctColors[,8] <- fsCTVals[,1]
+ctColors <- cbind(ctColors, fsCTVals[,2])
 volColors <- returnPosNegAndNeuColorScale(fsVOLVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))[-1,]
 volColors[,8] <- fsVOLVals[,1]
+volColors <- cbind(volColors, fsVOLVals[,2])
 
 # Now I need to save these color scales and the other thing
-writeMat('fsctColorscaleValid.mat', vals=ctColors)
-writeMat('fsvolColorScaleValid.mat', vals=volColors)
+writeMat('fsctvalidColorScale.mat', vals=ctColors)
+writeMat('fsvolvalidColorScale.mat', vals=volColors)
