@@ -11,8 +11,8 @@ function createImages(inputColorTable)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Load the MNI template surface and annotation files
-surf_r='/data/joy/BBL/studies/pnc/processedData/structural/freesurfer53/MNI_1mm_template/surf/rh.white';
-surf_l='/data/joy/BBL/studies/pnc/processedData/structural/freesurfer53/MNI_1mm_template/surf/lh.white';
+surf_r='/data/joy/BBL/studies/pnc/processedData/structural/freesurfer53/MNI_1mm_template/surf/rh.inflated';
+surf_l='/data/joy/BBL/studies/pnc/processedData/structural/freesurfer53/MNI_1mm_template/surf/lh.inflated';
 
 annot_r='/data/joy/BBL/studies/pnc/processedData/structural/freesurfer53/MNI_1mm_template/label/rh.aparc.annot';
 annot_l='/data/joy/BBL/studies/pnc/processedData/structural/freesurfer53/MNI_1mm_template/label/lh.aparc.annot';
@@ -71,25 +71,26 @@ tmp_cmp(max(indx)+1:end,:)=subtmpcolmap;
 % Now plot the surfaces
 hFig = trisurf(faces,verts(:,1),verts(:,2),verts(:,3),label_col);
 set(hFig,'edgecolor','none');
-camlight left
 axis image;
-material shiny
+material dull
 axis off
 colormap(tmp_cmp);
 view(-90,0)
-print('rhMedial', '-dpng')
+camlight headlight
+saveas(hFig, 'rhLateral.png')
+export_fig rhLateral.png -transparent
 
 hFig=figure();
-set(hFig, 'Visible', 'off')
 hFig = trisurf(faces,verts(:,1),verts(:,2),verts(:,3),label_col);
 set(hFig,'edgecolor','none');
-camlight right
 axis image;
-material shiny
+material dull
 axis off
 colormap(tmp_cmp);
 view(-280,0)
-print('rhLateral', '-dpng')
+camlight headlight
+saveas(hFig, 'rhMedial.png')
+export_fig rhMedial.png -transparent
 
 % Now replicate this whole procedure for the left hemisphere 
 % There is a better more line efficent manner to perform this but I am not pursuing that atm.
@@ -128,22 +129,23 @@ end
 % Now plot the surfaces
 hFig = trisurf(faces,verts(:,1),verts(:,2),verts(:,3),label_col);
 set(hFig,'edgecolor','none');
-camlight left
 axis image;
-material shiny
+material dull
 axis off
 colormap(tmp_cmp);
 view(-90,0)
-print('lhMedial', '-dpng')
+camlight headlight
+saveas(hFig, 'lhLateral.png')
+export_fig lhLateral.png -transparent
 
 hFig=figure();
-set(hFig, 'Visible', 'off')
 hFig = trisurf(faces,verts(:,1),verts(:,2),verts(:,3),label_col);
 set(hFig,'edgecolor','none');
-camlight right
 axis image;
-material shiny
+material dull
 axis off
 colormap(tmp_cmp);
 view(-280,0)
-print('lhLateral', '-dpng')
+camlight headlight
+saveas(hFig, 'lhMedial.png')
+export_fig lhMedial.png -transparent
