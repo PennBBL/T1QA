@@ -70,8 +70,8 @@ names(all.train.data) <- gsub(pattern='.x', x=names(all.train.data), replacement
 names(all.valid.data) <- gsub(pattern='.x', x=names(all.valid.data), replacement='')
 
 # Now lets declare our variables of interest 
-varsOfInterest <- c('bg.kurtosis', 'bg.skewness', 'cnr', 'efc', 'fber', 'qi1', 'snr', 'wm.skewness', 'SurfaceHoles', 'WM.hypointensities')
-prettyNames <- c('BG Kurtosis', 'BG Skewness', 'CNR', 'EFC', 'FBER', 'QI1', 'SNR', 'WM Skewness', 'Surface Holes', 'WM Hypointensities')
+varsOfInterest <- c('bg.kurtosis', 'bg.skewness', 'cnr', 'efc', 'fber', 'qi1', 'snr', 'wm.skewness', 'mean_euler', 'WM.hypointensities')
+prettyNames <- c('BG Kurtosis', 'BG Skewness', 'CNR', 'EFC', 'FBER', 'QI1', 'SNR', 'WM Skewness', 'Euler Number', 'WM Hypointensities')
 
 # Now lets create our training values
 trainingValues <- NULL 
