@@ -11,6 +11,12 @@
 ## Load the data
 source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 detachAllPackages()
+# Also load the euler number data
+eulerNumber <- read.csv('/home/adrose/qapQA/data/n1601_euler_number.csv')
+eulerNumber[,2] <- strSplitMatrixReturn(eulerNumber[,2], 'x')[,2]
+eulerNumber$mean_euler <- (eulerNumber[,3] + eulerNumber[,4])/2
+eulerNumber[,3:5] <-  scale(eulerNumber[,3:5], scale=T, center=T)
+mergedQAP <- merge(mergedQAP, eulerNumber, by=c('bblid', 'scanid'))
 set.seed(16)
 load('/home/adrose/qapQA/data/1vs28variableModel.RData')
 oneVsTwoModel <- mod8
@@ -56,6 +62,10 @@ all.valid.data <- merge(all.valid.data, fsVals, by='bblid')
 # Remove 0 scans 
 all.train.data <- all.train.data[which(all.train.data$averageRating!=0),]
 all.valid.data <- all.valid.data[which(all.valid.data$averageRating!=0),]
+
+# Now change our metric of interest
+all.train.data$oneVsTwoOutcome <- all.train.data$mean_euler
+all.valid.data$oneVsTwoOutcome <- all.valid.data$mean_euler
 
 # Now create our z scores
 tmp <- all.train.data[,-seq(2862, 2997)[1:38]]
