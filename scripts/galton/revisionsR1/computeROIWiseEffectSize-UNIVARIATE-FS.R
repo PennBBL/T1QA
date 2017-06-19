@@ -69,7 +69,7 @@ all.valid.data$oneVsTwoOutcome <- all.valid.data$mean_euler
 
 # Now create our z scores
 tmp <- all.train.data[,-seq(2862, 2997)[1:38]]
-fsCTVals <- pvalLoop('_thickness', tmp)
+fsCTVals <- pvalLoop('_thickness', tmp, correct=FALSE)
 fsCTVals <- fsCTVals[-grep('ean', fsCTVals[,1]),]
 rm(tmp)
 # Now trim the non cortical regions for our JLF vol regions
@@ -96,7 +96,7 @@ static <- all.train.data
 all.train.data <- all.valid.data
 
 tmp <- all.train.data[,-seq(2862, 2997)[1:38]]
-fsCTVals <- pvalLoop('_thickness', tmp)
+fsCTVals <- pvalLoop('_thickness', tmp, , correct=FALSE)
 fsCTVals <- fsCTVals[-grep('ean', fsCTVals[,1]),]
 rm(tmp)
 # Now trim the non cortical regions for our JLF vol regions
@@ -117,3 +117,22 @@ volColors <- cbind(volColors, fsVOLVals[,2])
 # Now I need to save these color scales and the other thing
 writeMat('fsctvalidColorScale.mat', vals=ctColors)
 writeMat('fsvolvalidColorScale.mat', vals=volColors)
+
+# Now do MGI
+source('/home/adrose/T1QA/scripts/galton/loadMgiData.R')
+mgiEuler <- read.csv('/home/adrose/qapQA/data/mgiEulerVals.csv')
+mgiEuler$mean_euler <- (mgiEuler$left_euler + mgiEuler$right_euler)/2
+all.train.data <- mergedQAP
+all.train.data <- all.train.data[which(all.train.data$averageRating!=0),]
+all.train.data <- merge(all.train.data, mgiEuler, by='bblid')
+all.train.data$oneVsTwoOutcome <- all.train.data$mean_euler
+all.train.data$ageAtGo1Scan <- all.train.data$age
+all.train.data$sex <- all.train.data$Gender
+fsCTVals <- pvalLoop('_thickness', all.train.data, correct=FALSE)
+fsCTVals <- fsCTVals[-grep('ean', fsCTVals[,1]),]
+## Now create our color values to export to ITK snap
+ctColors <- returnPosNegAndNeuColorScale(fsCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))[-1,]
+ctColors[,8] <- fsCTVals[,1]
+ctColors <- cbind(ctColors, fsCTVals[,2])
+# Now I need to save these color scales and the other thing
+writeMat('fsctColorScaleMGI.mat', vals=ctColors)
