@@ -205,7 +205,7 @@ returnPosNegAndNeuColorScale <- function(outputZScores, colorScaleNeg=c('light b
 
 # Now create a function which will return all of the pVals for a specific grep pattern
 # which will be the prefix for an imaging value
-pvalLoop <- function(grepPattern, dataFrame, TBV=FALSE){
+pvalLoop <- function(grepPattern, dataFrame, TBV=FALSE, correct=TRUE){
     # First lets find the values that we need to loop through
     colVals <- grep(grepPattern, names(dataFrame))
     
@@ -215,8 +215,12 @@ pvalLoop <- function(grepPattern, dataFrame, TBV=FALSE){
         outputPVals <- apply(dataFrame[,colVals], 2, function(x) returnPVal(x ,dataFrame$oneVsTwoOutcome, '+df$ageAtGo1Scan+df$sex+df$ageAtGo1Scan^2', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE, regressTBV=TRUE))
     }
     # Now fdr correct these suckers
-    outputPVals.fdr <- p.adjust(outputPVals, method='fdr')
-    
+    if(correct==TRUE){
+      outputPVals.fdr <- p.adjust(outputPVals, method='fdr')
+    }
+    if(correct==FALSE){
+      outputPVals.fdr <- outputPVals
+    }
     # Now append the T values to the output
     outputTVals <- apply(dataFrame[,colVals], 2, function(x) returnTVal(x ,dataFrame$oneVsTwoOutcome, '+df$ageAtGo1Scan+df$sex+df$ageAtGo1Scan^2', all.train.data, regressAgeBOO=FALSE, regressSexBOO=FALSE))
     
@@ -230,3 +234,46 @@ pvalLoop <- function(grepPattern, dataFrame, TBV=FALSE){
     rownames(output) <- NULL
     return(output)
 }
+
+returnPosNegAndNeuColorScaleNoThresh <- function(outputZScores, colorScaleNeg=c('light blue', 'blue'), colorScalePos=c('yellow', 'red'), colorScaleNeu=c('gray'), sigThreshold=.05){
+    # MAKE SURE WE ARE DEALING WITH NUMERICS!!!!
+    outputZScores <- as.numeric(as.character(outputZScores))
+    
+    # First convert our sig threshold into a z score to find our cut off value
+    cutOff <- abs(qnorm(sigThreshold))
+    
+    # Now we need to make our seperate our data into neutral, positive, and negative values
+    # We are going to order these just so it is easier to match the labesl to the output ROI
+    # when working with the ouput of this function
+    negativeValues <- outputZScores[which(outputZScores < 0)]
+    negativeValues <- negativeValues[order(negativeValues)]
+    positiveValues <- outputZScores[which(outputZScores >= 0)]
+    positiveValues <- positiveValues[order(positiveValues)]
+    
+    # Create our blank label row first
+    values <- rep(0, 7)
+    blankRow <- append(values, paste('"', 'Clear Label' ,'"', sep=''))
+    
+    # Now we need to create our individual color scales
+    #startPoint <- NULL
+    output <- blankRow
+    if(length(negativeValues) > 0 ){
+        negativeColors <- returnHeatMapITKSnapVals(negativeValues, lowColor=colorScaleNeg[1], hiColor=colorScaleNeg[2])[2:(length(negativeValues)+1),]
+        #negIndex <- max(as.numeric(as.character(negativeColors[,1])))
+        #startPoint <- cbind(startPoint, negIndex)
+        output <- rbind(output, negativeColors)
+    }
+    if(length(positiveValues) > 0 ){
+        positiveColors <- returnHeatMapITKSnapVals(positiveValues, lowColor=colorScalePos[1], hiColor=colorScalePos[2])[2:(length(positiveValues)+1),]
+        #posIndex <- max(as.numeric(as.character(positiveColors[,1])))
+        #startPoint <- cbind(startPoint, posIndex)
+        output <- rbind(output, positiveColors)
+    }
+    # Now I need to make sure that the index column doesn't have any repeats
+    # This will be done by running an an index thorugh the first column
+    output[,1] <- seq(0, length(outputZScores))
+    
+    # Now we are all set! just need to return our output
+    return(output)
+}
+
