@@ -61,12 +61,26 @@ end
 tmp_cmp=jet(loopLength);
 % Now find which rows have been greyed out in the input 
 indx=find(ismember(str2double(vals(:,2:4)), [190 190 190], 'rows'));
-% Now grey out the corresponding values
-tmp_cmp(min(indx):max(indx),:)=repmat(0.7, range(indx)+1, 3);
+% Now check to see if we have any gray values
+valueToCheck=size(indx);
+valueToCheck=valueToCheck(1);
+if (valueToCheck > 0)
+  % Now grey out the corresponding values
+  tmp_cmp(min(indx):max(indx),:)=repmat(0.7, range(indx)+1, 3);
+end
 % Now remove the green from the color map
 newMapLength=loopLength-max(indx);
 subtmpcolmap=autumn(newMapLength);
 tmp_cmp(max(indx)+1:end,:)=subtmpcolmap;
+% Now check to see if we did not have any gray images 
+% If we didn't export jet as the color table 
+if (valueToCheck == 0)
+  % Find the positive values and create a red-yellow heat map for those
+  indx=find(str2double(vals(:,9))<0);
+  tmp_cmp(0:max(indx),:)=cool(max(indx));
+  indx2=find(str2double(vals(:,9))>0);
+  tmp_cmp(max(tmp_cmp):max(indx2),:)=hot(max(indx2))
+end
 
 % Now plot the surfaces
 hFig = trisurf(faces,verts(:,1),verts(:,2),verts(:,3),label_col);

@@ -1,12 +1,14 @@
-val='/home/arosen/T1QA/data/fsctColorScale.mat'
+val='/data/joy/BBL/projects/pncT1QA/T1QA/data/fsctColorScale.mat'
 produceFSImages(val)
-system('mv *png /home/arosen/T1QA/data/fsct')
-val='/home/arosen/T1QA/data/fsctvalidColorScale.mat'
+system('mv *png /data/joy/BBL/projects/pncT1QA/T1QA/data/fsct')
+val='/data/joy/BBL/projects/pncT1QA/T1QA/data/fsctvalidColorScale.mat'
 produceFSImages(val)
-system('mv *png /home/arosen/T1QA/data/fsctvalid')
-val='/home/arosen/T1QA/data/fsvolColorScale.mat'
+system('mv *png /data/joy/BBL/projects/pncT1QA/T1QA/data/fsctvalid')
+val='/data/joy/BBL/projects/pncT1QA/T1QA/data/fsvolColorScale.mat'
 produceFSImages(val)
-system('mv *png /home/arosen/T1QA/data/fsvol')
-val='/home/arosen/T1QA/data/fsvolvalidColorScale.mat'
+system('mv *png /data/joy/BBL/projects/pncT1QA/T1QA/data/fsvol')
+val='/data/joy/BBL/projects/pncT1QA/T1QA/data/fsvolvalidColorScale.mat'
 produceFSImages(val)
-system('mv *png /home/arosen/T1QA/data/fsvolvalid')
+system('mv *png /data/joy/BBL/projects/pncT1QA/T1QA/data/fsvolvalid')
+val='/data/joy/BBL/projects/pncT1QA/T1QA/data/fsctColorScaleMGI.mat'
+produceFSImages(val)
