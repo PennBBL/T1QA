@@ -20,6 +20,9 @@ allFSData <- allFSData[! duplicated(allFSData),]
 allJLFData <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw2017/n1601_jlfAntsCTIntersectionVol_20170323.csv')
 allJLFDataGMD <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw2017/n1601_jlfAtroposIntersectionGMD_20170410.csv')
 allJLFDataCT <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw2017/n1601_jlfAtroposIntersectionCT_20170331.csv')
+eulerNumber <- read.csv('/home/adrose/qapQA/data/n1601_euler_number.csv')
+eulerNumber[,2] <- strSplitMatrixReturn(eulerNumber[,2], 'x')[,2]
+eulerNumber$mean_euler <- (eulerNumber[,3] + eulerNumber[,4])/2
 allJLFData <- merge(allJLFData, allJLFDataGMD, by=c('bblid', 'scanid'))
 allJLFData <- merge(allJLFData, allJLFDataCT, by=c('bblid', 'scanid'))
 
@@ -60,6 +63,7 @@ mergedQAP <- merge(mergedQAP, allFSData, by=c('bblid', 'scanid'))
 mergedQAP$bh.meanthickness <- apply(mergedQAP[,c(2520, 2522)], 1, function(x) mean(x, na.rm=T))
 mergedQAP$bh.totalarea <- apply(mergedQAP[,c(2521, 2523)], 1, function(x) sum(x, na.rm=T))
 mergedQAP <- merge(mergedQAP, allJLFData, by=c('bblid', 'scanid'))
+mergedQAP <- merge(mergedQAP, eulerNumber, by=c('bblid', 'scanid'))
 
 ## Declare some variables
 manualQAValue <- "averageRating"

@@ -12,6 +12,8 @@ manualQAData <- read.csv("/home/adrose/qapQA/data/n550_mgi_demo_dx_2013-12-13.cs
 manualQAData2 <- read.csv("/home/adrose/qapQA/data/n920_manual_ratings_validation.csv")
 thicknessValues <- read.csv("/home/adrose/qapQA/data/mgiThickness.csv")
 thicknessValues[,1] <- strSplitMatrixReturn(thicknessValues[,1], '_')[,1]
+eulerValues <- read.csv('/home/adrose/qapQA/data/mgiEulerVals.csv')
+
 
 # Here we will collapse the bins into 4 distinct groups based on average rating
 # We want 4 distinct rating bins 0 - bad, 1-1.33 - decent, 1.667 - good, 2 - stellar
@@ -47,6 +49,7 @@ qapRawOutput$scanid <- as.factor(qapRawOutput$scanid)
 # Now merge the data 
 mergedQAP <- merge(qapRawOutput, manualQAData, by="scanid")
 mergedQAP <- merge(mergedQAP, thicknessValues, by.x='bblid.x', by.y='bblid')
+mergedQAP <- merge(mergedQAP, eulerValues, by=c('bblid', 'scanid'))
 mergedQAP <- mergedQAP[!duplicated(mergedQAP),]
 
 # Now create the three data sets - Go2, mgi penn, and mgi pitt
@@ -66,6 +69,7 @@ qapValNames <- names(mergedQAP)[3:38]
 ## Now create a data set which only has good and bad data
 #mergedQAP <- rbind(mergedQAP.penn, mergedQAP.pitt)
 mergedQAP <- mergedQAP.penn
+all.mgi.data <- mergedQAP
 #mergedQAP <- mergedQAP[which(mergedQAP$age < 60),]
 colnames(mergedQAP) <- gsub(pattern='.x', replacement = '', x = colnames(mergedQAP), fixed = TRUE)
 isolatedVars <- mergedQAP[qapValNames]
