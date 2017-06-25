@@ -8,6 +8,7 @@
 
 ## Load data
 # Start with Go1
+source('/home/adrose/T1QA/scripts/galton/loadMgiData.R')
 source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 set.seed(16)
 
@@ -15,7 +16,7 @@ set.seed(16)
 summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
                       conf.interval=.95, .drop=TRUE) {
     library(plyr)
-
+    
     # New version of length which can handle NA's: if na.rm==T, don't count them
     length2 <- function (x, na.rm=FALSE) {
         if (na.rm) sum(!is.na(x))
@@ -64,16 +65,25 @@ all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 all.valid.data <- merge(mergedQAP, validationData, by='bblid')
 names(all.train.data) <- gsub(pattern='.x', x=names(all.train.data), replacement='')
 names(all.valid.data) <- gsub(pattern='.x', x=names(all.valid.data), replacement='')
+trainingData <- merge(trainingData, eulerNumber, by='bblid')
+trainingData$mean_euler <- scale(trainingData$mean_euler)
+validationData <- merge(validationData, eulerNumber, by='bblid')
+validationData$mean_euler <- scale(validationData$mean_euler)
+
+# Now ensure complete cases
+all.train.data <- all.train.data[complete.cases(all.train.data$mean_euler),]
+all.valid.data <- all.valid.data[complete.cases(all.valid.data$mean_euler),]
+all.mgi.data <- all.mgi.data[complete.cases(all.mgi.data$mean_euler),]
 
 # Now lets declare our variables of interest 
-varsOfInterest <- c('bg.kurtosis', 'bg.skewness', 'cnr', 'efc', 'fber', 'qi1', 'snr', 'wm.skewness')
-prettyNames <- c('BG Kurtosis', 'BG Skewness', 'CNR', 'EFC', 'FBER', 'QI1', 'SNR', 'WM Skewness')
+varsOfInterest <- c('bg.kurtosis', 'bg.skewness', 'cnr', 'efc', 'fber', 'qi1', 'snr', 'wm.skewness', 'mean_euler')
+prettyNames <- c('BG Kurtosis', 'BG Skewness', 'CNR', 'EFC', 'FBER', 'QI1', 'SNR', 'WM Skewness', 'Mean Euler')
 
 # Now lets create our training values
 trainingValues <- NULL 
 i <- 1
 for(qapVal in varsOfInterest){
-  valsToAppend <- summarySE(data=trainingData, measurevar=qapVal, groupvars='averageRating.y')
+  valsToAppend <- summarySE(data=trainingData, measurevar=qapVal, groupvars='averageRating.y', na.rm=T)
   qapValue <- rep(prettyNames[i], nrow(valsToAppend))
   Dataset <- rep('Training', nrow(valsToAppend))
   valsToAppend <- cbind(valsToAppend, qapValue, Dataset)
@@ -82,13 +92,25 @@ for(qapVal in varsOfInterest){
 }
 i <- 1
 for(qapVal in varsOfInterest){
-  valsToAppend <- summarySE(data=validationData, measurevar=qapVal, groupvars='averageRating.y')
+  valsToAppend <- summarySE(data=validationData, measurevar=qapVal, groupvars='averageRating.y', na.rm=T)
   qapValue <- rep(prettyNames[i], nrow(valsToAppend))
-  Dataset <- rep('Validation', nrow(valsToAppend))
+  Dataset <- rep('Testing', nrow(valsToAppend))
   valsToAppend <- cbind(valsToAppend, qapValue, Dataset)
   trainingValues <- rbind(trainingValues, valsToAppend)
   i <- i + 1
 }
+i <- 1
+for(qapVal in varsOfInterest){
+    all.mgi.data[qapVal] <- scale(unlist(all.mgi.data[qapVal]), center=T, scale=T)[1:233]
+    valsToAppend <- summarySE(data=all.mgi.data, measurevar=qapVal, groupvars='averageRating')
+    qapValue <- rep(prettyNames[i], nrow(valsToAppend))
+    Dataset <- rep('Validation', nrow(valsToAppend))
+    valsToAppend <- cbind(valsToAppend, qapValue, Dataset)
+    colnames(valsToAppend)[1] <- 'averageRating.y'
+    trainingValues <- rbind(trainingValues, valsToAppend)
+    i <- i + 1
+}
+trainingValues$averageRating.y[which(trainingValues$averageRating.y==1.670)] <- 1.667
 
 # Now produce all of our partial corellations 
 corVals <- NULL
@@ -113,12 +135,24 @@ for(qapVal in varsOfInterest){
   corVal <- cor(residAverageRating, residQuant, method='spearman')
   corPVal <- cor.test(residAverageRating, residQuant, method='spearman')$p.value
   qapValue <- prettyNames[i]
-  Dataset <- 'Validation'
+  Dataset <- 'Testing'
   valsToAppend <- cbind(corVal, qapValue, Dataset, corPVal)
   corVals <- rbind(corVals, valsToAppend)
   i <- i + 1
 }
-
+i <- 1
+residAverageRating <- lm(averageRating ~ age + Gender + age^2, data=all.mgi.data)$residuals
+for(qapVal in varsOfInterest){
+    form1 <- as.formula(paste(qapVal,' ~ age + Gender + age^2', sep=''))
+    residQuant <- lm(form1, data=all.mgi.data)$residuals
+    corVal <- cor(residAverageRating, residQuant, method='spearman')
+    corPVal <- cor.test(residAverageRating, residQuant, method='spearman')$p.value
+    qapValue <- prettyNames[i]
+    Dataset <- 'Validation'
+    valsToAppend <- cbind(corVal, qapValue, Dataset, corPVal)
+    corVals <- rbind(corVals, valsToAppend)
+    i <- i + 1
+}
 
 
 
@@ -139,7 +173,7 @@ corPlot <- ggplot(corVals,
                  axis.title=element_text(size=30,face="bold"),
                  strip.text.y = element_text(size = 16, angle = 270, face="bold"),
                  strip.text.x = element_text(size = 16, angle = 90, face="bold")) +
-		 scale_fill_manual(values=c("black", "black"))
+		 scale_fill_manual(values=c("black", "black", "black"))
 
 trainingValues$qapValue <- factor(trainingValues$qapValue, levels=levels(corVals$qapValue))
 allPlot <- ggplot(trainingValues, 
@@ -177,7 +211,7 @@ foo <- ggplot(trainingValues,
 
 png('figure4-qapMetricsVsQCQAPPaper.png', height=12, width=20, units='in', res=300)
 #multiplot(allPlot, corPlot, cols=2)
-grid.arrange(allPlot, corPlot, ncol = 3, layout_matrix = cbind(c(1,1,1,1,1,1),c(1,1,1,1,1,1),c(2,2,2,2,2,2)))
+grid.arrange(allPlot, corPlot, ncol = 2, layout_matrix = cbind(c(1,1,1,1,1,1),c(1,1,1,1,1,1),c(2,2,2,2,2,2)))
 dev.off()
 
 png('foo.png')
