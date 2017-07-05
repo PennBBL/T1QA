@@ -71,6 +71,7 @@ manualQAValue <- "averageRating"
 manualQAColVal <- grep(manualQAValue, names(mergedQAP))
 
 qapValNames <- names(mergedQAP)[6:41]
+qapValNames <- append(qapValNames, 'mean_euler')
 
 ## Now prep some derivative data sets
 isolatedVars <- mergedQAP[qapValNames]
