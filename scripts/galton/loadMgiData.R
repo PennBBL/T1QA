@@ -66,6 +66,7 @@ manualQAValue <- "averageRating"
 manualQAColVal <- grep(manualQAValue, names(mergedQAP))
 
 qapValNames <- names(mergedQAP)[3:38]
+qapValNames <- append(qapValNames, 'mean_euler')
 
 ## Now create a data set which only has good and bad data
 #mergedQAP <- rbind(mergedQAP.penn, mergedQAP.pitt)
