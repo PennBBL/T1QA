@@ -78,7 +78,7 @@ pValue <- t.test(all.valid.data$averageRating ~ all.valid.data$sex)
 pValue <- wilcox.test(all.valid.data$averageRating ~ all.valid.data$sex)
 bg2 <- ggplot(bg2.vals[which(bg2.vals$Dataset=='Training'),], aes(x=factor(sex), y=as.numeric(as.character(averageRating)), group=Dataset)) +
                 geom_bar(stat='identity', position=position_dodge(), width=.5) + 
-                labs(title='Training', x='Sex', y='Manual Quality Rating (mean value)') +
+                labs(title='Testing', x='Sex', y='Manual Quality Rating (mean value)') +
                 theme_bw() + 
                        geom_errorbar(aes(ymin=as.numeric(as.character(averageRating))-se, 
                                          ymax=as.numeric(as.character(averageRating))+se), 
@@ -178,7 +178,7 @@ scale_x_continuous(breaks=c(0,.33,.66,1,1.33,1.66,2)) +
 annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=c(as.character(corText2), as.character(corText1)), hjust=c(1, 1), vjust=c(-.5, -2.5), size=8, parse=T)
 
 
-png('figure3-demographicsvsRatingQAPPaper.png', width=16, height=16, units='in', res=300)
+png('figure3-demographicsvsRatingQAPPaper.png', width=24, height=16, units='in', res=300)
 multiplot(bg1, mod1, bg2, mod2, bg3, mod3, cols=3)
 dev.off()
 
