@@ -5,7 +5,6 @@
 # rating bins for the training and validation data sets
 
 ## First lets load our data
-source("/home/adrose/T1QA/scripts/galton/loadMgiData.R")
 source("/home/adrose/T1QA/scripts/galton/loadGo1Data.R")
 
 ## Now load any library(s) we need
@@ -80,32 +79,6 @@ rownames(trainValue) <- c('Rater 1', 'Rater 2', 'Rater 3')
 detach(all.valid.data)
 validValueDone <- trainValue
 
-# Now do the MGI data
-attach(all.mgi.data)
-trainValue <- matrix(NA, nrow=3, ncol=3)
-# Start with jason's values
-trainValue[1,1] <- kappa2(cbind(ratingJB, ratingJB),weight='squared')$value
-trainValue[2,1] <- kappa2(cbind(ratingJB, ratingKS),weight='squared')$value
-trainValue[3,1] <- kappa2(cbind(ratingJB, ratingLV),weight='squared')$value
-
-# Now do Kevin's column
-trainValue[1,2] <- kappa2(cbind(ratingKS, ratingJB),weight='squared')$value
-trainValue[2,2] <- kappa2(cbind(ratingKS, ratingKS),weight='squared')$value
-trainValue[3,2] <- kappa2(cbind(ratingKS, ratingLV),weight='squared')$value
-
-# And now prayosha's
-trainValue[1,3] <- kappa2(cbind(ratingLV, ratingJB),weight='squared')$value
-trainValue[2,3] <- kappa2(cbind(ratingLV, ratingKS),weight='squared')$value
-trainValue[3,3] <- kappa2(cbind(ratingLV, ratingLV),weight='squared')$value
-
-# Now fix the column and row names
-colnames(trainValue) <- c('Rater 1', 'Rater 2', 'Rater 3')
-rownames(trainValue) <- c('Rater 1', 'Rater 2', 'Rater 3')
-
-# Now detach MGI
-detach(all.mgi.data)
-mgiValidDone <- trainValue
-
 # Now create our cor matrices plots
 trainData <- melt(trainValueDone)
 trainCor <- ggplot(data = trainData, aes(x=Var1, y=Var2, fill=value)) +
@@ -152,31 +125,10 @@ plot.title=element_text(size=40, color="white"),
 axis.text.x=element_text(size=30, angle=90, color='black'),
 axis.text.y=element_text(size=30, color='black')) +
 theme(legend.position="none") + 
-ggtitle(expression(paste("Testing weighted-", kappa))) +
+ggtitle(expression(paste("Validation weighted-", kappa))) + 
 coord_equal()
 
-mgiData <- melt(mgiValueDone)
-mgiCor <- ggplot(data = mgiData, aes(x=Var1, y=Var2, fill=value)) +
-geom_tile() +
-scale_fill_gradient2(low = "red", high = "blue", mid = "white",
-midpoint = 0, limit = c(-1,1), space = "Lab") +
-geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
-theme(
-axis.title.x = element_blank(),
-axis.title.y = element_blank(),
-panel.grid.major = element_blank(),
-panel.border = element_blank(),
-panel.background = element_blank(),
-axis.ticks = element_blank(),
-legend.justification = c(1, 0),
-legend.position = c(0.6, 0.7),
-legend.direction = "horizontal",
-plot.title=element_text(size=40, color="white"),
-axis.text.x=element_text(size=30, angle=90, color='black'),
-axis.text.y=element_text(size=30, color='black')) +
-theme(legend.position="none") +
-ggtitle(expression(paste("Validation weighted-", kappa))) +
-coord_equal()
+
 
 # Now we need to create our bar graphs
 dataQaDfTrain <- as.data.frame(table(round(all.train.data$rawAverageRating.x, digits=2)))
@@ -199,26 +151,10 @@ scale_y_continuous(limits=c(0,1000), breaks=round(seq(0, 1000, 200), digits=2))
 dataQaDfValid <- as.data.frame(table(round(all.valid.data$rawAverageRating.x, digits=2)))
 dataQaDfValid <- cbind(dataQaDfValid, c(0,0,0,1,1.33,1.67,2))
 colnames(dataQaDfValid)[3] <- 'color'
-testBG <- ggplot(dataQaDfValid, aes(x=Var1, y=Freq, fill=factor(color))) +
-geom_bar(stat='identity') +
-labs(title='', x='Manual Quality Rating (mean value)', y='Testing') +
-geom_text(data=dataQaDfValid,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
-theme_bw() +
-theme(legend.position="none",
-axis.text.x=element_text(size=30),
-axis.text.y=element_text(size=30),
-axis.title.x=element_text(size=30),
-axis.title.y=element_text(size=40, angle=90),
-plot.title=element_text(size=40)) +
-scale_y_continuous(limits=c(0,500), breaks=round(seq(0, 500, 100), digits=2))
-
-dataQaDfMgi <- as.data.frame(table(round(all.mgi.data$rawAverageRating, digits=2)))
-dataQaDfMgi <- cbind(dataQaDfMgi, c(0,0,0,1,1.33,1.67,2))
-colnames(dataQaDfMgi)[3] <- 'color'
-validBG <- ggplot(dataQaDfMgi, aes(x=Var1, y=Freq, fill=factor(color))) +
+validBG <- ggplot(dataQaDfValid, aes(x=Var1, y=Freq, fill=factor(color))) +
 geom_bar(stat='identity') +
 labs(title='', x='Manual Quality Rating (mean value)', y='Validation') +
-geom_text(data=dataQaDfMgi,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
+geom_text(data=dataQaDfValid,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
 theme_bw() +
 theme(legend.position="none",
 axis.text.x=element_text(size=30),
