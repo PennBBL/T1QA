@@ -1,91 +1,11 @@
 ## Load the data
+source('/home/adrose/T1QA/scripts/galton/loadMgiData.R')
 source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 detachAllPackages()
 set.seed(16)
-load('/home/adrose/qapQA/data/1vs28variableModel.RData')
-oneVsTwoModel <- mod8
-rm(mod8)
-
-## Declare any functions
-rocdata <- function(grp, pred){
-    # Produces x and y co-ordinates for ROC curve plot
-    # Arguments: grp - labels classifying subject status
-    #            pred - values of each observation
-    # Output: List with 2 components:
-    #         roc = data.frame with x and y co-ordinates of plot
-    #         stats = data.frame containing: area under ROC curve, p value, upper and lower 95% confidence interval
-    
-    grp <- as.factor(grp)
-    if (length(pred) != length(grp)) {
-        stop("The number of classifiers must match the number of data points")
-    }
-    
-    if (length(levels(grp)) != 2) {
-        stop("There must only be 2 values for the classifier")
-    }
-    
-    cut <- unique(pred)
-    tp <- sapply(cut, function(x) length(which(pred > x & grp == levels(grp)[2])))
-    fn <- sapply(cut, function(x) length(which(pred < x & grp == levels(grp)[2])))
-    fp <- sapply(cut, function(x) length(which(pred > x & grp == levels(grp)[1])))
-    tn <- sapply(cut, function(x) length(which(pred < x & grp == levels(grp)[1])))
-    tpr <- tp / (tp + fn)
-    fpr <- fp / (fp + tn)
-    roc = data.frame(x = fpr, y = tpr)
-    roc <- roc[order(roc$x, roc$y),]
-    
-    i <- 2:nrow(roc)
-    auc <- (roc$x[i] - roc$x[i - 1]) %*% (roc$y[i] + roc$y[i - 1])/2
-    
-    pos <- pred[grp == levels(grp)[2]]
-    neg <- pred[grp == levels(grp)[1]]
-    q1 <- auc/(2-auc)
-    q2 <- (2*auc^2)/(1+auc)
-    se.auc <- sqrt(((auc * (1 - auc)) + ((length(pos) -1)*(q1 - auc^2)) + ((length(neg) -1)*(q2 - auc^2)))/(length(pos)*length(neg)))
-    ci.upper <- auc + (se.auc * 0.96)
-    ci.lower <- auc - (se.auc * 0.96)
-    
-    se.auc.null <- sqrt((1 + length(pos) + length(neg))/(12*length(pos)*length(neg)))
-    z <- (auc - 0.5)/se.auc.null
-    p <- 2*pnorm(-abs(z))
-    
-    stats <- data.frame (auc = auc,
-    p.value = p,
-    ci.upper = ci.upper,
-    ci.lower = ci.lower
-    )
-    
-    return (list(roc = roc, stats = stats))
-}
-
-
-rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
-    require(ggplot2)
-    plotdata <- rocdata(grp, pred)
-    
-    if (p.value == TRUE){
-        annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (P=", signif(p.value, 2), ")", sep=""))
-    } else {
-        annotation <- with(plotdata$stats, paste("AUC=",signif(auc, 2), " (95%CI ", signif(ci.upper, 2), " - ", signif(ci.lower, 2), ")", sep=""))
-    }
-    
-    p <- ggplot(plotdata$roc, aes(x = x, y = y)) +
-    geom_line(aes(colour = ""), size=3) +
-    geom_abline (intercept = 0, slope = 1) +
-    theme_bw() +
-    scale_x_continuous("1-Specificity") +
-    scale_y_continuous("Sensitivity") +
-    scale_colour_manual(labels = annotation, values = "#000000") +
-    ggtitle(title) +
-    theme_bw() +
-    theme(legend.position=c(1,0)) +
-    theme(legend.justification=c(1,0)) +
-    theme(legend.title=element_blank(),
-    text = element_text(size=30))
-    
-    return(p)
-}
-
+load('/home/adrose/qapQA/data/0vsNot0FinalData.RData')
+zeroVsNotZeroModel <- m1
+rm(m1)
 
 ## Load Library(s)
 install_load('pROC', 'ggplot2', 'caret', 'lme4', 'grid', 'gridExtra')
@@ -96,112 +16,131 @@ install_load('caret', 'lme4','BaylorEdPsych', 'mgcv', 'ppcor', 'ggplot2')
 
 ## Now create the training data set and create the outcomes for all of the training data sets
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
+#folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
+load('/home/adrose/qapQA/data/foldsToUse1vs2.RData')
+raw.lme.data[,2:33] <- scale(raw.lme.data[,2:33], center=T, scale=T)
 raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
 raw.lme.data <- raw.lme.data[which(raw.lme.data$averageRating.x!=0),]
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x<1.5] <- 1
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1.5] <- 2
-#folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
-load('/home/adrose/qapQA/data/foldsToUse1vs2.RData')
-raw.lme.data[,2:32] <- scale(raw.lme.data[,2:32], center=T, scale=T)
 index <- unlist(folds[1])
 trainingData <- raw.lme.data[index,]
+trainingData <- trainingData[complete.cases(trainingData),]
 validationData <- raw.lme.data[-index,]
+validationData <- validationData[complete.cases(validationData),]
 
-raw.lme.data <- melt(trainingData, id.vars=names(raw.lme.data)[1:32], measure.vars=names(raw.lme.data)[34:36])
+# Now get the measure vars
+measureVars <- names(raw.lme.data)[1:33]
+# Now get the id.vars
+idVars <- names(raw.lme.data)[35:37]
+
+raw.lme.data <- melt(trainingData, id.vars=measureVars, measure.vars=idVars)
 raw.lme.data$value[raw.lme.data$value <= 1] <- 0
-raw.lme.data$value[raw.lme.data$value > 1] <- 1
+raw.lme.data$value[raw.lme.data$value >= 1] <- 1
+raw.lme.data.test <- melt(validationData, id.vars=measureVars, measure.vars=idVars)
+raw.lme.data.test$value[raw.lme.data.test$value <= 1] <- 0
+raw.lme.data.test$value[raw.lme.data.test$value >= 1] <- 1
 
 
 # Now go through the same step wise process as I do in the 0 vs !0 data
 # Now run through each variable of interest and build an ROC curve for it
-outcome <- raw.lme.data$value
-qapValNames <- qapValNames[-grep('size', qapValNames)]
-qapValNames <- qapValNames[-grep('mean', qapValNames)]
-qapValNames <- qapValNames[-grep('std', qapValNames)]
-qapValNames <- qapValNames[-grep('fwhm_', qapValNames)]
-qapValNames <- qapValNames[-grep('hm.', qapValNames)]
-qapValNames <- qapValNames[-grep('all.', qapValNames)]
+qapValNamesUse <- qapValNames[-c(1:3, 5:7, 10:12, 14:19, 22:26,33:34)]
 aucVals <- NULL
-for(qapVal in qapValNames){
+testTmpSet <- validationData
+testTmpSet$variable <- 'ratingNULL'
+validTmpSet <- all.mgi.data[c(qapValNames, 'averageRating')]
+validTmpSet <- validTmpSet[-which(validTmpSet$averageRating==0),]
+validTmpSet$averageRating[validTmpSet$averageRating<1.5] <- 0
+validTmpSet$averageRating[validTmpSet$averageRating>1.5] <- 1
+validTmpSet$variable <- 'ratingNULL'
+for(qapVal in qapValNamesUse){
     model <- as.formula(paste("value ~", paste(qapVal), paste("+ (1|variable)")))
-    m1 <- glmer(model, data=raw.lme.data, family="binomial")
-    predictor <- predict(m1, type='response')
-    roc.tmp <- roc(outcome ~ predictor)
-    output <- cbind(qapVal, auc(roc.tmp))
-    aucVals <- rbind(aucVals, output)
+    # NOw train our model in the training data
+    m1 <- glmer(model, data=raw.lme.data, family='binomial')
+    # Now get our auc vals
+    trainAUC <- auc(roc(raw.lme.data$value ~ predict(m1, type='response')))
+    # Now get our test value auc
+    testAUC <- auc(roc(testTmpSet$averageRating.x ~ predict(m1, type='response', newdata=testTmpSet, allow.new.levels=T)))
+    validAUC <- auc(roc(validTmpSet$averageRating ~ predict(m1, type='response', newdata=validTmpSet, allow.new.levels=T)))
+    # Now prepare the output
+    outputData <- rbind(cbind(trainAUC, 'Training', qapVal), cbind(testAUC, 'Testing', qapVal), cbind(validAUC, 'Validation', qapVal))
+    aucVals <- rbind(aucVals, outputData)
 }
+aucValsAll <- aucVals
+aucValsAll <- cbind(aucVals, rep('Training', 45))
 
-aucVals[, 1] <- c("CNR", "EFC", "FBER", "FWHM", "QI1", "SNR",
+# Now train the data in the testing data set
+aucVals <- NULL
+trainTmpSet <- trainingData
+trainTmpSet$variable <- 'ratingNULL'
+for(qapVal in qapValNamesUse){
+    model <- as.formula(paste("value ~", paste(qapVal), paste("+ (1|variable)")))
+    # NOw train our model in the training data
+    m1 <- glmer(model, data=raw.lme.data.test, family='binomial')
+    # Now get our auc vals
+    testAUC <- auc(roc(raw.lme.data.test$value ~ predict(m1, type='response')))
+    # Now get our test value auc
+    trainAUC <- auc(roc(trainTmpSet$averageRating.x ~ predict(m1, type='response', newdata=trainTmpSet, allow.new.levels=T)))
+    validAUC <- auc(roc(validTmpSet$averageRating ~ predict(m1, type='response', newdata=validTmpSet, allow.new.levels=T)))
+    # Now prepare the output
+    outputData <- rbind(cbind(trainAUC, 'Training', qapVal), cbind(testAUC, 'Testing', qapVal), cbind(validAUC, 'Validation', qapVal))
+    aucVals <- rbind(aucVals, outputData)
+}
+aucVals <- cbind(aucVals, rep('Testing', 45))
+aucValsAll <- rbind(aucValsAll, aucVals)
+
+
+
+source('/home/adrose/T1QA/scripts/galton/loadMgiData.R')
+raw.lme.data.mgi <- merge(isolatedVars, manualQAData2, by=intersect(names(isolatedVars), names(manualQAData2)))
+raw.lme.data.mgi[,4:35] <- scale(raw.lme.data.mgi[,4:35], center=T, scale=T)
+raw.lme.data.mgi <- raw.lme.data.mgi[-which(raw.lme.data.mgi$rawAverageRating<.9),]
+raw.lme.data.mgi <- melt(raw.lme.data.mgi, id.vars=measureVars, measure.vars=idVars)
+raw.lme.data.mgi <- raw.lme.data.mgi[complete.cases(raw.lme.data.mgi),]
+raw.lme.data.mgi$value[raw.lme.data.mgi$value==1] <- 0
+raw.lme.data.mgi$value[raw.lme.data.mgi$value==2] <- 1
+
+# Now produce our AUC vals after training in the validation data set!
+aucVals <- NULL
+for(qapVal in qapValNamesUse){
+    model <- as.formula(paste("value ~", paste(qapVal), paste("+ (1|variable)")))
+    # NOw train our model in the training data
+    m1 <- glmer(model, data=raw.lme.data.mgi, family='binomial')
+    # Now get our auc vals
+    validAUC <- auc(roc(raw.lme.data.mgi$value ~ predict(m1, type='response')))
+    # Now get our test value auc
+    testAUC <- auc(roc(testTmpSet$averageRating.x ~ predict(m1, type='response', newdata=testTmpSet, allow.new.levels=T)))
+    trainAUC <- auc(roc(trainTmpSet$averageRating.x ~ predict(m1, type='response', newdata=trainTmpSet, allow.new.levels=T)))
+    # Now prepare the output
+    outputData <- rbind(cbind(trainAUC, 'Training', qapVal), cbind(testAUC, 'Testing', qapVal), cbind(validAUC, 'Validation', qapVal))
+    aucVals <- rbind(aucVals, outputData)
+}
+aucVals <- cbind(aucVals, rep('Validation', 45))
+aucValsAll <- rbind(aucValsAll, aucVals)
+
+# Now create our data frame to plot
+aucVals <- as.data.frame(aucValsAll)
+aucVals$trainAUC <- as.numeric(as.character(aucVals$trainAUC))
+aucVals$prettyQap <- rep(rep(c("CNR", "EFC", "FBER", "FWHM", "QI1", "SNR",
 "CSF Kurtosis", "CSF Skewness", "GM Kurtosis", "GM Skewness",
-"WM Kurtosis", "WM Skewness", "BG Kurtosis", "BG Skewness")
+"WM Kurtosis", "WM Skewness", "BG Kurtosis", "BG Skewness", "Mean Euler"), each=3), 3)
+aucValPlot <- ggplot(aucVals, aes(x=prettyQap, y=trainAUC)) +
+  geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
+  coord_cartesian(ylim=c(.5,.9)) +
+  facet_grid(V2 ~ V4, scales="free", space="free_x") +
+  theme(axis.text.x = element_text(angle=90,hjust=1, size=20),
+    axis.title.x = element_text(size=30),
+    axis.title.y = element_text(size=30),
+    text = element_text(size=30)) +
+  ggtitle("AUC across various training scheme") +
+  xlab("Image Quality Metrics") +
+  ylab("AUC")
 
-
-# Now order and find the AUC heirarchy
-aucVals <- as.data.frame(aucVals)
-aucVals$V2 <- as.numeric(as.character(aucVals$V2))
-aucVals <- aucVals[order(aucVals[,2], decreasing =TRUE),]
-aucVals <- cbind(aucVals, c('*', '*', '*', '', '', '*', '', '*', '', '', '', '*', '*', '*'))
-colnames(aucVals)[3] <- 'Model'
-
-aucOnevsTwoMonovariate <- ggplot(aucVals, aes(x=reorder(qapVal, -V2), y=V2, label=Model)) +
-geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
-theme(axis.text.x = element_text(angle=90,hjust=1, size=20),
-axis.title.x = element_text(size=30),
-axis.title.y = element_text(size=30),
-text = element_text(size=30)) +
-coord_cartesian(ylim=c(.65,.725)) +
-ggtitle("Quantification Model Feature Selection") +
-xlab("Image Quality Metrics") +
-ylab("AUC") + 
-geom_text(aes(y=.71), size=10)
-
-# Now prep our individual data sets
-all.train.data <- merge(trainingData, manualQAData, by='bblid')
-#all.train.data <- read.csv('/home/adrose/qapQA/data/allTrainData.csv')
-all.valid.data <- merge(validationData, manualQAData, by='bblid')
-#all.valid.data <- read.csv('/home/adrose/qapQA/data/allValidData.csv')
-
-# Now create our train roc curve
-all.train.data$variable <- rep('ratingNULL', nrow(all.train.data))
-trainOutcome <- predict(oneVsTwoModel, newdata=all.train.data,
-allow.new.levels=T, type='response')
-trainValues <- all.train.data$averageRating.x
-roc.train <- roc(trainValues ~ trainOutcome)
-trainPlot <- rocplot.single(trainValues, trainOutcome, title="Training")
-
-# Now we need to append the accuracy of the graph
-trainText1 <- paste("Classification Accuracy = ", round(coords(roc.train, 'best', ret='accuracy'), digits=2))
-trainText2 <- paste("AUC =  ", round(auc(roc.train), digits=2), '0', sep='')
-trainText <- c(trainText1, trainText2)
-trainPlot <- trainPlot  + theme(legend.position="none") + 
-theme(legend.justification=c(1,0)) +
-theme(legend.title=element_blank(),
-axis.title.x=element_text(color='white')) + 
-annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=trainText, vjust=c(-1,-2.2), hjust="inward", size=8) 
-
-
-# Now get the cut off value for the accuracy calucalation for the valid data
-cutoff <- coords(roc.train, 'best')[1]
-
-# Now do our validation data
-all.valid.data$variable <- rep('ratingNULL', nrow(all.valid.data))
-validOutcome <- predict(oneVsTwoModel, newdata=all.valid.data,
-allow.new.levels=T, type='response')
-validValues <- all.valid.data$averageRating.x
-roc.valid <- roc(validValues ~ validOutcome)
-validPlot <- rocplot.single(validValues, validOutcome, title="Validation", p.value='FALSE')
-
-# Now append the AUC and accuracy as previously performed
-validText1 <- paste("Classification Accuracy = ", round(coords(roc.valid, cutoff, ret='accuracy'), digits=2))
-validText2 <- paste("AUC = ", round(auc(roc.valid), digits=2))
-validText <- c(validText1, validText2)
-validPlot <- validPlot  + theme(legend.position="none") +
-theme(legend.justification=c(1,0)) +
-theme(legend.title=element_blank()) + 
-annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=validText, vjust=c(-1,-2.2), hjust="inward", size=8)
-
-png('figure6-monovariateAUC1vsNot2-withROCCurves.png', width=21, height=12, units='in', res=300)
-#multiplot(aucZerovsNotZeroMonovariate, trainPlot, validPlot, cols=3)
-grid.arrange(aucOnevsTwoMonovariate, trainPlot, validPlot, ncol = 3, layout_matrix = cbind(c(1,1), c(1,1), c(2,3)))
+png('figure6-AUCAcrossTrain.png', width=20, height=20, units='in', res=300)
+print(aucValPlot)
 dev.off()
 
+# Now create the model to validate
+modelToTrain <- as.formula("value ~ mean_euler + (1|variable)")
+mOut <- glmer(modelToTrain, data=raw.lme.data, family="binomial")
+save(mOut, file="/home/adrose/1vs2EulerMixedModel.RData")
