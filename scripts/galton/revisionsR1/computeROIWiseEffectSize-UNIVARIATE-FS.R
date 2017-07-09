@@ -11,16 +11,10 @@
 ## Load the data
 source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 detachAllPackages()
-# Also load the euler number data
-eulerNumber <- read.csv('/home/adrose/qapQA/data/n1601_euler_number.csv')
-eulerNumber[,2] <- strSplitMatrixReturn(eulerNumber[,2], 'x')[,2]
-eulerNumber$mean_euler <- (eulerNumber[,3] + eulerNumber[,4])/2
-eulerNumber[,3:5] <-  scale(eulerNumber[,3:5], scale=T, center=T)
-mergedQAP <- merge(mergedQAP, eulerNumber, by=c('bblid', 'scanid'))
 set.seed(16)
-load('/home/adrose/qapQA/data/1vs28variableModel.RData')
-oneVsTwoModel <- mod8
-rm(mod8)
+load('/home/adrose/1vs2EulerMixedModel.RData')
+oneVsTwoModel <- mOut
+rm(mOut)
 tbvData <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/n1601_antsCtVol.csv')
 ## Now load all of the freesurfer values
 fsVol <- read.csv('/home/adrose/qapQA/data/n1601_freesurferVol_20161220.csv')
@@ -63,19 +57,15 @@ all.valid.data <- merge(all.valid.data, fsVals, by='bblid')
 all.train.data <- all.train.data[which(all.train.data$averageRating!=0),]
 all.valid.data <- all.valid.data[which(all.valid.data$averageRating!=0),]
 
-# Now change our metric of interest
-all.train.data$oneVsTwoOutcome <- all.train.data$mean_euler
-all.valid.data$oneVsTwoOutcome <- all.valid.data$mean_euler
-
 # Now create our z scores
 tmp <- all.train.data[,-seq(2862, 2997)[1:38]]
-fsCTVals <- pvalLoop('_thickness', tmp, correct=FALSE)
+fsCTVals <- pvalLoop('_thickness', tmp, correct=TRUE)
 fsCTVals <- fsCTVals[-grep('ean', fsCTVals[,1]),]
 rm(tmp)
 # Now trim the non cortical regions for our JLF vol regions
 tmp <- all.train.data
 all.train.data <- all.train.data[,-seq(2592,2627,1)]
-fsVOLVals <- pvalLoop('_volume', all.train.data, TBV=TRUE)
+fsVOLVals <- pvalLoop('_volume', all.train.data, TBV=TRUE, correct=TRUE)
 all.train.data <- tmp
 rm(tmp)
 
@@ -96,13 +86,13 @@ static <- all.train.data
 all.train.data <- all.valid.data
 
 tmp <- all.train.data[,-seq(2862, 2997)[1:38]]
-fsCTVals <- pvalLoop('_thickness', tmp, , correct=FALSE)
+fsCTVals <- pvalLoop('_thickness', tmp, , correct=TRUE)
 fsCTVals <- fsCTVals[-grep('ean', fsCTVals[,1]),]
 rm(tmp)
 # Now trim the non cortical regions for our JLF vol regions
 tmp <- all.train.data
 all.train.data <- all.train.data[,-seq(2592,2627,1)]
-fsVOLVals <- pvalLoop('_volume', all.train.data, TBV=TRUE)
+fsVOLVals <- pvalLoop('_volume', all.train.data, TBV=TRUE, , correct=TRUE)
 all.train.data <- tmp
 rm(tmp)
 
@@ -120,15 +110,15 @@ writeMat('fsvolvalidColorScale.mat', vals=volColors)
 
 # Now do MGI
 source('/home/adrose/T1QA/scripts/galton/loadMgiData.R')
-mgiEuler <- read.csv('/home/adrose/qapQA/data/mgiEulerVals.csv')
-mgiEuler$mean_euler <- (mgiEuler$left_euler + mgiEuler$right_euler)/2
 all.train.data <- mergedQAP
 all.train.data <- all.train.data[which(all.train.data$averageRating!=0),]
-all.train.data <- merge(all.train.data, mgiEuler, by='bblid')
-all.train.data$oneVsTwoOutcome <- all.train.data$mean_euler
+all.train.data$mean_euler <- scale(all.train.data$mean_euler)
+all.train.data$variable <- rep('ratingNULL', nrow(all.train.data))
+all.train.data$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=all.train.data,
+allow.new.levels=T, type='response')
 all.train.data$ageAtGo1Scan <- all.train.data$age
 all.train.data$sex <- all.train.data$Gender
-fsCTVals <- pvalLoop('_thickness', all.train.data, correct=FALSE)
+fsCTVals <- pvalLoop('_thickness', all.train.data, correct=TRUE)
 fsCTVals <- fsCTVals[-grep('ean', fsCTVals[,1]),]
 ## Now create our color values to export to ITK snap
 ctColors <- returnPosNegAndNeuColorScale(fsCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))[-1,]
