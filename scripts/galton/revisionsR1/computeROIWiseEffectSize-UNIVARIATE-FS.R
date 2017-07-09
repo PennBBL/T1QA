@@ -34,7 +34,7 @@ raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRati
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
 #folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
 load('/home/adrose/qapQA/data/foldsToUse.RData')
-raw.lme.data[,3:32] <- scale(raw.lme.data[,3:32], center=T, scale=T)
+raw.lme.data[,3:33] <- scale(raw.lme.data[,3:33], center=T, scale=T)
 index <- unlist(folds[1])
 trainingData <- raw.lme.data[index,]
 validationData <- raw.lme.data[-index,]
@@ -92,7 +92,7 @@ rm(tmp)
 # Now trim the non cortical regions for our JLF vol regions
 tmp <- all.train.data
 all.train.data <- all.train.data[,-seq(2592,2627,1)]
-fsVOLVals <- pvalLoop('_volume', all.train.data, TBV=TRUE, , correct=TRUE)
+fsVOLVals <- pvalLoop('_volume', all.train.data, TBV=TRUE,correct=TRUE)
 all.train.data <- tmp
 rm(tmp)
 
