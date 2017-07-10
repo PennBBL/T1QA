@@ -12,3 +12,7 @@ produceFSImages(val)
 system('mv *png /data/joy/BBL/projects/pncT1QA/T1QA/data/fsvolvalid')
 val='/data/joy/BBL/projects/pncT1QA/T1QA/data/fsctColorScaleMGI.mat'
 produceFSImages(val)
+system('mv *png /data/joy/BBL/projects/pncT1QA/T1QA/data/fsctmgi')
+val='/data/joy/BBL/projects/pncT1QA/T1QA/data/fsvolColorScaleMGI.mat'
+produceFSImages(val)
+system('mv *png /data/joy/BBL/projects/pncT1QA/T1QA/data/fsvolmgi')
