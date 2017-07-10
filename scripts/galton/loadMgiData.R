@@ -12,6 +12,8 @@ manualQAData <- read.csv("/home/adrose/qapQA/data/n550_mgi_demo_dx_2013-12-13.cs
 manualQAData2 <- read.csv("/home/adrose/qapQA/data/n920_manual_ratings_validation.csv")
 thicknessValues <- read.csv("/home/adrose/qapQA/data/mgiThickness.csv")
 thicknessValues[,1] <- strSplitMatrixReturn(thicknessValues[,1], '_')[,1]
+volumeValues <- read.csv('/home/adrose/qapQA/data/volumeMGIData.csv')
+volumeValues[,1] <- strSplitMatrixReturn(volumeValues[,1], '_')[,1]
 eulerValues <- read.csv('/home/adrose/qapQA/data/mgiEulerVals.csv')
 eulerValues$mean_euler <- (eulerValues$left_euler + eulerValues$right_euler)/2
 colnames(eulerValues)[1] <- 'bblid.x'
@@ -51,6 +53,7 @@ qapRawOutput$scanid <- as.factor(qapRawOutput$scanid)
 mergedQAP <- merge(qapRawOutput, manualQAData, by="scanid")
 mergedQAP <- merge(mergedQAP, thicknessValues, by.x='bblid.x', by.y='bblid')
 mergedQAP <- merge(mergedQAP, eulerValues, by=c('bblid.x', 'scanid'))
+mergedQAP <- merge(mergedQAP, volumeValues, by.x='bblid.x', by.y='bblid')
 mergedQAP <- mergedQAP[!duplicated(mergedQAP),]
 
 # Now create the three data sets - Go2, mgi penn, and mgi pitt

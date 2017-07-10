@@ -65,7 +65,7 @@ rm(tmp)
 # Now trim the non cortical regions for our JLF vol regions
 tmp <- all.train.data
 all.train.data <- all.train.data[,-seq(2592,2627,1)]
-fsVOLVals <- pvalLoop('_volume', all.train.data, TBV=TRUE, correct=TRUE)
+fsVOLVals <- pvalLoop('_volume', all.train.data, TBV=F, correct=TRUE)
 all.train.data <- tmp
 rm(tmp)
 
@@ -86,13 +86,13 @@ static <- all.train.data
 all.train.data <- all.valid.data
 
 tmp <- all.train.data[,-seq(2862, 2997)[1:38]]
-fsCTVals <- pvalLoop('_thickness', tmp, , correct=TRUE)
+fsCTVals <- pvalLoop('_thickness', tmp, correct=TRUE)
 fsCTVals <- fsCTVals[-grep('ean', fsCTVals[,1]),]
 rm(tmp)
 # Now trim the non cortical regions for our JLF vol regions
 tmp <- all.train.data
 all.train.data <- all.train.data[,-seq(2592,2627,1)]
-fsVOLVals <- pvalLoop('_volume', all.train.data, TBV=TRUE,correct=TRUE)
+fsVOLVals <- pvalLoop('_volume', all.train.data, TBV=F,correct=TRUE)
 all.train.data <- tmp
 rm(tmp)
 
@@ -120,9 +120,15 @@ all.train.data$ageAtGo1Scan <- all.train.data$age
 all.train.data$sex <- all.train.data$Gender
 fsCTVals <- pvalLoop('_thickness', all.train.data, correct=TRUE)
 fsCTVals <- fsCTVals[-grep('ean', fsCTVals[,1]),]
+fsVOLVals <- pvalLoop('_volume', all.train.data, correct=T, TBV=F)
 ## Now create our color values to export to ITK snap
 ctColors <- returnPosNegAndNeuColorScale(fsCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))[-1,]
 ctColors[,8] <- fsCTVals[,1]
 ctColors <- cbind(ctColors, fsCTVals[,2])
+volColors <- returnPosNegAndNeuColorScale(fsVOLVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))[-1,]
+volColors[,8] <- fsVOLVals[,1]
+volColors <- cbind(volColors, fsVOLVals[,2])
 # Now I need to save these color scales and the other thing
 writeMat('fsctColorScaleMGI.mat', vals=ctColors)
+writeMat('fsvolColorScaleMGI.mat', vals=volColors)
+
