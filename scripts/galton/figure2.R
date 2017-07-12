@@ -5,6 +5,7 @@
 # rating bins for the training and validation data sets
 
 ## First lets load our data
+source("/home/adrose/T1QA/scripts/galton/loadMgiData.R")
 source("/home/adrose/T1QA/scripts/galton/loadGo1Data.R")
 
 ## Now load any library(s) we need
@@ -79,6 +80,32 @@ rownames(trainValue) <- c('Rater 1', 'Rater 2', 'Rater 3')
 detach(all.valid.data)
 validValueDone <- trainValue
 
+# Now do the MGI data which we will call our validation data
+attach(all.mgi.data)
+trainValue <- matrix(NA, nrow=3, ncol=3)
+# Start with jason's values
+trainValue[1,1] <- kappa2(cbind(ratingJB, ratingJB),weight='squared')$value
+trainValue[2,1] <- kappa2(cbind(ratingJB, ratingKS),weight='squared')$value
+trainValue[3,1] <- kappa2(cbind(ratingJB, ratingLV),weight='squared')$value
+
+# Now do Kevin's column
+trainValue[1,2] <- kappa2(cbind(ratingKS, ratingJB),weight='squared')$value
+trainValue[2,2] <- kappa2(cbind(ratingKS, ratingKS),weight='squared')$value
+trainValue[3,2] <- kappa2(cbind(ratingKS, ratingLV),weight='squared')$value
+
+# And now prayosha's
+trainValue[1,3] <- kappa2(cbind(ratingLV, ratingJB),weight='squared')$value
+trainValue[2,3] <- kappa2(cbind(ratingLV, ratingKS),weight='squared')$value
+trainValue[3,3] <- kappa2(cbind(ratingLV, ratingLV),weight='squared')$value
+
+# Now fix the column and row names
+colnames(trainValue) <- c('Rater 1', 'Rater 2', 'Rater 3')
+rownames(trainValue) <- c('Rater 1', 'Rater 2', 'Rater 3')
+
+# All done with MGI
+detach(all.mgi.data)
+mgiValid <- trainValue
+
 # Now create our cor matrices plots
 trainData <- melt(trainValueDone)
 trainCor <- ggplot(data = trainData, aes(x=Var1, y=Var2, fill=value)) +
@@ -128,7 +155,28 @@ theme(legend.position="none") +
 ggtitle(expression(paste("Validation weighted-", kappa))) + 
 coord_equal()
 
-
+mgiData <- melt(mgiValid)
+mgiCor <- ggplot(data = mgiData, aes(x=Var1, y=Var2, fill=value)) +
+geom_tile() +
+scale_fill_gradient2(low = "red", high = "blue", mid = "white",
+midpoint = 0, limit = c(-1,1), space = "Lab") +
+geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
+theme(
+axis.title.x = element_blank(),
+axis.title.y = element_blank(),
+panel.grid.major = element_blank(),
+panel.border = element_blank(),
+panel.background = element_blank(),
+axis.ticks = element_blank(),
+legend.justification = c(1, 0),
+legend.position = c(0.6, 0.7),
+legend.direction = "horizontal",
+plot.title=element_text(size=40, color="white"),
+axis.text.x=element_text(size=30, angle=90, color='black'),
+axis.text.y=element_text(size=30, color='black')) +
+theme(legend.position="none") +
+ggtitle(expression(paste("Validation weighted-", kappa))) +
+coord_equal()
 
 # Now we need to create our bar graphs
 dataQaDfTrain <- as.data.frame(table(round(all.train.data$rawAverageRating.x, digits=2)))
@@ -164,6 +212,23 @@ axis.title.y=element_text(size=40, angle=90),
 plot.title=element_text(size=40)) +
 scale_y_continuous(limits=c(0,500), breaks=round(seq(0, 500, 100), digits=2))
 
+# Now do MGI data
+# Now do the validation data
+dataQaDfMGI <- as.data.frame(table(round(all.mgi.data$rawAverageRating, digits=2)))
+dataQaDfMGI <- cbind(dataQaDfValid, c(0,0,0,1,1.33,1.67,2))
+colnames(dataQaDfMGI)[3] <- 'color'
+mgiBG <- ggplot(dataQaDfMGI, aes(x=Var1, y=Freq, fill=factor(color))) +
+geom_bar(stat='identity') +
+labs(title='', x='Manual Quality Rating (mean value)', y='Validation') +
+geom_text(data=dataQaDfMGI,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
+theme_bw() +
+theme(legend.position="none",
+axis.text.x=element_text(size=30),
+axis.text.y=element_text(size=30),
+axis.title.x=element_text(size=30),
+axis.title.y=element_text(size=40, angle=90),
+plot.title=element_text(size=40)) +
+scale_y_continuous(limits=c(0,500), breaks=round(seq(0, 500, 100), digits=2))
 
 # Now do the polychoric cor's down here
 attach(all.train.data)
@@ -219,6 +284,32 @@ rownames(trainValue) <- c('Rater 1', 'Rater 2', 'Rater 3')
 detach(all.valid.data)
 validValueDone <- trainValue
 
+## Now do the MGI data
+attach(all.mgi.data)
+trainValue <- matrix(NA, nrow=3, ncol=3)
+# Start with jason's values
+trainValue[1,1] <- polychor(x=ratingJB, y=ratingJB, ML=TRUE, maxcor=1)
+trainValue[2,1] <- polychor(x=ratingJB, y=ratingKS, ML=TRUE, maxcor=1)
+trainValue[3,1] <- polychor(x=ratingJB, y=ratingLV, ML=TRUE, maxcor=1)
+
+# Now do Kevin's column
+trainValue[1,2] <- polychor(x=ratingKS, y=ratingJB, ML=TRUE, maxcor=1)
+trainValue[2,2] <- polychor(x=ratingKS, y=ratingKS, ML=TRUE, maxcor=1)
+trainValue[3,2] <- polychor(x=ratingKS, y=ratingLV, ML=TRUE, maxcor=1)
+
+# And now prayosha's
+trainValue[1,3] <- polychor(x=ratingLV, y=ratingJB, ML=TRUE, maxcor=1)
+trainValue[2,3] <- polychor(x=ratingLV, y=ratingKS, ML=TRUE, maxcor=1)
+trainValue[3,3] <- polychor(x=ratingLV, y=ratingLV, ML=TRUE, maxcor=1)
+
+# Now fix the column and row names
+diag(trainValue) <- 1
+colnames(trainValue) <- c('Rater 1', 'Rater 2', 'Rater 3')
+rownames(trainValue) <- c('Rater 1', 'Rater 2', 'Rater 3')
+
+# All done with the validation data set
+detach(all.mgi.data)
+mgiValueDone <- trainValue
 
 # Now create our cor matrices plots
 my_y_title <- expression(paste("Polychoric ", italic("r")))
@@ -270,6 +361,31 @@ theme(legend.position="none") +
 labs(title=my_y_title) + 
 coord_equal()
 
+mgiDataPoly <- melt(mgiValueDone)
+mgiCorPoly <- ggplot(data = mgiDataPoly, aes(x=Var1, y=Var2, fill=value)) +
+geom_tile() +
+scale_fill_gradient2(low = "red", high = "blue", mid = "white",
+midpoint = 0, limit = c(-1,1), space = "Lab") +
+geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
+theme(
+axis.title.x = element_blank(),
+axis.title.y = element_blank(),
+panel.grid.major = element_blank(),
+panel.border = element_blank(),
+panel.background = element_blank(),
+axis.ticks = element_blank(),
+legend.justification = c(1, 0),
+legend.position = c(0.6, 0.7),
+legend.direction = "horizontal",
+plot.title=element_text(size=40, color='white'),
+axis.text.x=element_text(size=30, angle=90),
+axis.text.y=element_text(size=30, color='white')) +
+theme(legend.position="none") +
+labs(title=my_y_title) +
+coord_equal()
+
+
+
 foo <- ggplot(data = validDataPoly, aes(x=Var1, y=Var2, fill=value)) +
 geom_tile() +
 scale_fill_gradient2(low = "red", high = "blue", mid = "white",
@@ -293,9 +409,9 @@ theme(legend.position="bottom")
 
 
 # Now create our plot
-png('figure2-concordanceAmongstRaters.png', height=16, width=30, units='in', res=300)
+png('figure2-concordanceAmongstRaters.png', height=24, width=30, units='in', res=300)
 #multiplot(trainBG,  trainCor, trainCorPoly, validBG, validCor, validCorPoly, cols=3)
-multiplot(trainBG,  validBG, trainCor, validCor, trainCorPoly, validCorPoly, cols=3)
+multiplot(trainBG,  validBG, mgiBG, trainCor, validCor, mgiCor, trainCorPoly, validCorPoly, mgiCorPoly, cols=3)
 #foo
 dev.off()
 
