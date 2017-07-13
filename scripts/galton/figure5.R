@@ -21,7 +21,7 @@ raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRati
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
 #folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
 load('/home/adrose/qapQA/data/foldsToUse.RData')
-raw.lme.data[,2:33] <- scale(raw.lme.data[,2:33], center=T, scale=T)
+#raw.lme.data[,2:33] <- scale(raw.lme.data[,2:33], center=T, scale=T)
 index <- unlist(folds[1])
 trainingData <- raw.lme.data[index,]
 trainingData <- trainingData[complete.cases(trainingData),]
@@ -40,6 +40,7 @@ raw.lme.data.test$value[raw.lme.data.test$value > 1] <- 1
 
 # Now run through each variable of interest and build an ROC curve for it
 qapValNamesUse <- qapValNames[-c(1:3, 5:7, 10:12, 14:19, 22:26,33:34)]
+qapValNamesUse <- c('bg.kurtosis', 'bg.skewness', 'cnr', 'efc', 'fber', 'qi1', 'snr', 'wm.skewness', 'mean_euler')
 aucVals <- NULL
 # Now create a series of loops which will train in each of the data sets and validate in the other remaining
 # The output will be the output AUC value
@@ -64,7 +65,7 @@ for(qapVal in qapValNamesUse){
   outputData <- rbind(cbind(trainAUC, 'Training', qapVal), cbind(testAUC, 'Testing', qapVal), cbind(validAUC, 'Validation', qapVal))
   aucVals <- rbind(aucVals, outputData)
 }
-aucValsAll <- cbind(aucVals, rep('Training', 45))
+aucValsAll <- cbind(aucVals, rep('Training', 27))
 
 # Now train the data in the testing data set
 aucVals <- NULL
@@ -83,14 +84,14 @@ for(qapVal in qapValNamesUse){
     outputData <- rbind(cbind(trainAUC, 'Training', qapVal), cbind(testAUC, 'Testing', qapVal), cbind(validAUC, 'Validation', qapVal))
     aucVals <- rbind(aucVals, outputData)
 }
-aucVals <- cbind(aucVals, rep('Testing', 45))
+aucVals <- cbind(aucVals, rep('Testing', 27))
 aucValsAll <- rbind(aucValsAll, aucVals)
 
 # Now train in the validation data sets
 # First thing we have to do is melt the data set se we can have
 source('/home/adrose/T1QA/scripts/galton/loadMgiData.R')
 raw.lme.data.mgi <- merge(isolatedVars, manualQAData2, by=intersect(names(isolatedVars), names(manualQAData2)))
-raw.lme.data.mgi[,4:35] <- scale(raw.lme.data.mgi[,4:35], center=T, scale=T)
+#raw.lme.data.mgi[,4:35] <- scale(raw.lme.data.mgi[,4:35], center=T, scale=T)
 raw.lme.data.mgi <- melt(raw.lme.data.mgi, id.vars=measureVars, measure.vars=idVars)
 raw.lme.data.mgi$value[raw.lme.data.mgi$value > 1] <- 1
 raw.lme.data.mgi <- raw.lme.data.mgi[complete.cases(raw.lme.data.mgi),]
@@ -110,15 +111,13 @@ for(qapVal in qapValNamesUse){
     outputData <- rbind(cbind(trainAUC, 'Training', qapVal), cbind(testAUC, 'Testing', qapVal), cbind(validAUC, 'Validation', qapVal))
     aucVals <- rbind(aucVals, outputData)
 }
-aucVals <- cbind(aucVals, rep('Validation', 45))
+aucVals <- cbind(aucVals, rep('Validation', 27))
 aucValsAll <- rbind(aucValsAll, aucVals)
 
 # Now create our data frame to plot
 aucVals <- as.data.frame(aucValsAll)
 aucVals$trainAUC <- as.numeric(as.character(aucVals$trainAUC))
-aucVals$prettyQap <- rep(rep(c("CNR", "EFC", "FBER", "FWHM", "QI1", "SNR",
-"CSF Kurtosis", "CSF Skewness", "GM Kurtosis", "GM Skewness",
-"WM Kurtosis", "WM Skewness", "BG Kurtosis", "BG Skewness", "Mean Euler"), each=3), 3)
+aucVals$prettyQap <- rep(rep(c('BG Kurtosis', 'BG Skewness', 'CNR', 'EFC', 'FBER', 'QI1', 'SNR', 'WM Skewness', 'Mean Euler'), each=3), 3)
 aucValPlot <- ggplot(aucVals, aes(x=prettyQap, y=trainAUC)) +
   geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
   coord_cartesian(ylim=c(.5,1)) +

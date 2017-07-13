@@ -12,16 +12,19 @@
 source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 detachAllPackages()
 set.seed(16)
-load('/home/adrose/qapQA/data/1vs28variableModel.RData')
-oneVsTwoModel <- mod8
-rm(mod8)
+load('/home/adrose/1vs2EulerMixedModel.RData')
+oneVsTwoModel <- mOut
+rm(mOut)
 tbvData <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/n1601_antsCtVol.csv')
+fsVol <- read.csv('/home/adrose/qapQA/data/n1601_freesurferVol_20161220.csv')
+fsCt <- read.csv('/home/adrose/qapQA/data/n1601_freesurferCt_20161220.csv')
+fsVals <- merge(fsVol, fsCt, by=c('bblid', 'scanid'))
 
 ## Source all functions
 source('/home/adrose/T1QA/scripts/galton/computeROIWiseEffectSizeFucntions.R')
 
 ## Load library(s) we will need
-install_load('caret', 'lme4', 'bda', 'ggplot2')
+install_load('caret', 'lme4', 'bda', 'ggplot2', 'R.matlab')
 
 ## Now lets prep the data
 ## Now create the training data set and create the outcomes for all of the training data sets
@@ -46,14 +49,16 @@ validationData$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=validationData,
 allow.new.levels=T, type='response')
 ## Now merge our scaled data values with the original data values
 all.train.data <- merge(mergedQAP, trainingData, by='bblid')
+all.train.data <- merge(all.train.data, fsVals, by='bblid')
 all.valid.data <- merge(mergedQAP, validationData, by='bblid')
-
+all.valid.data <- merge(all.valid.data, fsVals, by='bblid')
 
 ## Now remove the 0 values because they do weird things
 ## to our ants values
 all.train.data <- all.train.data[which(all.train.data$averageRating!=0),]
 all.valid.data <- all.valid.data[which(all.valid.data$averageRating!=0),]
-vals <- grep('mprage_jlf_ct', names(all.train.data))[39:136]
+vals <- grep('_thickness', names(all.train.data))
+vals <- vals[-1]
 zScoreCT <- NULL
 binVals <- NULL
 for(i in vals){
@@ -68,53 +73,20 @@ binValsApply <- rep(0, length(vals))
 binValsApply[which(p.adjust(binVals[,2], method='fdr')<.05)] <- 1
 zScoreCT[,2] <- as.numeric(zScoreCT[,2]) * binValsApply
 zScoreCT <- zScoreCT[order(as.numeric(zScoreCT[,2])),]
-
-vals <- grep('mprage_jlf_gmd', names(all.train.data))[39:136]
-# Now rm nonesense ROI's
-zScoreGMD <- NULL
-binVals <- NULL
-for(i in vals){
-    foo <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[1]
-    toAppend <- c(names(all.train.data)[i], foo)
-    zScoreGMD <- rbind(zScoreGMD, toAppend)
-}
-zScoreGMD <- zScoreGMD[order(as.numeric(zScoreGMD[,2])),]
+zScoreCT <- zScoreCT[-c(1, grep('ean', zScoreCT[,1])),]
 
 ## Now create our color values to export to ITK snap
-ctColors <- returnPosNegAndNeuColorScale(zScoreCT[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))
-gmdColors <- returnPosNegAndNeuColorScale(zScoreGMD[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))
-
-# Now prepare the key between ROI and intensity
-jlfCTVals <- cbind(zScoreCT, seq(1:nrow(zScoreCT)))
-jlfGMDVals <- cbind(zScoreGMD, seq(1:nrow(zScoreGMD)))
-
+ctColors <- returnPosNegAndNeuColorScale(zScoreCT[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))[-1,]
+ctColors[,8] <- zScoreCT[,1]
+ctColors <- cbind(ctColors, c(zScoreCT[,2]))
+ctColors[ctColors=="NaN"] <- 190
 # Now I need to save these color scales and the other thing
-write.table(ctColors, file='ctColorScale.txt', sep="\t", quote=F, row.names=F, col.names=F)
-write.table(gmdColors, file='gmdColorScale.txt', sep="\t", quote=F, row.names=F, col.names=F)
-write.csv(jlfCTVals, 'jlfSigQAPROIct.csv', quote=F)
-write.csv(jlfGMDVals, 'jlfSigQAPROIgmd.csv', quote=F)
-
-# Now produce a figure which will display the differences between wioth and without mediation
-# I am going to do this for the anterior cingulate cortex - which has the largest positive mediation effect
-# To do this I am going to produce the models and then predict the values then model them.
-m1 <- lm(mprage_jlf_gmd_R_MFC ~ sex, data = all.train.data)
-m2 <- lm(mprage_jlf_gmd_R_MFC ~ sex + oneVsTwoOutcome, data = all.train.data)
-m3 <- lm(mprage_jlf_ct_R_ACgG ~ ageAtGo1Scan + averageRating.y, data = all.train.data)
-all.train.data$justAge <- residuals(m1)
-all.train.data$ageAndQuality <- residuals(m2)
-
-mediationPlot <- ggplot(all.train.data, aes(x=ageAtGo1Scan)) +
-  geom_smooth(method=lm, aes(y=justAge), color='red') +
-  geom_smooth(method=lm, aes(y=ageAndQuality), color='blue') +
-  labs(title='Mediation Effect in MFC GMD', x='Age', y='Predicted CT') +
-  theme_bw()
-
+writeMat('fsctColorScale.mat', vals=ctColors)
 
 # Now do the validation data down here
 static <- all.train.data
 all.train.data <- all.valid.data
 
-vals <- grep('mprage_jlf_ct', names(all.train.data))[39:136]
 zScoreCT <- NULL
 binVals <- NULL
 for(i in vals){
@@ -129,118 +101,12 @@ binValsApply <- rep(0, length(vals))
 binValsApply[which(p.adjust(binVals[,2], method='fdr')<.05)] <- 1
 zScoreCT[,2] <- as.numeric(zScoreCT[,2]) * binValsApply
 zScoreCT <- zScoreCT[order(as.numeric(zScoreCT[,2])),]
-
-vals <- grep('mprage_jlf_gmd', names(all.train.data))[39:136]
-# Now rm nonesense ROI's
-zScoreGMD <- NULL
-binVals <- NULL
-for(i in vals){
-    foo <- mediation.test(mv=all.train.data$oneVsTwoOutcome, iv=all.train.data$ageAtGo1Scan, dv= all.train.data[,i])$Sobel[1]
-    toAppend <- c(names(all.train.data)[i], foo)
-    zScoreGMD <- rbind(zScoreGMD, toAppend)
-}
-zScoreGMD <- zScoreGMD[order(as.numeric(zScoreGMD[,2])),]
-
-# Now prepare the key between ROI and intensity
-jlfCTVals <- cbind(zScoreCT, seq(1:nrow(zScoreCT)))
-jlfGMDVals <- cbind(zScoreGMD, seq(1:nrow(zScoreGMD)))
+zScoreCT <- zScoreCT[-c(1, grep('ean', zScoreCT[,1])),]
 
 ## Now create our color values to export to ITK snap
-ctColors <- returnPosNegAndNeuColorScale(jlfCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))
-gmdColors <- returnPosNegAndNeuColorScale(jlfGMDVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))
-
-
+ctColors <- returnPosNegAndNeuColorScale(zScoreCT[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))[-1,]
+ctColors[,8] <- zScoreCT[,1]
+ctColors <- cbind(ctColors, zScoreCT[,2])
+ctColors[ctColors=="NaN"] <- 190
 # Now I need to save these color scales and the other thing
-write.table(ctColors, file='ctColorScaleValid.txt', sep="\t", quote=F, row.names=F, col.names=F)
-write.table(gmdColors, file='gmdColorScaleValid.txt', sep="\t", quote=F, row.names=F, col.names=F)
-write.csv(jlfCTVals, 'jlfSigQAPROIctValid.csv', quote=F)
-write.csv(jlfGMDVals, 'jlfSigQAPROIgmdValid.csv', quote=F)
-# This section is going to be used to compare the raw age corellations vs the partial corellations of CT values
-# This si going to be done for each cortical thickness ROI
-all.train.data <- static
-vals <- grep('mprage_jlf_ct', names(all.train.data))[39:136]
-rValCT <- NULL
-regressedQaulityVals <- lm(oneVsTwoOutcome ~ ageAtGo1Scan + ageAtGo1Scan^2 + sex, data=all.train.data)$residuals
-regressedAgeVal <- lm(ageAtGo1Scan ~ sex + oneVsTwoOutcome, data=all.train.data)$residuals
-for(i in vals){
-    # First we need to create our regressed values
-    tmpRegVals <- lm(all.train.data[,i] ~ oneVsTwoOutcome + sex, data=all.train.data)$residuals
-    # Now find our cor value and our partial cor value
-    corVal <- cor(all.train.data$ageAtGo1Scan, all.train.data[,i])
-    pCorVal <- cor(tmpRegVals, regressedAgeVal)
-    toAppend <- c(names(all.train.data)[i], corVal, 'Raw')
-    toAppend <- rbind(toAppend, c(names(all.train.data)[i], pCorVal, 'Partial'))
-    toAppend <- rbind(toAppend, c(names(all.train.data)[i], corVal - pCorVal, 'Diff'))
-    rValCT <- rbind(rValCT, toAppend)
-}
-# Now plot these values
-rValDiff <- rValCT[grep('Diff', rValCT[,3]),]
-rValCT <- rValCT[-grep('Diff', rValCT[,3]),]
-rValCT[,1] <-gsub(rValCT[,1], pattern='mprage_jlf_ct_', replacement='')
-rValCT <- as.data.frame(rValCT)
-rValCT$V1 <- as.factor(rValCT$V1)
-rValCT$V2 <- as.numeric(as.character(rValCT$V2))
-rValCT$V3 <- as.factor(rValCT$V3)
-tmp <- rValCT
-rValCT <- rValCT[seq(1,98),]
-barPlot <- ggplot(rValCT, aes(x=V1, y=V2, group=V3, fill=V3)) +
-  geom_bar(stat='identity', position=position_dodge(), size=.1) +
-theme(legend.position="right") +
-labs(title='', x='ROI', y='Cor and PCor BTN CT and Age') +
-theme(text = element_text(size=30),
-axis.text.x = element_text(angle=90,hjust=1, size=16),
-axis.title.x = element_text(size=26),
-axis.title.y = element_text(size=26),
-legend.text = element_text(size=20))
-
-rValCT <- tmp[seq(99,198),]
-barPlot2 <- ggplot(rValCT, aes(x=V1, y=V2, group=V3, fill=V3)) +
-geom_bar(stat='identity', position=position_dodge(), size=.1) +
-theme(legend.position="right") +
-labs(title='', x='ROI', y='Cor and PCor BTN CT and Age') +
-theme(text = element_text(size=30),
-axis.text.x = element_text(angle=90,hjust=1, size=16),
-axis.title.x = element_text(size=26),
-axis.title.y = element_text(size=26),
-legend.text = element_text(size=20))
-
-rValCT <- rValDiff
-rValCT[,1] <-gsub(rValCT[,1], pattern='mprage_jlf_ct_', replacement='')
-rValCT <- as.data.frame(rValCT)
-rValCT$V1 <- as.factor(rValCT$V1)
-rValCT$V2 <- as.numeric(as.character(rValCT$V2))
-rValCT$V3 <- as.factor(rValCT$V3)
-
-barPlot3 <- ggplot(rValCT[seq(1,49),], aes(x=V1, y=V2, group=V3, fill=V3)) +
-geom_bar(stat='identity', position=position_dodge(), size=.1) +
-theme(legend.position="right") +
-labs(title='', x='ROI', y='Cor and PCor BTN CT and Age') +
-theme(text = element_text(size=30),
-axis.text.x = element_text(angle=90,hjust=1, size=16),
-axis.title.x = element_text(size=26),
-axis.title.y = element_text(size=26),
-legend.text = element_text(size=20))
-
-
-barPlot4 <- ggplot(rValCT[seq(50,98),], aes(x=V1, y=V2, group=V3, fill=V3)) +
-geom_bar(stat='identity', position=position_dodge(), size=.1) +
-theme(legend.position="right") +
-labs(title='', x='ROI', y='Cor and PCor BTN CT and Age') +
-theme(text = element_text(size=30),
-axis.text.x = element_text(angle=90,hjust=1, size=16),
-axis.title.x = element_text(size=26),
-axis.title.y = element_text(size=26),
-legend.text = element_text(size=20))
-
-
-pdf('gmdCorVsPCor.pdf', height=16, width=24)
-barPlot
-barPlot2
-barPlot3
-barPlot4
-dev.off()
-
-
-
-
-
+writeMat('fsctColorScaleTest.mat', vals=ctColors)

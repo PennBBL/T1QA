@@ -201,7 +201,7 @@ dataQaDfValid <- cbind(dataQaDfValid, c(0,0,0,1,1.33,1.67,2))
 colnames(dataQaDfValid)[3] <- 'color'
 validBG <- ggplot(dataQaDfValid, aes(x=Var1, y=Freq, fill=factor(color))) +
 geom_bar(stat='identity') +
-labs(title='', x='Manual Quality Rating (mean value)', y='Validation') +
+labs(title='', x='Manual Quality Rating (mean value)', y='Testing') +
 geom_text(data=dataQaDfValid,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
 theme_bw() +
 theme(legend.position="none",
@@ -215,7 +215,7 @@ scale_y_continuous(limits=c(0,500), breaks=round(seq(0, 500, 100), digits=2))
 # Now do MGI data
 # Now do the validation data
 dataQaDfMGI <- as.data.frame(table(round(all.mgi.data$rawAverageRating, digits=2)))
-dataQaDfMGI <- cbind(dataQaDfValid, c(0,0,0,1,1.33,1.67,2))
+dataQaDfMGI <- cbind(dataQaDfMGI, c(0,0,0,1,1.33,1.67,2))
 colnames(dataQaDfMGI)[3] <- 'color'
 mgiBG <- ggplot(dataQaDfMGI, aes(x=Var1, y=Freq, fill=factor(color))) +
 geom_bar(stat='identity') +
@@ -228,7 +228,7 @@ axis.text.y=element_text(size=30),
 axis.title.x=element_text(size=30),
 axis.title.y=element_text(size=40, angle=90),
 plot.title=element_text(size=40)) +
-scale_y_continuous(limits=c(0,500), breaks=round(seq(0, 500, 100), digits=2))
+scale_y_continuous(limits=c(0,300), breaks=round(seq(0, 300, 100), digits=2))
 
 # Now do the polychoric cor's down here
 attach(all.train.data)

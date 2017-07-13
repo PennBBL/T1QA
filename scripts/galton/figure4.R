@@ -65,9 +65,7 @@ all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 all.valid.data <- merge(mergedQAP, validationData, by='bblid')
 names(all.train.data) <- gsub(pattern='.x', x=names(all.train.data), replacement='')
 names(all.valid.data) <- gsub(pattern='.x', x=names(all.valid.data), replacement='')
-trainingData <- merge(trainingData, eulerNumber, by='bblid')
 trainingData$mean_euler <- scale(trainingData$mean_euler)
-validationData <- merge(validationData, eulerNumber, by='bblid')
 validationData$mean_euler <- scale(validationData$mean_euler)
 
 # Now ensure complete cases
@@ -101,7 +99,7 @@ for(qapVal in varsOfInterest){
 }
 i <- 1
 for(qapVal in varsOfInterest){
-    all.mgi.data[qapVal] <- scale(unlist(all.mgi.data[qapVal]), center=T, scale=T)[1:233]
+    all.mgi.data[qapVal] <- scale(unlist(all.mgi.data[qapVal]), center=T, scale=T)
     valsToAppend <- summarySE(data=all.mgi.data, measurevar=qapVal, groupvars='averageRating')
     qapValue <- rep(prettyNames[i], nrow(valsToAppend))
     Dataset <- rep('Validation', nrow(valsToAppend))
