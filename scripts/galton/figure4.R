@@ -161,7 +161,7 @@ corVals$qapValue <- factor(corVals$qapValue, levels=unique(as.character(corVals$
 corPlot <- ggplot(corVals, 
                  aes(x=factor(qapValue), y=as.numeric(as.character(corVal)), fill=factor(Dataset))) + 
                  geom_bar(stat='identity', position=position_dodge(), size=.1) + 
-                 labs(title='', x='Quantitative Metric', y='Partial Spearman Corellation') + 
+                 labs(title='', x='Quantitative Metric', y=expression("Correlation with Manual Quality Rating (partial"~rho*")")) +
                  theme_bw() + 
                  facet_grid(Dataset ~ qapValue, space = "free", scales='free_x') + 
                  theme(legend.position="none",
@@ -177,7 +177,7 @@ trainingValues$qapValue <- factor(trainingValues$qapValue, levels=levels(corVals
 allPlot <- ggplot(trainingValues, 
                  aes(x=factor(averageRating.y), y=as.numeric(as.character(mean)), fill=factor(averageRating.y))) + 
                  geom_bar(stat='identity', position=position_dodge(), size=.1) + 
-                 labs(title='', x='Manual Quality Rating (mean value)', y='Mean Standardized Quality Metric (z-score)') +
+                 labs(title='', x='Manual Quality Rating (mean value)', y='Quality Metric (mean z-score)') +
                  geom_errorbar(aes(ymin=as.numeric(as.character(mean))-se, ymax=as.numeric(as.character(mean))+se), 
                        width = .1, position=position_dodge(.9)) + 
                  theme_bw() + 

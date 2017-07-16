@@ -53,7 +53,7 @@ pValue <- t.test(all.train.data$averageRating ~ all.train.data$sex)
 pValue <- wilcox.test(all.train.data$averageRating ~ all.train.data$sex)
 bg1 <- ggplot(bg2.vals[which(bg2.vals$Dataset=='Training'),], aes(x=factor(sex), y=as.numeric(as.character(averageRating)), group=Dataset)) + 
                 geom_bar(stat='identity', position=position_dodge(), width=.5) + 
-                labs(title='Training', x='Sex', y='Manual Quality Rating (mean value)') +
+                labs(title='Training', x='Sex', y='Mean Manual Quality Rating') +
                 theme_bw() + 
                 coord_cartesian(ylim=c(1.6,2.1)) + 
                        geom_errorbar(aes(ymin=as.numeric(as.character(averageRating))-se, 
@@ -127,54 +127,55 @@ annotate("text", x=c(Inf), y=c(Inf), label="p > 0.9", hjust=c(2), vjust=c(1.1), 
 # Now build our models to show geneerl age trends
 corVal <- cor(all.train.data$rawAverageRating.x, all.train.data$age, method='spearman')
 corSig <- cor.test(all.train.data$rawAverageRating.x, all.train.data$age, method='spearman')$p.value
-corText1 <- expression("Spearman's"~rho == .15)
+corText1 <- expression(~rho == .15)
 corText2 <- paste("p < 0.01")
-mod1 <- ggplot(all.train.data, aes(x=rawAverageRating.x, y=age)) +
+mod1 <- ggplot(all.train.data, aes(y=rawAverageRating.x, x=age)) +
    geom_smooth(method=lm, color='black') +
    theme_bw() +
-   coord_cartesian(ylim=c(7,16)) +
-   labs(title='', x='Manual Quality Rating (mean value)', y='Age') +
+   coord_cartesian(xlim=c(8,16), ylim=c(1.5,2)) +
+   labs(title='', y='Mean Manual Quality Rating', x='Age (years)') +
    theme(
     axis.text=element_text(size=20),
     axis.title=element_text(size=30)) +
-   scale_x_continuous(breaks=c(0,.33,.66,1,1.33,1.66,2)) + 
+   scale_y_continuous(breaks=c(0,.33,.66,1,1.33,1.66,2)) +
    annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=c(as.character(corText2), as.character(corText1)), hjust=c(1, 1), vjust=c(-.5, -2.5), size=8, parse=T)
 
 
 corVal <- cor(all.valid.data$rawAverageRating.x, all.valid.data$age, method='spearman')
 corSig <- cor.test(all.valid.data$rawAverageRating.x, all.valid.data$age, method='spearman')$p.value
-corText1 <- expression("Spearman's"~rho == paste(0.31))
+corText1 <- expression(~rho == paste(0.31))
 corText2 <- paste("p < 0.01")
-mod2 <- ggplot(all.valid.data, aes(x=rawAverageRating.x, y=age)) +
+mod2 <- ggplot(all.valid.data, aes(y=rawAverageRating.x, x=age)) +
    geom_smooth(method=lm, color='black') +
    theme_bw() +
-   coord_cartesian(ylim=c(7,16)) +
-   labs(title='', x='Manual Quality Rating (mean value)', y='Age') +
+   coord_cartesian(xlim=c(8,16), ylim=c(1.5,2)) +
+   labs(title='', y='Mean Manual Quality Rating', x='Age (years)') +
    theme(
     axis.text=element_text(size=20),
     axis.title=element_text(size=30),
     axis.title.y=element_text(size=20, color='white'),
     axis.text.y=element_text(size=30, color='white'),
     axis.ticks.y=element_blank()) +
-    scale_x_continuous(breaks=c(0,.33,.66,1,1.33,1.66,2)) + 
+    scale_y_continuous(breaks=c(0,.33,.66,1,1.33,1.66,2)) +
    annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=c(as.character(corText2), as.character(corText1)), hjust=c(1, 1), vjust=c(-.5, -2.5), size=8, parse=T)
 
 corVal <- cor(all.mgi.data$rawAverageRating, all.mgi.data$age, method='spearman')
 corSig <- cor.test(all.mgi.data$rawAverageRating, all.mgi.data$age, method='spearman')$p.value
-corText1 <-expression("Spearman's"~rho == paste(-0.11))
+corText1 <-expression(~rho == paste(-0.11))
 corText2 <- paste("p < 0.1")
-mod3 <- ggplot(all.mgi.data, aes(x=rawAverageRating, y=age)) +
+mod3 <- ggplot(all.mgi.data, aes(y=rawAverageRating, x=age)) +
 geom_smooth(method=lm, color='black') +
 theme_bw() +
-coord_cartesian(ylim=c(20,60)) +
-labs(title='', x='Manual Quality Rating (mean value)', y='Age') +
+coord_cartesian(xlim=c(20,80), ylim=c(1.5,2)) +
+labs(title='', y='Manual Quality Rating (mean value)', x='Age (years)') +
 theme(
 axis.text=element_text(size=20),
 axis.title=element_text(size=30),
 axis.title.y=element_text(size=20, color='white'),
-axis.text.y=element_text(size=30, color='black'),
+axis.text.y=element_text(size=30, color='white'),
 axis.ticks.y=element_blank()) +
-scale_x_continuous(breaks=c(0,.33,.66,1,1.33,1.66,2)) +
+scale_y_continuous(breaks=c(0,.33,.66,1,1.33,1.66,2)) +
+scale_x_continuous(breaks=c(20,40,60,80)) +
 annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=c(as.character(corText2), as.character(corText1)), hjust=c(1, 1), vjust=c(-.5, -2.5), size=8, parse=T)
 
 
