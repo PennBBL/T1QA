@@ -121,8 +121,11 @@ aucValsAll <- rbind(aucValsAll, aucVals)
 
 # Now create our data frame to plot
 aucVals <- as.data.frame(aucValsAll)
+levels(aucVals$V2) <- c('Training', 'Testing', 'Validation')
+levels(aucVals$V4) <- c('Training', 'Testing', 'Validation')
 aucVals$trainAUC <- as.numeric(as.character(aucVals$trainAUC))
 aucVals$prettyQap <- rep(rep(c('BG Kurtosis', 'BG Skewness', 'CNR', 'EFC', 'FBER', 'QI1', 'SNR', 'WM Skewness', 'Mean Euler'), each=3), 3)
+aucVals$prettyQap <- factor(aucVals$prettyQap, levels=c('QI1', 'EFC', 'WM Skewness', 'SNR', 'CNR', 'FBER', 'BG Skewness', 'BG Kurtosis', 'Mean Euler'))
 aucValPlot <- ggplot(aucVals, aes(x=prettyQap, y=trainAUC)) +
   geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
   coord_cartesian(ylim=c(.5,.9)) +
@@ -130,7 +133,8 @@ aucValPlot <- ggplot(aucVals, aes(x=prettyQap, y=trainAUC)) +
   theme(axis.text.x = element_text(angle=90,hjust=1, size=20),
     axis.title.x = element_text(size=30),
     axis.title.y = element_text(size=30),
-    text = element_text(size=30)) +
+    text = element_text(size=30),
+    panel.margin = unit(1, "lines")) +
   ggtitle("AUC across various training scheme") +
   xlab("Image Quality Metrics") +
   ylab("AUC")

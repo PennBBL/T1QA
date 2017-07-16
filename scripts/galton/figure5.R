@@ -41,6 +41,7 @@ raw.lme.data.test$value[raw.lme.data.test$value > 1] <- 1
 # Now run through each variable of interest and build an ROC curve for it
 qapValNamesUse <- qapValNames[-c(1:3, 5:7, 10:12, 14:19, 22:26,33:34)]
 qapValNamesUse <- c('bg.kurtosis', 'bg.skewness', 'cnr', 'efc', 'fber', 'qi1', 'snr', 'wm.skewness', 'mean_euler')
+qapValNamesUse <- c('qi1', 'efc', 'wm.skewness', 'snr', 'cnr', 'fber', 'bg.skewness', 'bg.kurtosis', 'mean_euler')
 aucVals <- NULL
 # Now create a series of loops which will train in each of the data sets and validate in the other remaining
 # The output will be the output AUC value
@@ -117,7 +118,10 @@ aucValsAll <- rbind(aucValsAll, aucVals)
 # Now create our data frame to plot
 aucVals <- as.data.frame(aucValsAll)
 aucVals$trainAUC <- as.numeric(as.character(aucVals$trainAUC))
-aucVals$prettyQap <- rep(rep(c('BG Kurtosis', 'BG Skewness', 'CNR', 'EFC', 'FBER', 'QI1', 'SNR', 'WM Skewness', 'Mean Euler'), each=3), 3)
+levels(aucVals$V2) <- c('Training', 'Testing', 'Validation')
+levels(aucVals$V4) <- c('Training', 'Testing', 'Validation')
+aucVals$prettyQap <- rep(rep(c('QI1', 'EFC', 'WM Skewness', 'SNR', 'CNR', 'FBER', 'BG Skewness', 'BG Kurtosis', 'Mean Euler'), each=3), 3)
+aucVals$prettyQap <- factor(aucVals$prettyQap, levels=c('QI1', 'EFC', 'WM Skewness', 'SNR', 'CNR', 'FBER', 'BG Skewness', 'BG Kurtosis', 'Mean Euler'))
 aucValPlot <- ggplot(aucVals, aes(x=prettyQap, y=trainAUC)) +
   geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
   coord_cartesian(ylim=c(.5,1)) +
@@ -125,7 +129,8 @@ aucValPlot <- ggplot(aucVals, aes(x=prettyQap, y=trainAUC)) +
   theme(axis.text.x = element_text(angle=90,hjust=1, size=20),
     axis.title.x = element_text(size=30),
     axis.title.y = element_text(size=30),
-    text = element_text(size=30)) +
+    text = element_text(size=30),
+    panel.margin = unit(1, "lines")) +
   ggtitle("AUC across various training scheme") +
   xlab("Image Quality Metrics") +
   ylab("AUC")
