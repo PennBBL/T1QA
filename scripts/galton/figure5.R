@@ -120,6 +120,8 @@ aucVals <- as.data.frame(aucValsAll)
 aucVals$trainAUC <- as.numeric(as.character(aucVals$trainAUC))
 levels(aucVals$V2) <- c('Training', 'Testing', 'Validation')
 levels(aucVals$V4) <- c('Training', 'Testing', 'Validation')
+aucVals$BG <- 0
+aucVals$BG[which(aucVals$V2==aucVals$V4)] <- 1
 aucVals$prettyQap <- rep(rep(c('QI1', 'EFC', 'WM Skewness', 'SNR', 'CNR', 'FBER', 'BG Skewness', 'BG Kurtosis', 'Mean Euler'), each=3), 3)
 aucVals$prettyQap <- factor(aucVals$prettyQap, levels=c('QI1', 'EFC', 'WM Skewness', 'SNR', 'CNR', 'FBER', 'BG Skewness', 'BG Kurtosis', 'Mean Euler'))
 aucValPlot <- ggplot(aucVals, aes(x=prettyQap, y=trainAUC)) +
@@ -133,7 +135,9 @@ aucValPlot <- ggplot(aucVals, aes(x=prettyQap, y=trainAUC)) +
     panel.margin = unit(1, "lines")) +
   ggtitle("AUC across various training scheme") +
   xlab("Image Quality Metrics") +
-  ylab("AUC")
+  ylab("AUC") +
+  geom_rect(data = subset(aucVals,BG == '1'),,xmin = -Inf,xmax = Inf,
+    ymin = -Inf,ymax = Inf,alpha = 0.05, fill='gray')
 
 
 
