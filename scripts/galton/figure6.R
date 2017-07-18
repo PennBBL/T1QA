@@ -66,6 +66,9 @@ for(qapVal in qapValNamesUse){
     # Now prepare the output
     outputData <- rbind(cbind(trainAUC, 'Training', qapVal), cbind(testAUC, 'Testing', qapVal), cbind(validAUC, 'Validation', qapVal))
     aucVals <- rbind(aucVals, outputData)
+    if(qapVal == "mean_euler"){
+        save(m1, file="/home/adrose/qapQA/data/eulerModels/one/oneVsTwoTraining.RData")
+    }
 }
 aucValsAll <- aucVals
 aucValsAll <- cbind(aucVals, rep('Training', 27))
@@ -86,6 +89,9 @@ for(qapVal in qapValNamesUse){
     # Now prepare the output
     outputData <- rbind(cbind(trainAUC, 'Training', qapVal), cbind(testAUC, 'Testing', qapVal), cbind(validAUC, 'Validation', qapVal))
     aucVals <- rbind(aucVals, outputData)
+    if(qapVal == "mean_euler"){
+        save(m1, file="/home/adrose/qapQA/data/eulerModels/one/oneVsTwoTesting.RData")
+    }
 }
 aucVals <- cbind(aucVals, rep('Testing', 27))
 aucValsAll <- rbind(aucValsAll, aucVals)
@@ -115,6 +121,9 @@ for(qapVal in qapValNamesUse){
     # Now prepare the output
     outputData <- rbind(cbind(trainAUC, 'Training', qapVal), cbind(testAUC, 'Testing', qapVal), cbind(validAUC, 'Validation', qapVal))
     aucVals <- rbind(aucVals, outputData)
+    if(qapVal == "mean_euler"){
+        save(m1, file="/home/adrose/qapQA/data/eulerModels/one/oneVsTwoValidation.RData")
+    }
 }
 aucVals <- cbind(aucVals, rep('Validation', 27))
 aucValsAll <- rbind(aucValsAll, aucVals)

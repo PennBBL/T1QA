@@ -65,6 +65,9 @@ for(qapVal in qapValNamesUse){
   # Now prepare the output
   outputData <- rbind(cbind(trainAUC, 'Training', qapVal), cbind(testAUC, 'Testing', qapVal), cbind(validAUC, 'Validation', qapVal))
   aucVals <- rbind(aucVals, outputData)
+  if(qapVal == "mean_euler"){
+    save(m1, file="/home/adrose/qapQA/data/eulerModels/zero/zeroNotZeroTraining.RData")
+  }
 }
 aucValsAll <- cbind(aucVals, rep('Training', 27))
 
@@ -84,6 +87,9 @@ for(qapVal in qapValNamesUse){
     # Now prepare the output
     outputData <- rbind(cbind(trainAUC, 'Training', qapVal), cbind(testAUC, 'Testing', qapVal), cbind(validAUC, 'Validation', qapVal))
     aucVals <- rbind(aucVals, outputData)
+    if(qapVal == "mean_euler"){
+        save(m1, file="/home/adrose/qapQA/data/eulerModels/zero/zeroNotZeroTesting.RData")
+    }
 }
 aucVals <- cbind(aucVals, rep('Testing', 27))
 aucValsAll <- rbind(aucValsAll, aucVals)
@@ -111,6 +117,9 @@ for(qapVal in qapValNamesUse){
     # Now prepare the output
     outputData <- rbind(cbind(trainAUC, 'Training', qapVal), cbind(testAUC, 'Testing', qapVal), cbind(validAUC, 'Validation', qapVal))
     aucVals <- rbind(aucVals, outputData)
+    if(qapVal == "mean_euler"){
+        save(m1, file="/home/adrose/qapQA/data/eulerModels/zero/zeroNotZeroValidation.RData")
+    }
 }
 aucVals <- cbind(aucVals, rep('Validation', 27))
 aucValsAll <- rbind(aucValsAll, aucVals)
@@ -137,7 +146,7 @@ aucValPlot <- ggplot(aucVals, aes(x=prettyQap, y=trainAUC)) +
   xlab("Image Quality Metrics") +
   ylab("AUC") +
   geom_rect(data = subset(aucVals,BG == '1'),,xmin = -Inf,xmax = Inf,
-    ymin = -Inf,ymax = Inf,alpha = 0.05, fill='gray')
+    ymin = -Inf,ymax = Inf,alpha = 0.1, fill='gray')
 
 
 
