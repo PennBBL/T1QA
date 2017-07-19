@@ -70,7 +70,7 @@ if (valueToCheck > 0)
 end
 % Now remove the green from the color map
 newMapLength=loopLength-max(indx);
-subtmpcolmap=autumn(newMapLength);
+subtmpcolmap=cool(newMapLength);
 tmp_cmp(max(indx)+1:end,:)=subtmpcolmap;
 % Now check to see if we did not have any gray images 
 % If we didn't export jet as the color table 
@@ -79,7 +79,7 @@ if (valueToCheck == 0)
   indx=find(str2double(vals(:,9))<0);
   tmp_cmp(0:max(indx),:)=cool(max(indx));
   indx2=find(str2double(vals(:,9))>0);
-  tmp_cmp(max(tmp_cmp):max(indx2),:)=hot(max(indx2))
+  tmp_cmp(max(tmp_cmp):max(indx2),:)=autumn(max(indx2))
 end
 
 % Now plot the surfaces
