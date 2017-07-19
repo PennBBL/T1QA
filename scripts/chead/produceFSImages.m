@@ -58,7 +58,7 @@ end
 % 2.) Ensure that the colors indicate the correct directions of relationships:
 %    a. Hot must be larger 
 %    b. blue must be smaller 
-tmp_cmp=jet(loopLength);
+tmp_cmp=hsv(loopLength);
 % Now find which rows have been greyed out in the input 
 indx=find(ismember(str2double(vals(:,2:4)), [190 190 190], 'rows'));
 % Now check to see if we have any gray values
