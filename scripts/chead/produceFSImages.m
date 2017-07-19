@@ -58,7 +58,7 @@ end
 % 2.) Ensure that the colors indicate the correct directions of relationships:
 %    a. Hot must be larger 
 %    b. blue must be smaller 
-tmp_cmp=hsv(loopLength);
+tmp_cmp=jet(loopLength);
 % Now find which rows have been greyed out in the input 
 indx=find(ismember(str2double(vals(:,2:4)), [190 190 190], 'rows'));
 % Now check to see if we have any gray values
@@ -70,7 +70,7 @@ if (valueToCheck > 0)
 end
 % Now remove the green from the color map
 newMapLength=loopLength-max(indx);
-subtmpcolmap=cool(newMapLength);
+subtmpcolmap=autumn(newMapLength);
 tmp_cmp(max(indx)+1:end,:)=subtmpcolmap;
 % Now check to see if we did not have any gray images 
 % If we didn't export jet as the color table 
@@ -79,7 +79,7 @@ if (valueToCheck == 0)
   indx=find(str2double(vals(:,9))<0);
   tmp_cmp(0:max(indx),:)=cool(max(indx));
   indx2=find(str2double(vals(:,9))>0);
-  tmp_cmp(max(tmp_cmp):max(indx2),:)=autumn(max(indx2))
+  tmp_cmp(max(tmp_cmp):max(indx2),:)=hot(max(indx2))
 end
 
 % Now plot the surfaces
@@ -88,7 +88,7 @@ set(hFig,'edgecolor','none');
 axis image;
 material dull
 axis off
-colormap(tmp_cmp);
+colormap(flipud(tmp_cmp));
 view(-90,0)
 camlight headlight
 saveas(hFig, 'rhLateral.png')
@@ -100,7 +100,7 @@ set(hFig,'edgecolor','none');
 axis image;
 material dull
 axis off
-colormap(tmp_cmp);
+colormap(flipud(tmp_cmp));
 view(-280,0)
 camlight headlight
 saveas(hFig, 'rhMedial.png')
@@ -146,7 +146,7 @@ set(hFig,'edgecolor','none');
 axis image;
 material dull
 axis off
-colormap(tmp_cmp);
+colormap(flipud(tmp_cmp));
 view(-90,0)
 camlight headlight
 saveas(hFig, 'lhLateral.png')
@@ -158,7 +158,7 @@ set(hFig,'edgecolor','none');
 axis image;
 material dull
 axis off
-colormap(tmp_cmp);
+colormap(flipud(tmp_cmp));
 view(-280,0)
 camlight headlight
 saveas(hFig, 'lhMedial.png')
