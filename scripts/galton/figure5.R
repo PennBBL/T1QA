@@ -12,6 +12,80 @@ load('/home/adrose/qapQA/data/0vsNot0FinalData.RData')
 zeroVsNotZeroModel <- m1
 rm(m1)
 
+# Declare functions 
+rocdata <- function(grp, pred){
+    # Produces x and y co-ordinates for ROC curve plot
+    # Arguments: grp - labels classifying subject status
+    #            pred - values of each observation
+    # Output: List with 2 components:
+    #         roc = data.frame with x and y co-ordinates of plot
+    #         stats = data.frame containing: area under ROC curve, p value, upper and lower 95% confidence interval
+    
+    grp <- as.factor(grp)
+    if (length(pred) != length(grp)) {
+        stop("The number of classifiers must match the number of data points")
+    }
+    
+    if (length(levels(grp)) != 2) {
+        stop("There must only be 2 values for the classifier")
+    }
+    
+    cut <- unique(pred)
+    tp <- sapply(cut, function(x) length(which(pred > x & grp == levels(grp)[2])))
+    fn <- sapply(cut, function(x) length(which(pred < x & grp == levels(grp)[2])))
+    fp <- sapply(cut, function(x) length(which(pred > x & grp == levels(grp)[1])))
+    tn <- sapply(cut, function(x) length(which(pred < x & grp == levels(grp)[1])))
+    tpr <- tp / (tp + fn)
+    fpr <- fp / (fp + tn)
+    roc = data.frame(x = fpr, y = tpr)
+    roc <- roc[order(roc$x, roc$y),]
+    
+    i <- 2:nrow(roc)
+    auc <- (roc$x[i] - roc$x[i - 1]) %*% (roc$y[i] + roc$y[i - 1])/2
+    
+    pos <- pred[grp == levels(grp)[2]]
+    neg <- pred[grp == levels(grp)[1]]
+    q1 <- auc/(2-auc)
+    q2 <- (2*auc^2)/(1+auc)
+    se.auc <- sqrt(((auc * (1 - auc)) + ((length(pos) -1)*(q1 - auc^2)) + ((length(neg) -1)*(q2 - auc^2)))/(length(pos)*length(neg)))
+    ci.upper <- auc + (se.auc * 0.96)
+    ci.lower <- auc - (se.auc * 0.96)
+    
+    se.auc.null <- sqrt((1 + length(pos) + length(neg))/(12*length(pos)*length(neg)))
+    z <- (auc - 0.5)/se.auc.null
+    p <- 2*pnorm(-abs(z))
+    
+    stats <- data.frame (auc = auc,
+    p.value = p,
+    ci.upper = ci.upper,
+    ci.lower = ci.lower
+    )
+    
+    return (list(roc = roc, stats = stats))
+}
+
+rocplot.single <- function(grp, pred, title = "ROC Plot", p.value = FALSE){
+    require(ggplot2)
+    plotdata <- rocdata(grp, pred)
+
+    p <- ggplot(plotdata$roc, aes(x = x, y = y)) +
+    geom_line(aes(colour = ""), size=3) +
+    geom_abline (intercept = 0, slope = 1) +
+    theme_bw() +
+    scale_x_continuous("1-Specificity") +
+    scale_y_continuous("Sensitivity") +
+    scale_colour_manual(values = "#000000") +
+    ggtitle(title) +
+    theme_bw() +
+    theme(legend.position=c(1,0)) +
+    theme(legend.justification=c(1,0)) +
+    theme(legend.title=element_blank(),
+    text = element_text(size=30)) + theme(legend.position="none")
+    
+    return(p)
+}
+
+
 ## Load Library(s)
 install_load('pROC', 'ggplot2', 'caret', 'lme4', 'grid', 'gridExtra')
 
@@ -71,59 +145,6 @@ for(qapVal in qapValNamesUse){
 }
 aucValsAll <- cbind(aucVals, rep('Training', 27))
 
-# Now train the data in the testing data set
-aucVals <- NULL
-trainTmpSet <- trainingData
-trainTmpSet$variable <- 'ratingNULL'
-for(qapVal in qapValNamesUse){
-    model <- as.formula(paste("value ~", paste(qapVal), paste("+ (1|variable)")))
-    # NOw train our model in the training data
-    m1 <- glmer(model, data=raw.lme.data.test, family='binomial')
-    # Now get our auc vals
-    testAUC <- auc(roc(raw.lme.data.test$value ~ predict(m1, type='response')))
-    # Now get our test value auc
-    trainAUC <- auc(roc(trainTmpSet$averageRating.x ~ predict(m1, type='response', newdata=trainTmpSet, allow.new.levels=T)))
-    validAUC <- auc(roc(validTmpSet$averageRating ~ predict(m1, type='response', newdata=validTmpSet, allow.new.levels=T)))
-    # Now prepare the output
-    outputData <- rbind(cbind(trainAUC, 'Training', qapVal), cbind(testAUC, 'Testing', qapVal), cbind(validAUC, 'Validation', qapVal))
-    aucVals <- rbind(aucVals, outputData)
-    if(qapVal == "mean_euler"){
-        save(m1, file="/home/adrose/qapQA/data/eulerModels/zero/zeroNotZeroTesting.RData")
-    }
-}
-aucVals <- cbind(aucVals, rep('Testing', 27))
-aucValsAll <- rbind(aucValsAll, aucVals)
-
-# Now train in the validation data sets
-# First thing we have to do is melt the data set se we can have
-source('/home/adrose/T1QA/scripts/galton/loadMgiData.R')
-raw.lme.data.mgi <- merge(isolatedVars, manualQAData2, by=intersect(names(isolatedVars), names(manualQAData2)))
-#raw.lme.data.mgi[,4:35] <- scale(raw.lme.data.mgi[,4:35], center=T, scale=T)
-raw.lme.data.mgi <- melt(raw.lme.data.mgi, id.vars=measureVars, measure.vars=idVars)
-raw.lme.data.mgi$value[raw.lme.data.mgi$value > 1] <- 1
-raw.lme.data.mgi <- raw.lme.data.mgi[complete.cases(raw.lme.data.mgi),]
-
-# Now produce our AUC vals after training in the validation data set!
-aucVals <- NULL
-for(qapVal in qapValNamesUse){
-    model <- as.formula(paste("value ~", paste(qapVal), paste("+ (1|variable)")))
-    # NOw train our model in the training data
-    m1 <- glmer(model, data=raw.lme.data.mgi, family='binomial')
-    # Now get our auc vals
-    validAUC <- auc(roc(raw.lme.data.mgi$value ~ predict(m1, type='response')))
-    # Now get our test value auc
-    testAUC <- auc(roc(testTmpSet$averageRating.x ~ predict(m1, type='response', newdata=testTmpSet, allow.new.levels=T)))
-    trainAUC <- auc(roc(trainTmpSet$averageRating.x ~ predict(m1, type='response', newdata=trainTmpSet, allow.new.levels=T)))
-    # Now prepare the output
-    outputData <- rbind(cbind(trainAUC, 'Training', qapVal), cbind(testAUC, 'Testing', qapVal), cbind(validAUC, 'Validation', qapVal))
-    aucVals <- rbind(aucVals, outputData)
-    if(qapVal == "mean_euler"){
-        save(m1, file="/home/adrose/qapQA/data/eulerModels/zero/zeroNotZeroValidation.RData")
-    }
-}
-aucVals <- cbind(aucVals, rep('Validation', 27))
-aucValsAll <- rbind(aucValsAll, aucVals)
-
 # Now create our data frame to plot
 aucVals <- as.data.frame(aucValsAll)
 aucVals$trainAUC <- as.numeric(as.character(aucVals$trainAUC))
@@ -131,26 +152,81 @@ levels(aucVals$V2) <- c('Training', 'Testing', 'Validation')
 levels(aucVals$V4) <- c('Training', 'Testing', 'Validation')
 aucVals$BG <- 0
 aucVals$BG[which(aucVals$V2==aucVals$V4)] <- 1
-aucVals$prettyQap <- rep(rep(c('QI1', 'EFC', 'WM Skewness', 'SNR', 'CNR', 'FBER', 'BG Skewness', 'BG Kurtosis', 'Mean Euler'), each=3), 3)
+aucVals$prettyQap <- rep(rep(c('QI1', 'EFC', 'WM Skewness', 'SNR', 'CNR', 'FBER', 'BG Skewness', 'BG Kurtosis', 'Mean Euler'), each=3), 1)
 aucVals$prettyQap <- factor(aucVals$prettyQap, levels=c('QI1', 'EFC', 'WM Skewness', 'SNR', 'CNR', 'FBER', 'BG Skewness', 'BG Kurtosis', 'Mean Euler'))
 aucValPlot <- ggplot(aucVals, aes(x=prettyQap, y=trainAUC)) +
   geom_bar(stat="identity", width=0.4, position=position_dodge(width=0.5)) +
   coord_cartesian(ylim=c(.5,1)) +
-  facet_grid(V2 ~ V4, scales="free", space="free_x") +
+  facet_grid(. ~ V2, scales="free", space="free_x") +
   theme(axis.text.x = element_text(angle=90,hjust=1, size=20),
     axis.title.x = element_text(size=30),
     axis.title.y = element_text(size=30),
     text = element_text(size=30),
     panel.margin = unit(1, "lines")) +
   ggtitle("AUC across various training scheme") +
-  xlab("Image Quality Metrics") +
+  xlab("") +
   ylab("AUC") +
   geom_rect(data = subset(aucVals,BG == '1'),,xmin = -Inf,xmax = Inf,
     ymin = -Inf,ymax = Inf,alpha = 0.1, fill='gray')
 
+# Now create the ROC curves
+install_load('pROC', 'ggplot2', 'caret', 'lme4', 'grid', 'gridExtra')
+raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
+raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRating.x))
+raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
+load('/home/adrose/qapQA/data/foldsToUse.RData')
+index <- unlist(folds[1])
+
+# Now produce our data sets
+raw.lme.data.test <- raw.lme.data[-index,]
+raw.lme.data <- raw.lme.data[index,]
+
+load("/home/adrose/qapQA/data/eulerModels/zero/zeroNotZeroTraining.RData")
+raw.lme.data$variable <- "ratingNULL"
+raw.lme.data$zeroVsNotZero <- predict(m1, newdata=raw.lme.data, allow.new.levels=T, type='response')
+raw.lme.data <- raw.lme.data[complete.cases(raw.lme.data$zeroVsNotZero),]
+roc.tmp <- roc(averageRating.x ~ zeroVsNotZero, data=raw.lme.data)
+trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, 'best', ret='accuracy'), digits=2))
+trainText2 <- paste("AUC =  ", round(auc(roc.tmp), digits=2), sep='')
+trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2),".00", sep='')
+trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
+trainText <- c(trainText1, trainText2, trainText3, trainText4)
+trainZeroPlot <- rocplot.single(pred=raw.lme.data$zeroVsNotZero, grp=raw.lme.data$averageRating.x, title="")
+trainZeroPlot <- trainZeroPlot + annotate("text", x=c(Inf, Inf, Inf, Inf), y=c(-Inf, -Inf, -Inf, -Inf), label=trainText, vjust=c(-1,-2.2, -3.4, -4.6), hjust="inward", size=8) + 
+  theme(axis.text.x=element_text(color='black'), axis.title.x=element_text(color='black'))
+
+# Now produce the testing ROC plot using the training data set
+raw.lme.data.test$variable <- "ratingNULL"
+raw.lme.data.test$zeroVsNotZero <- predict(m1, newdata=raw.lme.data.test, allow.new.levels=T, type='response')
+raw.lme.data.test <- raw.lme.data.test[complete.cases(raw.lme.data.test$zeroVsNotZero),]
+roc.tmp <- roc(averageRating.x ~ zeroVsNotZero, data=raw.lme.data.test)
+trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, 'best', ret='accuracy'), digits=2))
+trainText2 <- paste("AUC =  ", round(auc(roc.tmp), digits=2), sep='')
+trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2),".00", sep='')
+trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
+trainText <- c(trainText1, trainText2, trainText3, trainText4)
+testZeroPlot <- rocplot.single(pred=raw.lme.data.test$zeroVsNotZero, grp=raw.lme.data.test$averageRating.x, title="")
+testZeroPlot <- testZeroPlot + annotate("text", x=c(Inf, Inf, Inf, Inf), y=c(-Inf, -Inf, -Inf, -Inf), label=trainText, vjust=c(-1,-2.2, -3.4, -4.6), hjust="inward", size=8) + 
+  theme(axis.text.x=element_text(color='black'), axis.title.x=element_text(color='black'), axis.title.y=element_text(color='white'), axis.text.y=element_text(color='white'), axis.ticks.y=element_blank())
+
+# Now do the validation data using the training model???
+all.mgi.data$variable <- "ratingNULL"
+all.mgi.data$zeroVsNotZero <- predict(m1, newdata=all.mgi.data, allow.new.levels=T, type='response')
+all.mgi.data <- all.mgi.data[complete.cases(all.mgi.data$mean_euler),]
+all.mgi.data$averageRating.x <- 1
+all.mgi.data$averageRating.x[which(all.mgi.data$averageRating == 0)] <- 0
+roc.tmp <- roc(averageRating.x ~ zeroVsNotZero, data=all.mgi.data)
+trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, 'best', ret='accuracy'), digits=2))
+trainText2 <- paste("AUC =  ", round(auc(roc.tmp), digits=2), sep='')
+trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2), sep='')
+trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
+trainText <- c(trainText1, trainText2, trainText3, trainText4)
+validZeroPlot <- rocplot.single(pred=all.mgi.data$zeroVsNotZero, grp=all.mgi.data$averageRating.x, title="")
+validZeroPlot <- validZeroPlot + annotate("text", x=c(Inf, Inf, Inf, Inf), y=c(-Inf, -Inf, -Inf, -Inf), label=trainText, vjust=c(-1,-2.2, -3.4, -4.6), hjust="inward", size=8) + 
+  theme(axis.text.x=element_text(color='black'), axis.title.x=element_text(color='black'), axis.title.y=element_text(color='white'), axis.text.y=element_text(color='white'), axis.ticks.y=element_blank())
 
 
-png('figure5-AUCAcrossTrain.png', width=20, height=20, units='in', res=300)
-print(aucValPlot)
+png('figure5-AUCAcrossTrain.png', width=20, height=16, units='in', res=300)
+grid.arrange(aucValPlot, trainZeroPlot, testZeroPlot, validZeroPlot, ncol = 3, layout_matrix = rbind(c(1, 1, 1), c(2, 3, 4)))
 dev.off()
 
