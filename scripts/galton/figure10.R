@@ -7,6 +7,8 @@ zeroModel <- m1
 load('/home/adrose/qapQA/data/eulerModels/one/oneVsTwoTraining.RData')
 oneModel <- m1
 rm(m1)
+motionData <- read.csv('/home/adrose/qapQA/data/qaData/allMergedQAData.csv')
+
 
 ## Now load the library(s)
 install_load('caret', 'ggplot2', 'scales', 'pROC')
@@ -29,15 +31,17 @@ raw.lme.data$oneVsTwoOutcome <- predict(oneModel, newdata=raw.lme.data,
 					       allow.new.levels=T, type='response')
 raw.lme.data <- raw.lme.data[complete.cases(raw.lme.data$zeroVsNotZeroOutcome),]
 
+# Now cretae our full DF
+raw.lme.data <- merge(raw.lme.data, motionData, by=intersect(names(raw.lme.data), names(motionData)))
+
 # Now get the motion cols
-motionCols <- grep('Meanrelrms', names(raw.lme.data))
-motionCols <- append(motionCols, grep('zeroVsNotZeroOutcome', names(raw.lme.data)))
+motionCols <- c(2945, 2953, 2980, 2967, 2943)
 
 # Create the data to plot a survivor
 survivorPercents <- matrix(NA, nrow=nrow(raw.lme.data), ncol=length(motionCols))
 z <- 1
 for(i in motionCols){
-  survivorPercents[complete.cases(raw.lme.data[,i]),z] <- raw.lme.data$averageRating[complete.cases(raw.lme.data[,i])]
+  survivorPercents[which(raw.lme.data[,i]!=1),z] <- raw.lme.data$averageRating[which(raw.lme.data[,i]!=1)]
   z <- z+1
 }
 
@@ -67,6 +71,7 @@ survivorPlot <- ggplot(plotData, aes(x=V1, y=value, group=variable, color=variab
     axis.title=element_text(size=30,face="bold"))
 
 # Now produce the AUC vals for the training data
+motionCols <- c(307, 2954, 2981, 2968, 2943)
 raw.lme.data <- raw.lme.data[complete.cases(raw.lme.data[,motionCols]),]
 aucVals <- NULL
 for(i in motionCols){
@@ -77,14 +82,12 @@ for(i in motionCols){
 }
 
 # Now produce all of the 1 vs 2 values
-#raw.lme.data <- data.freeze
 raw.lme.data <- raw.lme.data[which(raw.lme.data$averageRating.x!=0),]
 raw.lme.data$averageRating[raw.lme.data$averageRating<1.5] <- 1
 raw.lme.data$averageRating[raw.lme.data$averageRating>1.5] <- 2
 
 # Now grab the motion columns
-motionCols <- grep('Meanrelrms', names(raw.lme.data))
-motionCols <- append(motionCols, grep('oneVsTwoOutcome', names(raw.lme.data)))
+motionCols <- c(307, 2954, 2981, 2968, 2944)
 
 # Now produce the AUC vals
 aucVals1 <- NULL
@@ -97,18 +100,18 @@ for(i in motionCols){
 
 # Now produce the bar plot!
 row.names(aucVals) <- NULL
-prettyNames <- c('tfMRI 1', 'tfMRI 2', 'PCASL', 'rsfMRI', 'Euler Model')
+prettyNames <- c('tfMRI 1', 'tfMRI 2', 'PCASL', 'rsfMRI', 'T1')
 aucVals[,1] <- prettyNames
 plotData <- as.data.frame(aucVals)
 plotData$V2 <- as.numeric(as.character(plotData$V2))
-plotData$V1 <- factor(plotData$V1, levels=c('Euler Model', 'PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI'))
+plotData$V1 <- factor(plotData$V1, levels=c('T1', 'PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI'))
 aucPlot <- ggplot(plotData, aes(x=V1, y=V2, fill=V1)) + 
                  geom_bar(stat='identity', position=position_dodge(), size=.1) + 
                  labs(title='', x='Motion Estimate', y="AUC") +
                  theme_bw() + 
 #facet_grid(V3 ~ V4, space = "free", scales='free_x') +
                  theme(legend.position="none",
-                 axis.text.x = element_text(angle=90, size=10, face='bold'),
+                 axis.text.x = element_text(angle=90, size=16, face='bold'),
         	 axis.ticks.x=element_blank(),
                  axis.text.y = element_text(size=16, face="bold"),
                  axis.title=element_text(size=30,face="bold"),
@@ -121,14 +124,14 @@ row.names(aucVals1) <- NULL
 aucVals1[,1] <- prettyNames
 plotData <- as.data.frame(aucVals1)
 plotData$V2 <- as.numeric(as.character(plotData$V2))
-plotData$V1 <- factor(plotData$V1, levels=c('Euler Model', 'PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI'))
+plotData$V1 <- factor(plotData$V1, levels=c('T1', 'PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI'))
 aucPlot1 <- ggplot(plotData, aes(x=V1, y=V2, fill=V1)) +
 geom_bar(stat='identity', position=position_dodge(), size=.1) +
 labs(title='', x='Motion Estimate', y="") +
 theme_bw() +
 #facet_grid(V3 ~ V4, space = "free", scales='free_x') +
 theme(legend.position="none",
-axis.text.x = element_text(angle=90, size=10, face='bold'),
+axis.text.x = element_text(angle=90, size=16, face='bold'),
 axis.ticks.x=element_blank(),
 axis.text.y = element_text(size=16, face="bold"),
 axis.title=element_text(size=30,face="bold"),
