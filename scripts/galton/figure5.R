@@ -163,11 +163,9 @@ aucValPlot <- ggplot(aucVals, aes(x=prettyQap, y=trainAUC)) +
     axis.title.y = element_text(size=30),
     text = element_text(size=30),
     panel.margin = unit(1, "lines")) +
-  ggtitle("AUC across various training scheme") +
+  ggtitle("") +
   xlab("") +
-  ylab("AUC") +
-  geom_rect(data = subset(aucVals,BG == '1'),,xmin = -Inf,xmax = Inf,
-    ymin = -Inf,ymax = Inf,alpha = 0.1, fill='gray')
+  ylab("AUC")
 
 # Now create the ROC curves
 install_load('pROC', 'ggplot2', 'caret', 'lme4', 'grid', 'gridExtra')
@@ -188,11 +186,11 @@ raw.lme.data <- raw.lme.data[complete.cases(raw.lme.data$zeroVsNotZero),]
 roc.tmp <- roc(averageRating.x ~ zeroVsNotZero, data=raw.lme.data)
 trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, 'best', ret='accuracy'), digits=2))
 trainText2 <- paste("AUC =  ", round(auc(roc.tmp), digits=2), sep='')
-trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2),".00", sep='')
-trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
-trainText <- c(trainText1, trainText2, trainText3, trainText4)
+#trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2),".00", sep='')
+#trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
+trainText <- c(trainText1, trainText2)
 trainZeroPlot <- rocplot.single(pred=raw.lme.data$zeroVsNotZero, grp=raw.lme.data$averageRating.x, title="")
-trainZeroPlot <- trainZeroPlot + annotate("text", x=c(Inf, Inf, Inf, Inf), y=c(-Inf, -Inf, -Inf, -Inf), label=trainText, vjust=c(-1,-2.2, -3.4, -4.6), hjust="inward", size=8) + 
+trainZeroPlot <- trainZeroPlot + annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=trainText, vjust=c(-3.4, -4.6), hjust="inward", size=8) + 
   theme(axis.text.x=element_text(color='black'), axis.title.x=element_text(color='black'))
 
 # Now produce the testing ROC plot using the training data set
@@ -202,11 +200,11 @@ raw.lme.data.test <- raw.lme.data.test[complete.cases(raw.lme.data.test$zeroVsNo
 roc.tmp <- roc(averageRating.x ~ zeroVsNotZero, data=raw.lme.data.test)
 trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, 'best', ret='accuracy'), digits=2))
 trainText2 <- paste("AUC =  ", round(auc(roc.tmp), digits=2), sep='')
-trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2),".00", sep='')
-trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
-trainText <- c(trainText1, trainText2, trainText3, trainText4)
+#trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2),".00", sep='')
+#trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
+trainText <- c(trainText1, trainText2)
 testZeroPlot <- rocplot.single(pred=raw.lme.data.test$zeroVsNotZero, grp=raw.lme.data.test$averageRating.x, title="")
-testZeroPlot <- testZeroPlot + annotate("text", x=c(Inf, Inf, Inf, Inf), y=c(-Inf, -Inf, -Inf, -Inf), label=trainText, vjust=c(-1,-2.2, -3.4, -4.6), hjust="inward", size=8) + 
+testZeroPlot <- testZeroPlot + annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=trainText, vjust=c(-3.4, -4.6), hjust="inward", size=8) + 
   theme(axis.text.x=element_text(color='black'), axis.title.x=element_text(color='black'), axis.title.y=element_text(color='white'), axis.text.y=element_text(color='white'), axis.ticks.y=element_blank())
 
 # Now do the validation data using the training model???
@@ -218,11 +216,11 @@ all.mgi.data$averageRating.x[which(all.mgi.data$averageRating == 0)] <- 0
 roc.tmp <- roc(averageRating.x ~ zeroVsNotZero, data=all.mgi.data)
 trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, 'best', ret='accuracy'), digits=2))
 trainText2 <- paste("AUC =  ", round(auc(roc.tmp), digits=2), sep='')
-trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2), sep='')
-trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
-trainText <- c(trainText1, trainText2, trainText3, trainText4)
+#trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2), sep='')
+#trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
+trainText <- c(trainText1, trainText2)
 validZeroPlot <- rocplot.single(pred=all.mgi.data$zeroVsNotZero, grp=all.mgi.data$averageRating.x, title="")
-validZeroPlot <- validZeroPlot + annotate("text", x=c(Inf, Inf, Inf, Inf), y=c(-Inf, -Inf, -Inf, -Inf), label=trainText, vjust=c(-1,-2.2, -3.4, -4.6), hjust="inward", size=8) + 
+validZeroPlot <- validZeroPlot + annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=trainText, vjust=c(-3.4, -4.6), hjust="inward", size=8) + 
   theme(axis.text.x=element_text(color='black'), axis.title.x=element_text(color='black'), axis.title.y=element_text(color='white'), axis.text.y=element_text(color='white'), axis.ticks.y=element_blank())
 
 

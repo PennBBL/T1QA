@@ -165,11 +165,9 @@ aucValPlot <- ggplot(aucVals, aes(x=prettyQap, y=trainAUC)) +
     axis.title.y = element_text(size=30),
     text = element_text(size=30),
     panel.margin = unit(1, "lines")) +
-  ggtitle("AUC across various training scheme") +
+  ggtitle("") +
   xlab("") +
-  ylab("AUC") +
-  geom_rect(data = subset(aucVals,BG == '1'),,xmin = -Inf,xmax = Inf,
-    ymin = -Inf,ymax = Inf,alpha = 0.05, fill='gray')
+  ylab("AUC")
 
 # Now produce the ROC curves
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
@@ -192,9 +190,9 @@ trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, 'best', 
 trainText2 <- paste("AUC =  ", round(auc(roc.tmp), digits=2),"1", sep='')
 trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2), sep='')
 trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
-trainText <- c(trainText1, trainText2, trainText3, trainText4)
+trainText <- c(trainText1, trainText2)#, trainText3, trainText4)
 trainOnePlot <- rocplot.single(pred=raw.lme.data$oneVsTwo, grp=raw.lme.data$averageRating.x, title="")
-trainOnePlot <- trainOnePlot + annotate("text", x=c(Inf, Inf, Inf, Inf), y=c(-Inf, -Inf, -Inf, -Inf), label=trainText, vjust=c(-1,-2.2, -3.4, -4.6), hjust="inward", size=8)
+trainOnePlot <- trainOnePlot + annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=trainText, vjust=c(-3.4,-4.6), hjust="inward", size=8)
 
 # Now do the testing data set
 raw.lme.data.test$variable <- "ratingNULL"
@@ -205,9 +203,9 @@ trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, 'best', 
 trainText2 <- paste("AUC =  ", round(auc(roc.tmp), digits=2), sep='')
 trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2), sep='')
 trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
-trainText <- c(trainText1, trainText2, trainText3, trainText4)
+trainText <- c(trainText1, trainText2)#, trainText3, trainText4)
 testOnePlot <- rocplot.single(pred=raw.lme.data.test$oneVsTwo, grp=raw.lme.data.test$averageRating.x, title="")
-testOnePlot <- testOnePlot + annotate("text", x=c(Inf, Inf, Inf, Inf), y=c(-Inf, -Inf, -Inf, -Inf), label=trainText, vjust=c(-1,-2.2, -3.4, -4.6), hjust="inward", size=8)  + theme(axis.title.y=element_text(color='white'), axis.text.y=element_text(color='white'), axis.ticks.y=element_blank())
+testOnePlot <- testOnePlot + annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=trainText, vjust=c(-3.4,-4.6), hjust="inward", size=8)  + theme(axis.title.y=element_text(color='white'), axis.text.y=element_text(color='white'), axis.ticks.y=element_blank())
 
 # Now do the validation data set
 source('/home/adrose/T1QA/scripts/galton/loadMgiData.R')
@@ -220,9 +218,9 @@ trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, 'best', 
 trainText2 <- paste("AUC =  ", round(auc(roc.tmp), digits=2), sep='')
 trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2), sep='')
 trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
-trainText <- c(trainText1, trainText2, trainText3, trainText4)
+trainText <- c(trainText1, trainText2)#, trainText3, trainText4)
 validOnePlot <- rocplot.single(pred=all.mgi.data$oneVsTwo, grp=all.mgi.data$averageRating, title="")
-validOnePlot <- validOnePlot + annotate("text", x=c(Inf, Inf, Inf, Inf), y=c(-Inf, -Inf, -Inf, -Inf), label=trainText, vjust=c(-1,-2.2, -3.4, -4.6), hjust="inward", size=8) + theme(axis.title.y=element_text(color='white'), axis.text.y=element_text(color='white'), axis.ticks.y=element_blank())
+validOnePlot <- validOnePlot + annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=trainText, vjust=c(-3.4,-4.6), hjust="inward", size=8) + theme(axis.title.y=element_text(color='white'), axis.text.y=element_text(color='white'), axis.ticks.y=element_blank())
 
 
 png('figure6-AUCAcrossTrain.png', width=20, height=16, units='in', res=300)

@@ -100,6 +100,7 @@ bg2 <- ggplot(bg2.vals[which(bg2.vals$Dataset=='Training'),], aes(x=factor(sex),
                            breaks=round(seq(1.6, 2.1, .2), digits=2), oob=rescale_none) + 
 		annotate("text", x=c(Inf), y=c(Inf), label="p < 0.001", hjust=c(2), vjust=c(1.1), size=8, parse=T)		
 pValue <- t.test(all.mgi.data$averageRating~ all.mgi.data$Gender)
+pValue <- wilcox.test(all.mgi.data$averageRating~ all.mgi.data$Gender)
 bg3 <- ggplot(bg2.vals[which(bg2.vals$Dataset=='Validation'),], aes(x=factor(sex), y=as.numeric(as.character(averageRating)), group=Dataset)) +
 geom_bar(stat='identity', position=position_dodge(), width=.5) +
 labs(title='Validation', x='Sex', y='Manual Quality Rating (mean value)') +
@@ -117,12 +118,12 @@ axis.ticks.y=element_blank(),
 strip.text.y = element_text(size = 16, angle = 270, face="bold"),
 title=element_text(size=30)) +
 geom_path(aes(x=factor(sex), y=c(2,2))) +
-geom_path(aes(x=factor(sex)[1], y=c(1.8, 2))) +
-geom_path(aes(x=factor(sex)[2], y=c(1.8, 2))) +
+geom_path(aes(x=factor(sex)[1], y=c(1.9, 2))) +
+geom_path(aes(x=factor(sex)[2], y=c(1.9, 2))) +
 geom_text(aes(x=factor(sex)[1], y=2.05), label='',angle=90, size=10) +
 scale_y_continuous(limits=c(1.6, 2.1),
 breaks=round(seq(1.6, 2.1, .2), digits=2), oob=rescale_none) +
-annotate("text", x=c(Inf), y=c(Inf), label="p > 0.9", hjust=c(2), vjust=c(1.1), size=8, parse=T)
+annotate("text", x=c(Inf), y=c(Inf), label="p > 0.1", hjust=c(2), vjust=c(1.1), size=8, parse=T)
 
 # Now build our models to show geneerl age trends
 corVal <- cor(all.train.data$rawAverageRating.x, all.train.data$age, method='spearman')
@@ -161,8 +162,8 @@ mod2 <- ggplot(all.valid.data, aes(y=rawAverageRating.x, x=age)) +
 
 corVal <- cor(all.mgi.data$rawAverageRating, all.mgi.data$age, method='spearman')
 corSig <- cor.test(all.mgi.data$rawAverageRating, all.mgi.data$age, method='spearman')$p.value
-corText1 <-expression(~rho == paste(-0.11))
-corText2 <- paste("p < 0.1")
+corText1 <-expression(~rho == paste(-0.24))
+corText2 <- paste("p < 0.01")
 mod3 <- ggplot(all.mgi.data, aes(y=rawAverageRating, x=age)) +
 geom_smooth(method=lm, color='black') +
 theme_bw() +

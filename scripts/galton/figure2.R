@@ -149,7 +149,7 @@ legend.justification = c(1, 0),
 legend.position = c(0.6, 0.7),
 legend.direction = "horizontal",
 plot.title=element_text(size=40, color="white"),
-axis.text.x=element_text(size=30, angle=90, color='black'),
+axis.text.x=element_text(size=30, angle=90, color='white'),
 axis.text.y=element_text(size=30, color='black')) +
 theme(legend.position="none") + 
 ggtitle(expression(paste("Validation weighted-", kappa))) + 
@@ -355,7 +355,7 @@ legend.justification = c(1, 0),
 legend.position = c(0.6, 0.7),
 legend.direction = "horizontal",
 plot.title=element_text(size=40, color='white'),
-axis.text.x=element_text(size=30, angle=90),
+axis.text.x=element_text(size=30, angle=90, color='white'),
 axis.text.y=element_text(size=30, color='white')) +
 theme(legend.position="none") + 
 labs(title=my_y_title) + 

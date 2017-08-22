@@ -59,7 +59,7 @@ centValsToPlot$V1 <- c("tfMRI 1", "tfMRI 2", "PCASL", "rsfMRI", "T1")
 centValsToPlot$V1 <- factor(centValsToPlot$V1, levels=c("T1", "PCASL", "tfMRI 1", "tfMRI 2", "rsfMRI"))
 plotData <- melt(centValsToPlot, id.vars='V1')
 
-survivorPlot <- ggplot(plotData, aes(x=V1, y=value, group=variable, color=variable)) +
+survivorPlot <- ggplot(plotData, aes(x=V1, y=value, group=variable)) +
   geom_line(aes(size=1.5)) +
   labs(title='', x='Sequence', y="% Remaining") +
   theme_bw()+
@@ -68,7 +68,12 @@ survivorPlot <- ggplot(plotData, aes(x=V1, y=value, group=variable, color=variab
     axis.text.y = element_text(angle=0, size=16, face='bold'),
     axis.ticks.x=element_blank(),
     axis.text.y = element_text(size=16, face="bold"),
-    axis.title=element_text(size=30,face="bold"))
+    axis.title=element_text(size=30,face="bold")) + 
+  annotate("text", x=5.2, y=.45, label=0, parse=T, hjust=c(1), size=8) + 
+  annotate("text", x=5.2, y=.63, label=1, parse=T, hjust=c(1), size=8) + 
+  annotate("text", x=5.5, y=.79, label=1.3, parse=T, hjust=c(1), size=8) +
+  annotate("text", x=5.5, y=.85, label=1.6, parse=T, hjust=c(1), size=8) +
+  annotate("text", x=5.2, y=.92, label=2, parse=T, hjust=c(1), size=8)
 
 # Now produce the AUC vals for the training data
 motionCols <- c(307, 2954, 2981, 2968, 2943)
@@ -105,7 +110,7 @@ aucVals[,1] <- prettyNames
 plotData <- as.data.frame(aucVals)
 plotData$V2 <- as.numeric(as.character(plotData$V2))
 plotData$V1 <- factor(plotData$V1, levels=c('T1', 'PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI'))
-aucPlot <- ggplot(plotData, aes(x=V1, y=V2, fill=V1)) + 
+aucPlot <- ggplot(plotData, aes(x=V1, y=V2)) + 
                  geom_bar(stat='identity', position=position_dodge(), size=.1) + 
                  labs(title='', x='Motion Estimate', y="AUC") +
                  theme_bw() + 
@@ -125,7 +130,7 @@ aucVals1[,1] <- prettyNames
 plotData <- as.data.frame(aucVals1)
 plotData$V2 <- as.numeric(as.character(plotData$V2))
 plotData$V1 <- factor(plotData$V1, levels=c('T1', 'PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI'))
-aucPlot1 <- ggplot(plotData, aes(x=V1, y=V2, fill=V1)) +
+aucPlot1 <- ggplot(plotData, aes(x=V1, y=V2)) +
 geom_bar(stat='identity', position=position_dodge(), size=.1) +
 labs(title='', x='Motion Estimate', y="") +
 theme_bw() +
