@@ -37,7 +37,7 @@ bg2.vals$sex <- c('Male', 'Female', 'Male', 'Female', 'Male', 'Female')
 # Now create the plots
 bg1 <- ggplot(bg2.vals[which(bg2.vals$Dataset=='Training'),], aes(x=factor(sex), y=as.numeric(as.character(mean_euler)), group=Dataset)) +
                 geom_bar(stat='identity', position=position_dodge(), width=.5) + 
-                labs(title='Training', x='Sex', y='Mean Manual Quality Rating') +
+                labs(title='Training', x='Sex', y='Euler Number') +
                 theme_bw() + 
                 coord_cartesian(ylim=c(-110,-250)) +
                        geom_errorbar(aes(ymin=as.numeric(as.character(mean_euler))-se,
@@ -68,6 +68,7 @@ bg2 <- ggplot(bg2.vals[which(bg2.vals$Dataset=='Testing'),], aes(x=factor(sex), 
 		#facet_grid(Dataset ~ .) +
 		theme(legend.position="none",
 		axis.text.y=element_text(size=20, color='white'),
+		axis.title.y=element_text(size=30, color='white'),
 		axis.text=element_text(size=20),
 		axis.title=element_text(size=30),
 		axis.ticks.y=element_blank(),
@@ -116,7 +117,7 @@ mod1 <- ggplot(all.train.data, aes(y=mean_euler, x=age)) +
    geom_smooth(method=lm, color='black') +
    theme_bw() +
    coord_cartesian(xlim=c(8,22), ylim=c(-250,-80)) +
-   labs(title='', y='Mean Manual Quality Rating', x='Age (years)') +
+   labs(title='', y='Euler Number', x='Age (years)') +
    theme(
     axis.text=element_text(size=20),
     axis.title=element_text(size=30)) +
