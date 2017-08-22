@@ -57,10 +57,10 @@ mergedQAP <- merge(mergedQAP, volumeValues, by.x='bblid.x', by.y='bblid')
 mergedQAP <- mergedQAP[!duplicated(mergedQAP),]
 
 # Now create the three data sets - Go2, mgi penn, and mgi pitt
-mergedQAP.pitt <- mergedQAP[which(mergedQAP$SiteID==70),]
+mergedQAP.pitt <- mergedQAP[which(mergedQAP$SiteID==71),]
 mergedQAP.go2  <- merge(qapRawOutput, manualQAData2, by="bblid")
 mergedQAP.go2 <- mergedQAP.go2[which(mergedQAP.go2$bblid %in% mergedQAP$bblid.x == 'FALSE'),]
-mergedQAP.penn <- mergedQAP[which(mergedQAP$SiteID==71),]
+mergedQAP.penn <- mergedQAP[which(mergedQAP$SiteID==70),]
 
 
 ## Declare some variables
