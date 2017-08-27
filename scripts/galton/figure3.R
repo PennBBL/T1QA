@@ -186,18 +186,25 @@ dev.off()
 
 # Now build a lme model in the training data 
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
-raw.lme.data <- melt(trainingData, id.vars = names(raw.lme.data)[1:32], measure.vars = names(raw.lme.data)[34:36])
+raw.lme.data <- melt(trainingData, id.vars = names(raw.lme.data)[1:32], measure.vars = names(raw.lme.data)[35:37])
 raw.lme.data$value[raw.lme.data$value > 1] <- 1
 train.data <- merge(raw.lme.data, all.train.data, by = "bblid")
 train.data$age <- as.numeric(as.character(train.data$age))
 m1 <- lmer(rawAverageRating.y ~ age + sex + (1|variable), data = train.data)
 sigValsTrain <- Anova(m1)
 
-# Now do the same for the validation data
+# Now do the same for the testing data
 raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
-raw.lme.data <- melt(validationData, id.vars = names(raw.lme.data)[1:32], measure.vars = names(raw.lme.data)[34:36])
+raw.lme.data <- melt(validationData, id.vars = names(raw.lme.data)[1:32], measure.vars = names(raw.lme.data)[35:37])
 raw.lme.data$value[raw.lme.data$value > 1] <- 1
 train.data <- merge(raw.lme.data, all.valid.data, by = "bblid")
 train.data$age <- as.numeric(as.character(train.data$age))
 m1 <- lmer(rawAverageRating.y ~ age + sex  + (1|variable), data = train.data)
+sigValsTest <- Anova(m1)
+
+# Now do the validation dataset
+names(all.mgi.data)[1] <- 'bblid'
+raw.lme.data <- merge(isolatedVars, manualQAData2, by='bblid')
+train.data <- melt(all.mgi.data, id.vars=c(names(raw.lme.data)[1:32], 'age', 'rawAverageRating', 'Gender'), measure.vars=names(raw.lme.data)[35:37])
+m1 <- lmer(rawAverageRating ~ age + Gender  + (1|variable), data = train.data)
 sigValsValid <- Anova(m1)

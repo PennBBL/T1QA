@@ -430,11 +430,13 @@ index <- unlist(folds[1])
 trainingData <- raw.lme.data[index,]
 validationData <- raw.lme.data[-index,] 
 
-raw.lme.data.train <- melt(trainingData, id.vars=names(raw.lme.data)[1:32], measure.vars=names(raw.lme.data)[34:36])
-raw.lme.data.valid <- melt(validationData, id.vars=names(raw.lme.data)[1:32], measure.vars=names(raw.lme.data)[34:36])
+names(all.mgi.data)[1] <- 'bblid'
+raw.lme.data.mgi <- melt(all.mgi.data, id.vars=names(raw.lme.data)[1:32], measure.vars=names(raw.lme.data)[35:37])
+raw.lme.data.train <- melt(trainingData, id.vars=names(raw.lme.data)[1:32], measure.vars=names(raw.lme.data)[35:37])
+raw.lme.data.valid <- melt(validationData, id.vars=names(raw.lme.data)[1:32], measure.vars=names(raw.lme.data)[35:37])
 
 # Now run the repated effects AOV's
 aov.train <- aov(value ~ variable, data=raw.lme.data.train)
 aov.valid <- aov(value ~ variable, data=raw.lme.data.valid)
-
+aov.mgi <- aov(value ~ variable, data=raw.lme.data.mgi)
 
