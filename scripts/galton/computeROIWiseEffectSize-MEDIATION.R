@@ -76,7 +76,7 @@ zScoreCT <- zScoreCT[order(as.numeric(zScoreCT[,2])),]
 zScoreCT <- zScoreCT[-c(1, grep('ean', zScoreCT[,1])),]
 
 ## Now create our color values to export to ITK snap
-ctColors <- returnPosNegAndNeuColorScale(zScoreCT[,2], colorScalePos=c('blue', 'light blue'),colorScaleNeg=c('yellow', 'pink'))[-1,]
+ctColors <- returnPosNegAndNeuColorScale(zScoreCT[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'pink'))[-1,]
 ctColors[,8] <- zScoreCT[,1]
 ctColors <- cbind(ctColors, c(zScoreCT[,2]))
 ctColors[ctColors=="NaN"] <- 190
