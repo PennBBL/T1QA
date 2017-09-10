@@ -25,10 +25,10 @@ raw.lme.data <- merge(raw.lme.data, mergedQAP, by=intersect(names(raw.lme.data),
 # First create our zero vs not zero outcome for everyone 
 raw.lme.data$variable <- 'ratingNULL'
 # Now produce our outcomes
-raw.lme.data$zeroVsNotZeroOutcome <- predict(zeroModel, newdata=raw.lme.data,
-                                               allow.new.levels=T, type='response')
-raw.lme.data$oneVsTwoOutcome <- predict(oneModel, newdata=raw.lme.data,
-					       allow.new.levels=T, type='response')
+raw.lme.data$zeroVsNotZeroOutcome <- raw.lme.data$mean_euler#predict(zeroModel, newdata=raw.lme.data,
+                                      #          allow.new.levels=T, type='response')
+raw.lme.data$oneVsTwoOutcome <- raw.lme.data$mean_euler#predict(oneModel, newdata=raw.lme.data,
+				#	       allow.new.levels=T, type='response')
 raw.lme.data <- raw.lme.data[complete.cases(raw.lme.data$zeroVsNotZeroOutcome),]
 
 # Now cretae our full DF

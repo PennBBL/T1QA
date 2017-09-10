@@ -201,7 +201,7 @@ dataQaDfValid <- cbind(dataQaDfValid, c(0,0,0,1,1.33,1.67,2))
 colnames(dataQaDfValid)[3] <- 'color'
 validBG <- ggplot(dataQaDfValid, aes(x=Var1, y=Freq, fill=factor(color))) +
 geom_bar(stat='identity') +
-labs(title='', x='', y='Testing') +
+labs(title='', x='', y='Testing: Internal') +
 geom_text(data=dataQaDfValid,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
 theme_bw() +
 theme(legend.position="none",
@@ -219,7 +219,7 @@ dataQaDfMGI <- cbind(dataQaDfMGI, c(0,0,0,1,1.33,1.67,2))
 colnames(dataQaDfMGI)[3] <- 'color'
 mgiBG <- ggplot(dataQaDfMGI, aes(x=Var1, y=Freq, fill=factor(color))) +
 geom_bar(stat='identity') +
-labs(title='', x='Mean Manual Quality Rating', y='Validation') +
+labs(title='', x='Mean Manual Quality Rating', y='Testing: External') +
 geom_text(data=dataQaDfMGI,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
 theme_bw() +
 theme(legend.position="none",

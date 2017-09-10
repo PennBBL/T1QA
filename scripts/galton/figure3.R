@@ -78,7 +78,7 @@ pValue <- t.test(all.valid.data$averageRating ~ all.valid.data$sex)
 pValue <- wilcox.test(all.valid.data$averageRating ~ all.valid.data$sex)
 bg2 <- ggplot(bg2.vals[which(bg2.vals$Dataset=='Training'),], aes(x=factor(sex), y=as.numeric(as.character(averageRating)), group=Dataset)) +
                 geom_bar(stat='identity', position=position_dodge(), width=.5) + 
-                labs(title='Testing', x='Sex', y='Manual Quality Rating (mean value)') +
+                labs(title='Testing: Internal', x='Sex', y='Manual Quality Rating (mean value)') +
                 theme_bw() + 
                        geom_errorbar(aes(ymin=as.numeric(as.character(averageRating))-se, 
                                          ymax=as.numeric(as.character(averageRating))+se), 
@@ -103,7 +103,7 @@ pValue <- t.test(all.mgi.data$averageRating~ all.mgi.data$Gender)
 pValue <- wilcox.test(all.mgi.data$averageRating~ all.mgi.data$Gender)
 bg3 <- ggplot(bg2.vals[which(bg2.vals$Dataset=='Validation'),], aes(x=factor(sex), y=as.numeric(as.character(averageRating)), group=Dataset)) +
 geom_bar(stat='identity', position=position_dodge(), width=.5) +
-labs(title='Validation', x='Sex', y='Manual Quality Rating (mean value)') +
+labs(title='Testing: External', x='Sex', y='Manual Quality Rating (mean value)') +
 theme_bw() +
 geom_errorbar(aes(ymin=as.numeric(as.character(averageRating))-se,
 ymax=as.numeric(as.character(averageRating))+se),

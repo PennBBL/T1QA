@@ -129,19 +129,19 @@ validTmpSet$averageRating[validTmpSet$averageRating>=1] <- 1
 validTmpSet$variable <- 'ratingNULL'
 for(qapVal in qapValNamesUse){
   model <- as.formula(paste("value ~", paste(qapVal), paste("+ (1|variable)")))
+  
   # NOw train our model in the training data
-  m1 <- glmer(model, data=raw.lme.data, family='binomial')
+  #m1 <- glmer(model, data=raw.lme.data, family='binomial')
   # Now get our auc vals
-  trainAUC <- auc(roc(raw.lme.data$value ~ predict(m1, type='response')))
+  form <- as.formula(paste("averageRating.x ~ ", paste(qapVal)))
+  trainAUC <- auc(roc(form, data=trainingData))
   # Now get our test value auc
-  testAUC <- auc(roc(testTmpSet$averageRating.x ~ predict(m1, type='response', newdata=testTmpSet, allow.new.levels=T)))
-  validAUC <- auc(roc(validTmpSet$averageRating ~ predict(m1, type='response', newdata=validTmpSet, allow.new.levels=T)))
+  testAUC <- auc(roc(form, data=validationData))
+  form <- as.formula(paste("averageRating ~ ", paste(qapVal)))  
+  validAUC <- auc(roc(form, data=all.mgi.data))
   # Now prepare the output
-  outputData <- rbind(cbind(trainAUC, 'Training', qapVal), cbind(testAUC, 'Testing', qapVal), cbind(validAUC, 'Validation', qapVal))
-  aucVals <- rbind(aucVals, outputData)
-  if(qapVal == "mean_euler"){
-    save(m1, file="/home/adrose/qapQA/data/eulerModels/zero/zeroNotZeroTraining.RData")
-  }
+  outputData <- rbind(cbind(trainAUC, 'Training', qapVal), cbind(testAUC, 'Testing: Internal', qapVal), cbind(validAUC, 'Testing: External', qapVal))
+  aucVals <- rbind(aucVals, outputData)  
 }
 aucValsAll <- cbind(aucVals, rep('Training', 27))
 
@@ -183,27 +183,27 @@ load("/home/adrose/qapQA/data/eulerModels/zero/zeroNotZeroTraining.RData")
 raw.lme.data$variable <- "ratingNULL"
 raw.lme.data$zeroVsNotZero <- predict(m1, newdata=raw.lme.data, allow.new.levels=T, type='response')
 raw.lme.data <- raw.lme.data[complete.cases(raw.lme.data$zeroVsNotZero),]
-roc.tmp <- roc(averageRating.x ~ zeroVsNotZero, data=raw.lme.data)
+roc.tmp <- roc(averageRating.x ~ mean_euler, data=trainingData)
 trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, 'best', ret='accuracy'), digits=2))
 trainText2 <- paste("AUC =  ", round(auc(roc.tmp), digits=2), sep='')
 #trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2),".00", sep='')
 #trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
 trainText <- c(trainText1, trainText2)
-trainZeroPlot <- rocplot.single(pred=raw.lme.data$zeroVsNotZero, grp=raw.lme.data$averageRating.x, title="")
+trainZeroPlot <- rocplot.single(pred=trainingData$mean_euler, grp=trainingData$averageRating.x, title="")
 trainZeroPlot <- trainZeroPlot + annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=trainText, vjust=c(-3.4, -4.6), hjust="inward", size=8) + 
   theme(axis.text.x=element_text(color='black'), axis.title.x=element_text(color='black'))
-
+threshold <- coords(roc.tmp, 'best')[1]
 # Now produce the testing ROC plot using the training data set
 raw.lme.data.test$variable <- "ratingNULL"
 raw.lme.data.test$zeroVsNotZero <- predict(m1, newdata=raw.lme.data.test, allow.new.levels=T, type='response')
 raw.lme.data.test <- raw.lme.data.test[complete.cases(raw.lme.data.test$zeroVsNotZero),]
-roc.tmp <- roc(averageRating.x ~ zeroVsNotZero, data=raw.lme.data.test)
-trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, 'best', ret='accuracy'), digits=2))
+roc.tmp <- roc(averageRating.x ~ mean_euler, data=validationData)
+trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, threshold, ret='accuracy'), digits=2))
 trainText2 <- paste("AUC =  ", round(auc(roc.tmp), digits=2), sep='')
 #trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2),".00", sep='')
 #trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
 trainText <- c(trainText1, trainText2)
-testZeroPlot <- rocplot.single(pred=raw.lme.data.test$zeroVsNotZero, grp=raw.lme.data.test$averageRating.x, title="")
+testZeroPlot <- rocplot.single(pred=validationData$mean_euler, grp=validationData$averageRating.x, title="")
 testZeroPlot <- testZeroPlot + annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=trainText, vjust=c(-3.4, -4.6), hjust="inward", size=8) + 
   theme(axis.text.x=element_text(color='black'), axis.title.x=element_text(color='black'), axis.title.y=element_text(color='white'), axis.text.y=element_text(color='white'), axis.ticks.y=element_blank())
 
@@ -213,13 +213,13 @@ all.mgi.data$zeroVsNotZero <- predict(m1, newdata=all.mgi.data, allow.new.levels
 all.mgi.data <- all.mgi.data[complete.cases(all.mgi.data$mean_euler),]
 all.mgi.data$averageRating.x <- 1
 all.mgi.data$averageRating.x[which(all.mgi.data$averageRating == 0)] <- 0
-roc.tmp <- roc(averageRating.x ~ zeroVsNotZero, data=all.mgi.data)
-trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, 'best', ret='accuracy'), digits=2))
+roc.tmp <- roc(averageRating.x ~ mean_euler, data=all.mgi.data)
+trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, threshold, ret='accuracy'), digits=2))
 trainText2 <- paste("AUC =  ", round(auc(roc.tmp), digits=2), sep='')
 #trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2), sep='')
 #trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
 trainText <- c(trainText1, trainText2)
-validZeroPlot <- rocplot.single(pred=all.mgi.data$zeroVsNotZero, grp=all.mgi.data$averageRating.x, title="")
+validZeroPlot <- rocplot.single(pred=all.mgi.data$mean_euler, grp=all.mgi.data$averageRating.x, title="")
 validZeroPlot <- validZeroPlot + annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=trainText, vjust=c(-3.4, -4.6), hjust="inward", size=8) + 
   theme(axis.text.x=element_text(color='black'), axis.title.x=element_text(color='black'), axis.title.y=element_text(color='white'), axis.text.y=element_text(color='white'), axis.ticks.y=element_blank())
 
