@@ -86,22 +86,71 @@ for(i in motionCols){
   aucVals <- rbind(aucVals, outTmp)
 }
 
-# Now produce all of the 1 vs 2 values
-raw.lme.data <- raw.lme.data[which(raw.lme.data$averageRating.x!=0),]
-raw.lme.data$averageRating[raw.lme.data$averageRating<1.5] <- 1
-raw.lme.data$averageRating[raw.lme.data$averageRating>1.5] <- 2
+# Now produce mean motion vs scan sequence
+all.train.data <- raw.lme.data
+cols <- grep('Meanrelrms', names(all.train.data))
+colsCorrect <- cols[c(3, 2, 1, 4)]
 
-# Now grab the motion columns
-motionCols <- c(307, 2954, 2981, 2968, 2944)
+val1 <- summarySE(data=all.train.data[,colsCorrect],  measurevar=names(all.train.data[,colsCorrect])[1], na.rm=T)
+colnames(val1)[3] <- 'mean'
+val2 <- summarySE(data=all.train.data[,colsCorrect],  measurevar=names(all.train.data[,colsCorrect])[2], na.rm=T)
+colnames(val2)[3] <- 'mean'
+val3 <- summarySE(data=all.train.data[,colsCorrect],  measurevar=names(all.train.data[,colsCorrect])[3], na.rm=T)
+colnames(val3)[3] <- 'mean'
+val4 <- summarySE(data=all.train.data[,colsCorrect],  measurevar=names(all.train.data[,colsCorrect])[4], na.rm=T)
+colnames(val4)[3] <- 'mean'
 
-# Now produce the AUC vals
-aucVals1 <- NULL
+motionValues <- rbind(val1, val2, val3, val4)
+motionValues$.id <- c('2:46', '14:51', '20:19', '43:01')
+motionValues$.id <- factor(motionValues$.id, levels=c('2:46', '14:51', '20:19', '43:01'))
+
+# Produce a mean motion vs time bar plot
+meanMotionPlot <- ggplot(motionValues, aes(x=.id, y=mean, fill=.id)) +
+  geom_bar(stat='identity', position=position_dodge(), size=.1) +
+  geom_errorbar(aes(ymin=mean-se, ymax=mean+se),
+    width = .2, position=position_dodge(.9)) +
+  theme_bw() +
+  theme(legend.position="none") +
+  labs(title='', y='Mean Relative RMS', x='Time in Scanner(min:sec)') +
+  coord_cartesian(ylim=c(.06,.17)) +
+  theme(text=element_text(size=20), axis.text.x = element_text(angle = 0)) + 
+  scale_fill_grey()
+
+# Now produce the correlation values 
+all.train.data <- all.train.data[which(all.train.data$averageRating>=1),]
+all.train.data <- all.train.data[complete.cases(all.train.data[,colsCorrect]),]
+all.train.data$ratingReg <- lm(rawAverageRating ~ ageAtGo1Scan + ageAtGo1Scan^2 + sex, data=all.train.data)$residuals
+outVals <- NA
 for(i in motionCols){
-  roc.tmp <- roc(raw.lme.data$averageRating ~ raw.lme.data[,i])
-  auc.tmp <- auc(roc.tmp)
-  outTmp <- c(names(raw.lme.data)[i], auc.tmp, '1 vs 2', 'Training')
-  aucVals1 <- rbind(aucVals1, outTmp)
+  tmpVals <- lm(all.train.data[,i] ~ ageAtGo1Scan + ageAtGo1Scan^2 + sex, data=all.train.data)$residuals
+  print(names(all.train.data[i]))
+  print(cor(all.train.data$ratingReg, tmpVals, method='p', use='complete'))
+  print(plot(tmpVals, all.train.data$ratingReg))
+  outrow <- c(names(all.train.data[i]), cor(all.train.data$ratingReg, tmpVals, method='s', use='complete'))
+  outVals <- rbind(outVals, outrow)
 }
+
+
+# Now produce the bar plot
+prettyNames <- c('tfMRI 2', 'tfMRI 1', 'PCASL', 'rsfMRI', 'T1')
+outVals <- outVals[-1,]
+rownames(outVals) <- NULL
+outVals <- as.data.frame(outVals)
+outVals$V2 <- as.numeric(as.character(outVals$V2))
+outVals$V3 <- prettyNames
+outVals$V3 <- factor(outVals$V3, levels=c('T1', 'PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI'))
+corPlot <- ggplot(outVals, aes(x=V3, y=abs(V2))) + 
+                 geom_bar(stat='identity', position=position_dodge(), size=.1) + 
+                 labs(title='', x='Sequence', y="Partial Cor") +
+                 theme_bw() + 
+                 theme(legend.position="none",
+                 axis.text.x = element_text(angle=90, size=16, face='bold'),
+        	 axis.ticks.x=element_blank(),
+                 axis.text.y = element_text(size=16, face="bold"),
+                 axis.title=element_text(size=30,face="bold"),
+                 strip.text.y = element_text(size = 16, angle = 270, face="bold"),
+                 strip.text.x = element_text(size = 16, angle = 0, face="bold"))
+
 
 # Now produce the bar plot!
 row.names(aucVals) <- NULL
@@ -114,7 +163,6 @@ aucPlot <- ggplot(plotData, aes(x=V1, y=V2)) +
                  geom_bar(stat='identity', position=position_dodge(), size=.1) + 
                  labs(title='', x='Motion Estimate', y="AUC") +
                  theme_bw() + 
-#facet_grid(V3 ~ V4, space = "free", scales='free_x') +
                  theme(legend.position="none",
                  axis.text.x = element_text(angle=90, size=16, face='bold'),
         	 axis.ticks.x=element_blank(),
@@ -124,25 +172,6 @@ aucPlot <- ggplot(plotData, aes(x=V1, y=V2)) +
                  strip.text.x = element_text(size = 16, angle = 0, face="bold")) + 
                  coord_cartesian(ylim=c(.75,1))
 
-# Now produce the second bar plot
-row.names(aucVals1) <- NULL
-aucVals1[,1] <- prettyNames
-plotData <- as.data.frame(aucVals1)
-plotData$V2 <- as.numeric(as.character(plotData$V2))
-plotData$V1 <- factor(plotData$V1, levels=c('T1', 'PCASL', 'tfMRI 1', 'tfMRI 2', 'rsfMRI'))
-aucPlot1 <- ggplot(plotData, aes(x=V1, y=V2)) +
-geom_bar(stat='identity', position=position_dodge(), size=.1) +
-labs(title='', x='Motion Estimate', y="") +
-theme_bw() +
-#facet_grid(V3 ~ V4, space = "free", scales='free_x') +
-theme(legend.position="none",
-axis.text.x = element_text(angle=90, size=16, face='bold'),
-axis.ticks.x=element_blank(),
-axis.text.y = element_text(size=16, face="bold"),
-axis.title=element_text(size=30,face="bold"),
-strip.text.y = element_text(size = 16, angle = 270, face="bold"),
-strip.text.x = element_text(size = 16, angle = 0, face="bold")) +
-coord_cartesian(ylim=c(.65,.8))
 
 # Now plot our data
 png('figure10-aucCompare.png', height=6, width=18, units='in', res=300)
