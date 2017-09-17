@@ -110,8 +110,8 @@ mgiValid <- trainValue
 trainData <- melt(trainValueDone)
 trainCor <- ggplot(data = trainData, aes(x=Var1, y=Var2, fill=value)) +
 geom_tile() +
-scale_fill_gradient2(low = "red", high = "blue", mid = "white",
-midpoint = 0, limit = c(-1,1), space = "Lab") +
+scale_fill_gradient(low = "black", high = "white",
+limit = c(.5,1), space = "Lab") +
 geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
 theme(
 axis.title.x = element_blank(),
@@ -135,8 +135,8 @@ coord_equal()
 validData <- melt(validValueDone)
 validCor <- ggplot(data = validData, aes(x=Var1, y=Var2, fill=value)) +
 geom_tile() +
-scale_fill_gradient2(low = "red", high = "blue", mid = "white",
-midpoint = 0, limit = c(-1,1), space = "Lab") +
+scale_fill_gradient(low = "black", high = "white",
+limit = c(.5,1), space = "Lab") +
 geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
 theme(
 axis.title.x = element_blank(),
@@ -158,8 +158,8 @@ coord_equal()
 mgiData <- melt(mgiValid)
 mgiCor <- ggplot(data = mgiData, aes(x=Var1, y=Var2, fill=value)) +
 geom_tile() +
-scale_fill_gradient2(low = "red", high = "blue", mid = "white",
-midpoint = 0, limit = c(-1,1), space = "Lab") +
+scale_fill_gradient(low = "black", high = "white",
+limit = c(.5,1), space = "Lab") +
 geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
 theme(
 axis.title.x = element_blank(),
@@ -193,7 +193,7 @@ axis.text.y=element_text(size=30),
 axis.title.y=element_text(size=40, angle=90),
 axis.title.x=element_text(size=30),
 plot.title=element_text(size=40)) +
-scale_y_continuous(limits=c(0,1000), breaks=round(seq(0, 1000, 200), digits=2))
+scale_y_continuous(limits=c(0,1000), breaks=round(seq(0, 1000, 200), digits=2)) + scale_fill_grey()
 
 # Now do the validation data
 dataQaDfValid <- as.data.frame(table(round(all.valid.data$rawAverageRating.x, digits=2)))
@@ -210,7 +210,7 @@ axis.text.y=element_text(size=30),
 axis.title.x=element_text(size=30),
 axis.title.y=element_text(size=40, angle=90),
 plot.title=element_text(size=40)) +
-scale_y_continuous(limits=c(0,500), breaks=round(seq(0, 500, 100), digits=2))
+scale_y_continuous(limits=c(0,500), breaks=round(seq(0, 500, 100), digits=2)) + scale_fill_grey()
 
 # Now do MGI data
 # Now do the validation data
@@ -228,7 +228,7 @@ axis.text.y=element_text(size=30),
 axis.title.x=element_text(size=30),
 axis.title.y=element_text(size=40, angle=90),
 plot.title=element_text(size=40)) +
-scale_y_continuous(limits=c(0,250), breaks=round(seq(0, 250, 50), digits=2))
+scale_y_continuous(limits=c(0,250), breaks=round(seq(0, 250, 50), digits=2)) + scale_fill_grey()
 
 # Now do the polychoric cor's down here
 attach(all.train.data)
@@ -316,8 +316,8 @@ my_y_title <- expression(paste("Polychoric ", italic("r")))
 trainDataPoly <- melt(trainValueDone)
 trainCorPoly <- ggplot(data = trainDataPoly, aes(x=Var1, y=Var2, fill=value)) +
 geom_tile() +
-scale_fill_gradient2(low = "red", high = "blue", mid = "white",
-midpoint = 0, limit = c(-1,1), space = "Lab") +
+scale_fill_gradient(low = "black", high = "white",
+limit = c(.5,1), space = "Lab") +
 geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
 theme(
 axis.title.x = element_blank(),
@@ -341,8 +341,8 @@ coord_equal()
 validDataPoly <- melt(validValueDone)
 validCorPoly <- ggplot(data = validDataPoly, aes(x=Var1, y=Var2, fill=value)) +
 geom_tile() +
-scale_fill_gradient2(low = "red", high = "blue", mid = "white",
-midpoint = 0, limit = c(-1,1), space = "Lab") +
+scale_fill_gradient(low = "black", high = "white",
+limit = c(.5,1), space = "Lab") +
 geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
 theme(
 axis.title.x = element_blank(),
@@ -364,8 +364,8 @@ coord_equal()
 mgiDataPoly <- melt(mgiValueDone)
 mgiCorPoly <- ggplot(data = mgiDataPoly, aes(x=Var1, y=Var2, fill=value)) +
 geom_tile() +
-scale_fill_gradient2(low = "red", high = "blue", mid = "white",
-midpoint = 0, limit = c(-1,1), space = "Lab") +
+scale_fill_gradient(low = "black", high = "white",
+limit = c(.5,1), space = "Lab") +
 geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
 theme(
 axis.title.x = element_blank(),
@@ -382,14 +382,14 @@ axis.text.x=element_text(size=30, angle=90),
 axis.text.y=element_text(size=30, color='white')) +
 theme(legend.position="none") +
 labs(title=my_y_title) +
-coord_equal()
+coord_equal() 
 
 
 
 foo <- ggplot(data = validDataPoly, aes(x=Var1, y=Var2, fill=value)) +
 geom_tile() +
-scale_fill_gradient2(low = "red", high = "blue", mid = "white",
-midpoint = 0, limit = c(-1,1), space = "Lab") +
+scale_fill_gradient2(low = "black", high = "white",
+midpoint = .9, limit = c(.5,1), space = "Lab") +
 geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
 theme(
 axis.title.x = element_blank(),

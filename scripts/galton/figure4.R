@@ -190,7 +190,7 @@ allPlot <- ggplot(trainingValues,
                  axis.title=element_text(size=30,face="bold"),
                  strip.text.y = element_text(size = 16, angle = 270, face="bold"),
                  strip.text.x = element_text(size = 16, angle = 90, face="bold"),
-                 panel.margin = unit(2, "lines"))
+                 panel.margin = unit(2, "lines")) + scale_fill_grey()
 
 
 foo <- ggplot(trainingValues, 
@@ -207,7 +207,7 @@ foo <- ggplot(trainingValues,
         	 axis.ticks.x=element_blank(),
                  axis.title=element_text(size=30,face="bold"),
                  strip.text.y = element_text(size = 16, angle = 270, face="bold"),
-                 strip.text.x = element_text(size = 16, angle = 90, face="bold"))
+                 strip.text.x = element_text(size = 16, angle = 90, face="bold")) + scale_fill_grey()
 
 png('figure4-qapMetricsVsQCQAPPaper.png', height=12, width=20, units='in', res=300)
 #multiplot(allPlot, corPlot, cols=2)
