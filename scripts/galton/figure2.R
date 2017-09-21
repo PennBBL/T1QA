@@ -116,7 +116,7 @@ trainCor <- ggplot(data = trainData, aes(x=Var1, y=Var2, fill=value)) +
 geom_tile() +
 scale_fill_gradient(low = "black", high = "white",
 limit = c(.5,1), space = "Lab") +
-geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
+geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "white", size = 16) +
 theme(
 axis.title.x = element_blank(),
 axis.title.y = element_blank(),
@@ -141,7 +141,7 @@ validCor <- ggplot(data = validData, aes(x=Var1, y=Var2, fill=value)) +
 geom_tile() +
 scale_fill_gradient(low = "black", high = "white",
 limit = c(.5,1), space = "Lab") +
-geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
+geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "white", size = 16) +
 theme(
 axis.title.x = element_blank(),
 axis.title.y = element_blank(),
@@ -164,7 +164,7 @@ mgiCor <- ggplot(data = mgiData, aes(x=Var1, y=Var2, fill=value)) +
 geom_tile() +
 scale_fill_gradient(low = "black", high = "white",
 limit = c(.5,1), space = "Lab") +
-geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
+geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "white", size = 16) +
 theme(
 axis.title.x = element_blank(),
 panel.grid.major = element_blank(),

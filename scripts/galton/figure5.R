@@ -188,9 +188,9 @@ trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, 'best', 
 trainText2 <- paste("AUC =  ", round(auc(roc.tmp), digits=2), sep='')
 #trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2),".00", sep='')
 #trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
-trainText <- c(trainText1, trainText2)
+trainText <- c(trainText2)
 trainZeroPlot <- rocplot.single(pred=trainingData$mean_euler, grp=trainingData$averageRating.x, title="")
-trainZeroPlot <- trainZeroPlot + annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=trainText, vjust=c(-3.4, -4.6), hjust="inward", size=8) + 
+trainZeroPlot <- trainZeroPlot + annotate("text", x=c(Inf), y=c(-Inf), label=trainText, vjust=c(-3.4), hjust="inward", size=8) + 
   theme(axis.text.x=element_text(color='black'), axis.title.x=element_text(color='black'))
 threshold <- coords(roc.tmp, 'best')[1]
 # Now produce the testing ROC plot using the training data set
@@ -202,9 +202,9 @@ trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, threshol
 trainText2 <- paste("AUC =  ", round(auc(roc.tmp), digits=2), sep='')
 #trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2),".00", sep='')
 #trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
-trainText <- c(trainText1, trainText2)
+trainText <- c(trainText2)
 testZeroPlot <- rocplot.single(pred=validationData$mean_euler, grp=validationData$averageRating.x, title="")
-testZeroPlot <- testZeroPlot + annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=trainText, vjust=c(-3.4, -4.6), hjust="inward", size=8) + 
+testZeroPlot <- testZeroPlot  + annotate("text", x=c(Inf), y=c(-Inf), label=trainText, vjust=c(-3.4), hjust="inward", size=8) + 
   theme(axis.text.x=element_text(color='black'), axis.title.x=element_text(color='black'), axis.title.y=element_text(color='white'), axis.text.y=element_text(color='white'), axis.ticks.y=element_blank())
 
 # Now do the validation data using the training model???
@@ -218,9 +218,9 @@ trainText1 <- paste("Classification Accuracy = ", round(coords(roc.tmp, threshol
 trainText2 <- paste("AUC =  ", round(auc(roc.tmp), digits=2), sep='')
 #trainText3 <- paste("PPV = ", round(coords(roc.tmp, 'best', ret='ppv'), digits=2), sep='')
 #trainText4 <- paste("NPV = ", round(coords(roc.tmp, 'best', ret='npv'), digits=2), sep='')
-trainText <- c(trainText1, trainText2)
+trainText <- c(trainText2)
 validZeroPlot <- rocplot.single(pred=all.mgi.data$mean_euler, grp=all.mgi.data$averageRating.x, title="")
-validZeroPlot <- validZeroPlot + annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=trainText, vjust=c(-3.4, -4.6), hjust="inward", size=8) + 
+validZeroPlot <- validZeroPlot + annotate("text", x=c(Inf), y=c(-Inf), label=trainText, vjust=c(-3.4), hjust="inward", size=8) + 
   theme(axis.text.x=element_text(color='black'), axis.title.x=element_text(color='black'), axis.title.y=element_text(color='white'), axis.text.y=element_text(color='white'), axis.ticks.y=element_blank())
 
 

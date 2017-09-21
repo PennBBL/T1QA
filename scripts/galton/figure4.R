@@ -97,6 +97,8 @@ for(qapVal in varsOfInterest){
   trainingValues <- rbind(trainingValues, valsToAppend)
   i <- i + 1
 }
+all.mgi.data$averageRating <- all.mgi.data$rawAverageRating
+all.mgi.data$averageRating[all.mgi.data$averageRating < 1] <- 0.00
 i <- 1
 for(qapVal in varsOfInterest){
     all.mgi.data[qapVal] <- scale(unlist(all.mgi.data[qapVal]), center=T, scale=T)
@@ -109,7 +111,7 @@ for(qapVal in varsOfInterest){
     i <- i + 1
 }
 trainingValues$averageRating.y[which(trainingValues$averageRating.y==1.670)] <- 1.667
-
+trainingValues$averageRating.y[which(trainingValues$averageRating.y==1.330)] <- 1.333
 # Now produce all of our partial corellations 
 corVals <- NULL
 i <- 1

@@ -40,6 +40,12 @@ all.train.data$averageRatingSR <- residuals(lm(averageRating ~ sex, data = all.t
 all.valid.data$averageRatingSR <- residuals(lm(averageRating ~ sex, data = all.valid.data))
 all.mgi.data$averageRatingSR <- residuals(lm(averageRating ~ Gender, data = all.mgi.data))
 
+# Now age reg 
+all.train.data$ageSR <- residuals(lm(age ~ sex, data=all.train.data))
+all.valid.data$ageSR <- residuals(lm(age ~ sex, data=all.valid.data))
+all.mgi.data$ageSR <- residuals(lm(age ~ Gender, data=all.mgi.data))
+
+
 # Now prepare our values
 bg1.vals.train <- summarySE(data=all.train.data, groupvars='averageRating', measurevar='age')
 bg1.vals.train$Dataset <- rep('Training', nrow(bg1.vals.train))
@@ -79,10 +85,10 @@ bg1 <- ggplot(bg2.vals[which(bg2.vals$Dataset=='Training'),], aes(x=factor(sex),
                 title=element_text(size=30)) + 
 		geom_path(aes(x=factor(sex), y=c(.17,.17))) +
 		geom_path(aes(x=factor(sex)[1], y=c(.05, .17))) +
-		geom_text(aes(x=factor(sex)[1], y=.19), label='*',angle=90, size=10) +
-		scale_y_continuous(limits=c(-.2, .2), 
+		geom_text(aes(x=factor(sex)[1], y=.19), label='',angle=90, size=10) +
+		scale_y_continuous(limits=c(-.2, .25), 
                            breaks=round(seq(-.2, .2, .1), digits=2), oob=rescale_none) + 
-		annotate("text", x=c(Inf), y=c(Inf), label="p < 0.001", hjust=c(2.1), vjust=c(1.1), size=8, parse=T)
+		annotate("text", x=c(Inf), y=c(Inf), label="p > 0.1", hjust=c(2.1), vjust=c(1.1), size=8, parse=T)
 		
 pValue <- t.test(all.valid.data$averageRating ~ all.valid.data$sex)
 pValue <- wilcox.test(all.valid.data$averageRating ~ all.valid.data$sex)
@@ -105,9 +111,9 @@ bg2 <- ggplot(bg2.vals[which(bg2.vals$Dataset=='Training'),], aes(x=factor(sex),
 		geom_path(aes(x=factor(sex), y=c(.17,.17))) +
 		geom_path(aes(x=factor(sex)[1], y=c(.05, .17))) +
 		geom_text(aes(x=factor(sex)[1], y=2.05), label='***',angle=90, size=10) +
-		scale_y_continuous(limits=c(-.2, .2), 
+		scale_y_continuous(limits=c(-.2, .25), 
                            breaks=round(seq(-.2, .2, .1), digits=2), oob=rescale_none) + 
-		annotate("text", x=c(Inf), y=c(Inf), label="p < 0.001", hjust=c(2), vjust=c(1.1), size=8, parse=T)
+		annotate("text", x=c(Inf), y=c(Inf), label="p > 0.1", hjust=c(2), vjust=c(1.1), size=8, parse=T)
 		
 pValue <- t.test(all.mgi.data$averageRatingAR~ all.mgi.data$Gender)
 pValue <- wilcox.test(all.mgi.data$averageRating~ all.mgi.data$Gender)
@@ -130,14 +136,14 @@ title=element_text(size=30)) +
 geom_path(aes(x=factor(sex), y=c(.2,.2))) +
 geom_path(aes(x=factor(sex)[1], y=c(.05, .2))) +
 geom_text(aes(x=factor(sex)[1], y=2.05), label='',angle=90, size=10) +
-scale_y_continuous(limits=c(-.2, .2), 
+scale_y_continuous(limits=c(-.2, .25), 
                            breaks=round(seq(-.2, .2, .1), digits=2), oob=rescale_none) +
-annotate("text", x=c(Inf), y=c(Inf), label="p < 0.1", hjust=c(2), vjust=c(1.1), size=8, parse=T)
+annotate("text", x=c(Inf), y=c(Inf), label="p < 0.05", hjust=c(2), vjust=c(1.1), size=8, parse=T)
 
 # Now build our models to show geneerl age trends
-corVal <- cor(all.train.data$averageRatingSR, all.train.data$age, method='spearman')
-corSig <- cor.test(all.train.data$averageRatingSR, all.train.data$age, method='spearman')$p.value
-corText1 <- expression(~rho == .08)
+corVal <- cor(all.train.data$averageRatingSR, all.train.data$ageSR, method='spearman')
+corSig <- cor.test(all.train.data$averageRatingSR, all.train.data$ageSR, method='spearman')$p.value
+corText1 <- expression(~rho == .14)
 corText2 <- paste("p < 0.001")
 mod1 <- ggplot(all.train.data, aes(y=scale(averageRatingSR), x=age)) +
    geom_smooth(method=lm, color='black') +
