@@ -51,9 +51,9 @@ testValues[which(testValues>1)] <- 1
 roc.test <- roc(testValues ~ testOutcome, controls=)
 
 # Now prepare our table's values
-output.train <- coords(roc.train, 'best')
-output.valid <- coords(roc.valid, output.train[1])
-output.test <- coords(roc.test, output.train[1])
+output.train <- coords(roc.train, 'best', ret=c("threshold", "specificity", "sensitivity", "accuracy"))
+output.valid <- coords(roc.valid, output.train[1], ret=c("threshold", "specificity", "sensitivity", "accuracy"))
+output.test <- coords(roc.test, output.train[1], ret=c("threshold", "specificity", "sensitivity", "accuracy"))
 # Now create our table
 
 output <- rbind(output.train, output.valid, output.test)
@@ -61,3 +61,11 @@ rownames(output) <- c('Training', 'Internal Testing', 'External Testing')
 
 # Now write our csv
 write.csv(output, 'table3-useabilityROCMetrics.csv', quote=F)
+
+# Now produce the table 4 values
+output.train <- coords(roc.train, 'best', ret=c("threshold", "specificity", "sensitivity", "accuracy"))
+output.valid <- coords(roc.valid, 'best', ret=c("threshold", "specificity", "sensitivity", "accuracy"))
+output.test <- coords(roc.test, 'best', ret=c("threshold", "specificity", "sensitivity", "accuracy"))
+output <- rbind(output.train, output.valid, output.test)
+rownames(output) <- c('Training', 'Internal Testing', 'External Testing')
+write.csv(output, 'table4-useabilityInSetROCMetrics.csv', quote=F)
