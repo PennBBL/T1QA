@@ -26,6 +26,10 @@ trainingData <- raw.lme.data[index, ]
 validationData <- raw.lme.data[-index, ]
 all.train.data <- merge(trainingData, manualQAData, by = "bblid")
 all.valid.data <- merge(validationData, manualQAData, by = "bblid")
+all.train.data <- all.train.data[complete.cases(all.train.data$mean_euler),]
+all.valid.data <- all.valid.data[complete.cases(all.valid.data$mean_euler),]
+all.mgi.data <- all.mgi.data[complete.cases(all.mgi.data$mean_euler),]
+
 
 ## Now lets produce our ICC values for our training data
 attach(all.train.data)
@@ -163,7 +167,6 @@ limit = c(.5,1), space = "Lab") +
 geom_text(aes(Var2, Var1, label = round(value, digits=2)), color = "black", size = 16) +
 theme(
 axis.title.x = element_blank(),
-axis.title.y = element_blank(),
 panel.grid.major = element_blank(),
 panel.border = element_blank(),
 panel.background = element_blank(),
@@ -188,6 +191,8 @@ labs(title='Distribution of Manual Quality Ratings', x='', y='Training') +
 geom_text(data=dataQaDfTrain,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
 theme_bw() +
 theme(legend.position="none",
+axis.title.x = element_blank(),
+axis.ticks = element_blank(),
 axis.text.x=element_text(size=30, color='white'),
 axis.text.y=element_text(size=30),
 axis.title.y=element_text(size=40, angle=90),
@@ -205,11 +210,13 @@ labs(title='', x='', y='Testing: Internal') +
 geom_text(data=dataQaDfValid,aes(x=Var1,y=Freq,label=Freq),vjust=0, size=12) +
 theme_bw() +
 theme(legend.position="none",
-axis.text.x=element_text(size=30),
+axis.text.x=element_blank(),
 axis.text.y=element_text(size=30),
 axis.title.x=element_text(size=30),
 axis.title.y=element_text(size=40, angle=90),
-plot.title=element_text(size=40)) +
+plot.title=element_text(size=40),
+axis.title.x=element_blank(), 
+axis.ticks.x=element_blank()) +
 scale_y_continuous(limits=c(0,500), breaks=round(seq(0, 500, 100), digits=2)) + scale_fill_grey()
 
 # Now do MGI data
