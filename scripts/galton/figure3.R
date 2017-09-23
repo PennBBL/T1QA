@@ -27,7 +27,7 @@ summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
       .fun = function(xx, col) {
         c(N    = length2(xx[[col]], na.rm=na.rm),
           mean = median   (xx[[col]], na.rm=na.rm),
-          sd   = IQR     (xx[[col]], na.rm=na.rm)
+          sd   = IQR     (xx[[col]], na.rm=na.rm)/2
         )
       },
       measurevar
@@ -169,7 +169,7 @@ bg3 <- ggplot(bg2.vals[which(bg2.vals$Dataset=='Validation'),], aes(x=factor(sex
 		strip.text.y = element_text(size = 16, angle = 270, face="bold"),
 		title=element_text(size=30)) +
 		geom_path(aes(x=factor(sex), y=c(maxVal-.2,maxVal-.2))) +
-		geom_path(aes(x=factor(sex)[1], y=c(maxVal-.2, maxVal-.2))) +
+		geom_path(aes(x=factor(sex)[1], y=c(maxVal-.4, maxVal-.2))) +
 		geom_path(aes(x=factor(sex)[2], y=c(maxVal-.4, maxVal-.2))) +
 		geom_text(aes(x=factor(sex)[1], y=.19), label='',angle=90, size=10) +
 		scale_y_continuous(limits=c(minVal, maxVal), 
