@@ -13,8 +13,9 @@ source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 detachAllPackages()
 set.seed(16)
 load('/home/adrose/1vs2EulerMixedModel.RData')
-oneVsTwoModel <- mOut
-rm(mOut)
+load('/home/adrose/eulerLmerMod.RData')
+oneVsTwoModel <- m1
+rm(m1)
 tbvData <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/n1601_antsCtVol.csv')
 ## Now load all of the freesurfer values
 fsVol <- read.csv('/home/adrose/qapQA/data/n1601_freesurferVol_20161220.csv')
@@ -34,7 +35,7 @@ raw.lme.data$averageRating.x <- as.numeric(as.character(raw.lme.data$averageRati
 raw.lme.data$averageRating.x[raw.lme.data$averageRating.x>1] <- 1
 #folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
 load('/home/adrose/qapQA/data/foldsToUse.RData')
-raw.lme.data[,3:33] <- scale(raw.lme.data[,3:33], center=T, scale=T)
+#raw.lme.data[,3:33] <- scale(raw.lme.data[,3:33], center=T, scale=T)
 index <- unlist(folds[1])
 trainingData <- raw.lme.data[index,]
 validationData <- raw.lme.data[-index,]
@@ -43,10 +44,10 @@ validationData <- raw.lme.data[-index,]
 trainingData$variable <- rep('ratingNULL', nrow(trainingData))
 validationData$variable <- rep('ratingNULL', nrow(validationData))
 # Now lets do our 1 vs 2 model for everyone
-trainingData$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=trainingData,
-allow.new.levels=T, type='response')
-validationData$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=validationData,
-allow.new.levels=T, type='response')
+trainingData$oneVsTwoOutcome <- trainingData$mean_euler#predict(oneVsTwoModel, newdata=trainingData,
+#allow.new.levels=T, type='response')
+validationData$oneVsTwoOutcome <- validationData$mean_euler#predict(oneVsTwoModel, newdata=validationData,
+#allow.new.levels=T, type='response')
 ## Now merge our scaled data values with the original data values
 all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 all.train.data <- merge(all.train.data, fsVals, by='bblid')
@@ -114,8 +115,7 @@ all.train.data <- mergedQAP
 all.train.data <- all.train.data[which(all.train.data$averageRating!=0),]
 all.train.data$mean_euler <- scale(all.train.data$mean_euler)
 all.train.data$variable <- rep('ratingNULL', nrow(all.train.data))
-all.train.data$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=all.train.data,
-allow.new.levels=T, type='response')
+all.train.data$oneVsTwoOutcome <- all.train.data$mean_euler#predict(oneVsTwoModel, newdata=all.train.data,allow.new.levels=T, type='response')
 all.train.data$ageAtGo1Scan <- all.train.data$age
 all.train.data$sex <- all.train.data$Gender
 fsCTVals <- pvalLoop('_thickness', all.train.data, correct=TRUE)

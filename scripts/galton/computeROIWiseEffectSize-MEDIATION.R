@@ -13,8 +13,9 @@ source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 detachAllPackages()
 set.seed(16)
 load('/home/adrose/1vs2EulerMixedModel.RData')
-oneVsTwoModel <- mOut
-rm(mOut)
+load('/home/adrose/eulerLmerMod.RData')
+oneVsTwoModel <- m1
+rm(m1)
 tbvData <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/n1601_antsCtVol.csv')
 fsVol <- read.csv('/home/adrose/qapQA/data/n1601_freesurferVol_20161220.csv')
 fsCt <- read.csv('/home/adrose/qapQA/data/n1601_freesurferCt_20161220.csv')
@@ -43,10 +44,10 @@ validationData <- raw.lme.data[-index,]
 trainingData$variable <- rep('ratingNULL', nrow(trainingData))
 validationData$variable <- rep('ratingNULL', nrow(validationData))
 # Now lets do our 1 vs 2 model for everyone
-trainingData$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=trainingData,
-allow.new.levels=T, type='response')
-validationData$oneVsTwoOutcome <- predict(oneVsTwoModel, newdata=validationData,
-allow.new.levels=T, type='response')
+trainingData$oneVsTwoOutcome <- trainingData$mean_euler#predict(oneVsTwoModel, newdata=trainingData,
+#allow.new.levels=T, type='response')
+validationData$oneVsTwoOutcome <- validationData$mean_euler#predict(oneVsTwoModel, newdata=validationData,
+#allow.new.levels=T, type='response')
 ## Now merge our scaled data values with the original data values
 all.train.data <- merge(mergedQAP, trainingData, by='bblid')
 all.train.data <- merge(all.train.data, fsVals, by='bblid')
@@ -76,7 +77,7 @@ zScoreCT <- zScoreCT[order(as.numeric(zScoreCT[,2])),]
 zScoreCT <- zScoreCT[-c(1, grep('ean', zScoreCT[,1])),]
 
 ## Now create our color values to export to ITK snap
-ctColors <- returnPosNegAndNeuColorScale(zScoreCT[,2], colorScalePos=c('blue', 'light blue'),colorScaleNeg=c('yellow', 'pink'))[-1,]
+ctColors <- returnPosNegAndNeuColorScale(zScoreCT[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'pink'))[-1,]
 ctColors[,8] <- zScoreCT[,1]
 ctColors <- cbind(ctColors, c(zScoreCT[,2]))
 ctColors[ctColors=="NaN"] <- 190

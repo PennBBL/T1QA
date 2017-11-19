@@ -92,24 +92,26 @@ i <- 1
 for(qapVal in varsOfInterest){
   valsToAppend <- summarySE(data=validationData, measurevar=qapVal, groupvars='averageRating.y', na.rm=T)
   qapValue <- rep(prettyNames[i], nrow(valsToAppend))
-  Dataset <- rep('Testing', nrow(valsToAppend))
+  Dataset <- rep('Testing: Internal', nrow(valsToAppend))
   valsToAppend <- cbind(valsToAppend, qapValue, Dataset)
   trainingValues <- rbind(trainingValues, valsToAppend)
   i <- i + 1
 }
+all.mgi.data$averageRating <- all.mgi.data$rawAverageRating
+all.mgi.data$averageRating[all.mgi.data$averageRating < 1] <- 0.00
 i <- 1
 for(qapVal in varsOfInterest){
     all.mgi.data[qapVal] <- scale(unlist(all.mgi.data[qapVal]), center=T, scale=T)
     valsToAppend <- summarySE(data=all.mgi.data, measurevar=qapVal, groupvars='averageRating')
     qapValue <- rep(prettyNames[i], nrow(valsToAppend))
-    Dataset <- rep('Validation', nrow(valsToAppend))
+    Dataset <- rep('Testing: External', nrow(valsToAppend))
     valsToAppend <- cbind(valsToAppend, qapValue, Dataset)
     colnames(valsToAppend)[1] <- 'averageRating.y'
     trainingValues <- rbind(trainingValues, valsToAppend)
     i <- i + 1
 }
 trainingValues$averageRating.y[which(trainingValues$averageRating.y==1.670)] <- 1.667
-
+trainingValues$averageRating.y[which(trainingValues$averageRating.y==1.330)] <- 1.333
 # Now produce all of our partial corellations 
 corVals <- NULL
 i <- 1
@@ -133,7 +135,7 @@ for(qapVal in varsOfInterest){
   corVal <- cor(residAverageRating, residQuant, method='spearman')
   corPVal <- cor.test(residAverageRating, residQuant, method='spearman')$p.value
   qapValue <- prettyNames[i]
-  Dataset <- 'Testing'
+  Dataset <- 'Testing: Internal'
   valsToAppend <- cbind(corVal, qapValue, Dataset, corPVal)
   corVals <- rbind(corVals, valsToAppend)
   i <- i + 1
@@ -146,7 +148,7 @@ for(qapVal in varsOfInterest){
     corVal <- cor(residAverageRating, residQuant, method='spearman')
     corPVal <- cor.test(residAverageRating, residQuant, method='spearman')$p.value
     qapValue <- prettyNames[i]
-    Dataset <- 'Validation'
+    Dataset <- 'Testing: External'
     valsToAppend <- cbind(corVal, qapValue, Dataset, corPVal)
     corVals <- rbind(corVals, valsToAppend)
     i <- i + 1
@@ -158,6 +160,7 @@ for(qapVal in varsOfInterest){
 corVals <- corVals[order(as.numeric(corVals[,1])),]
 corVals <- as.data.frame(corVals)
 corVals$qapValue <- factor(corVals$qapValue, levels=unique(as.character(corVals$qapValue)))
+corVals$Dataset <- factor(corVals$Datase, levels=c('Training', 'Testing: Internal', 'Testing: External'))
 corPlot <- ggplot(corVals, 
                  aes(x=factor(qapValue), y=as.numeric(as.character(corVal)), fill=factor(Dataset))) + 
                  geom_bar(stat='identity', position=position_dodge(), size=.1) + 
@@ -188,7 +191,8 @@ allPlot <- ggplot(trainingValues,
         	 axis.ticks.x=element_blank(),
                  axis.title=element_text(size=30,face="bold"),
                  strip.text.y = element_text(size = 16, angle = 270, face="bold"),
-                 strip.text.x = element_text(size = 16, angle = 90, face="bold"))
+                 strip.text.x = element_text(size = 16, angle = 90, face="bold"),
+                 panel.margin = unit(2, "lines")) + scale_fill_grey()
 
 
 foo <- ggplot(trainingValues, 
@@ -205,7 +209,7 @@ foo <- ggplot(trainingValues,
         	 axis.ticks.x=element_blank(),
                  axis.title=element_text(size=30,face="bold"),
                  strip.text.y = element_text(size = 16, angle = 270, face="bold"),
-                 strip.text.x = element_text(size = 16, angle = 90, face="bold"))
+                 strip.text.x = element_text(size = 16, angle = 90, face="bold")) + scale_fill_grey()
 
 png('figure4-qapMetricsVsQCQAPPaper.png', height=12, width=20, units='in', res=300)
 #multiplot(allPlot, corPlot, cols=2)
