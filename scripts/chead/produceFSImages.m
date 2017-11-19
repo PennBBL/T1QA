@@ -1,4 +1,4 @@
-function createImages(inputColorTable)
+function [ tmp_cmp ] = createImages(inputColorTable, colorMap)
 
 %GLCONSENSUS Consensus community detection using the Louvain-like
 % modularity-maximisation procedure, as implemented in genlouvain.m
@@ -70,16 +70,23 @@ if (valueToCheck > 0)
 end
 % Now remove the green from the color map
 newMapLength=loopLength-max(indx);
-subtmpcolmap=autumn(newMapLength);
+subtmpcolmap=autumn(newMapLength+30);
+subtmpcolmap=subtmpcolmap(1:newMapLength,:);
 tmp_cmp(max(indx)+1:end,:)=subtmpcolmap;
 % Now check to see if we did not have any gray images 
 % If we didn't export jet as the color table 
 if (valueToCheck == 0)
   % Find the positive values and create a red-yellow heat map for those
   indx=find(str2double(vals(:,9))<0);
-  tmp_cmp(0:max(indx),:)=cool(max(indx));
+  standIn=blueMap(max(indx)*2);
+  standIn=standIn(6:max(indx)+5,:)
+  tmp_cmp(1:max(indx),:)=standIn;
   indx2=find(str2double(vals(:,9))>0);
-  tmp_cmp(max(tmp_cmp):max(indx2),:)=hot(max(indx2))
+  lengthValue=size(max(indx)+1 : max(indx2));
+  lengthValue=lengthValue(2);
+  standOut=autumn(lengthValue)
+  standOut=standOut(1:lengthValue,:)
+  tmp_cmp(max(indx)+1:max(indx2),:)=standOut
 end
 
 % Now plot the surfaces
@@ -88,7 +95,10 @@ set(hFig,'edgecolor','none');
 axis image;
 material dull
 axis off
-colormap(flipud(tmp_cmp));
+if exist('colorMap', 'var')
+  tmp_cmp = colorMap
+end
+colormap(tmp_cmp);
 view(-90,0)
 camlight headlight
 saveas(hFig, 'rhLateral.png')
@@ -100,7 +110,7 @@ set(hFig,'edgecolor','none');
 axis image;
 material dull
 axis off
-colormap(flipud(tmp_cmp));
+colormap(tmp_cmp);
 view(-280,0)
 camlight headlight
 saveas(hFig, 'rhMedial.png')
@@ -146,7 +156,7 @@ set(hFig,'edgecolor','none');
 axis image;
 material dull
 axis off
-colormap(flipud(tmp_cmp));
+colormap(tmp_cmp);
 view(-90,0)
 camlight headlight
 saveas(hFig, 'lhLateral.png')
@@ -158,7 +168,7 @@ set(hFig,'edgecolor','none');
 axis image;
 material dull
 axis off
-colormap(flipud(tmp_cmp));
+colormap(tmp_cmp);
 view(-280,0)
 camlight headlight
 saveas(hFig, 'lhMedial.png')
