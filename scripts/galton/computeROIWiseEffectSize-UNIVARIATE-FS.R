@@ -12,10 +12,6 @@
 source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 detachAllPackages()
 set.seed(16)
-load('/home/adrose/1vs2EulerMixedModel.RData')
-load('/home/adrose/eulerLmerMod.RData')
-oneVsTwoModel <- m1
-rm(m1)
 tbvData <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/n1601_antsCtVol.csv')
 ## Now load all of the freesurfer values
 fsVol <- read.csv('/home/adrose/qapQA/data/n1601_freesurferVol_20161220.csv')
@@ -62,6 +58,7 @@ all.valid.data <- all.valid.data[which(all.valid.data$averageRating!=0),]
 tmp <- all.train.data[,-seq(2862, 2997)[1:38]]
 fsCTVals <- pvalLoop('_thickness', tmp, correct=TRUE)
 fsCTVals <- fsCTVals[-grep('ean', fsCTVals[,1]),]
+write.csv(fsCTVals, 'ctZScoreTrain.csv')
 rm(tmp)
 # Now trim the non cortical regions for our JLF vol regions
 tmp <- all.train.data
@@ -90,6 +87,7 @@ all.train.data <- all.valid.data
 tmp <- all.train.data[,-seq(2862, 2997)[1:38]]
 fsCTVals <- pvalLoop('_thickness', tmp, correct=TRUE)
 fsCTVals <- fsCTVals[-grep('ean', fsCTVals[,1]),]
+write.csv(fsCTVals, 'ctZScoreTest.csv')
 rm(tmp)
 # Now trim the non cortical regions for our JLF vol regions
 tmp <- all.train.data
