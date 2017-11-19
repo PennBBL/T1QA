@@ -12,10 +12,10 @@
 source('/home/adrose/T1QA/scripts/galton/loadGo1Data.R')
 detachAllPackages()
 set.seed(16)
-load('/home/adrose/1vs2EulerMixedModel.RData')
-load('/home/adrose/eulerLmerMod.RData')
-oneVsTwoModel <- m1
-rm(m1)
+#load('/home/adrose/1vs2EulerMixedModel.RData')
+#load('/home/adrose/eulerLmerMod.RData')
+#oneVsTwoModel <- m1
+#rm(m1)
 tbvData <- read.csv('/home/adrose/dataPrepForHiLoPaper/data/preRaw/t1/n1601_antsCtVol.csv')
 fsVol <- read.csv('/home/adrose/qapQA/data/n1601_freesurferVol_20161220.csv')
 fsCt <- read.csv('/home/adrose/qapQA/data/n1601_freesurferCt_20161220.csv')
@@ -70,14 +70,15 @@ for(i in vals){
     zScoreCT <- rbind(zScoreCT, toAppend)
     binVals <- rbind(binVals, toAppend2)
 }
-binValsApply <- rep(0, length(vals))
-binValsApply[which(p.adjust(binVals[,2], method='fdr')<.05)] <- 1
+binValsApply <- rep(1, length(vals))
+#binValsApply[which(p.adjust(binVals[,2], method='fdr')<.05)] <- 1
 zScoreCT[,2] <- as.numeric(zScoreCT[,2]) * binValsApply
 zScoreCT <- zScoreCT[order(as.numeric(zScoreCT[,2])),]
 zScoreCT <- zScoreCT[-c(1, grep('ean', zScoreCT[,1])),]
 
 ## Now create our color values to export to ITK snap
 ctColors <- returnPosNegAndNeuColorScale(zScoreCT[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'pink'))[-1,]
+ctColors <- returnPosNegAndNeuColorScaleNoThresh(zScoreCT[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'pink'))[-1,]
 ctColors[,8] <- zScoreCT[,1]
 ctColors <- cbind(ctColors, c(zScoreCT[,2]))
 ctColors[ctColors=="NaN"] <- 190
@@ -98,14 +99,15 @@ for(i in vals){
     zScoreCT <- rbind(zScoreCT, toAppend)
     binVals <- rbind(binVals, toAppend2)
 }
-binValsApply <- rep(0, length(vals))
-binValsApply[which(p.adjust(binVals[,2], method='fdr')<.05)] <- 1
+binValsApply <- rep(1, length(vals))
+#binValsApply[which(p.adjust(binVals[,2], method='fdr')<.05)] <- 1
 zScoreCT[,2] <- as.numeric(zScoreCT[,2]) * binValsApply
 zScoreCT <- zScoreCT[order(as.numeric(zScoreCT[,2])),]
 zScoreCT <- zScoreCT[-c(1, grep('ean', zScoreCT[,1])),]
 
 ## Now create our color values to export to ITK snap
 ctColors <- returnPosNegAndNeuColorScale(zScoreCT[,2], colorScalePos=c('blue', 'light blue'),colorScaleNeg=c('yellow', 'pink'))[-1,]
+ctColors <- returnPosNegAndNeuColorScaleNoThresh(zScoreCT[,2], colorScalePos=c('blue', 'light blue'),colorScaleNeg=c('yellow', 'pink'))[-1,]
 ctColors[,8] <- zScoreCT[,1]
 ctColors <- cbind(ctColors, zScoreCT[,2])
 ctColors[ctColors=="NaN"] <- 190

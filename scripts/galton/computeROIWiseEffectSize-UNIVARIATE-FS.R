@@ -72,6 +72,7 @@ rm(tmp)
 
 ## Now create our color values to export to ITK snap
 ctColors <- returnPosNegAndNeuColorScale(fsCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))[-1,]
+ctColors <- returnPosNegAndNeuColorScaleNoThresh(fsCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))[-1,]
 ctColors[,8] <- fsCTVals[,1]
 ctColors <- cbind(ctColors, fsCTVals[,2])
 volColors <- returnPosNegAndNeuColorScale(fsVOLVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))[-1,]
@@ -99,6 +100,7 @@ rm(tmp)
 
 ## Now create our color values to export to ITK snap
 ctColors <- returnPosNegAndNeuColorScale(fsCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))[-1,]
+ctColors <- returnPosNegAndNeuColorScaleNoThresh(fsCTVals[,2], colorScaleNeg=c('blue', 'light blue'),colorScalePos=c('yellow', 'red'))[-1,]
 ctColors[,8] <- fsCTVals[,1]
 ctColors <- cbind(ctColors, fsCTVals[,2])
 volColors <- returnPosNegAndNeuColorScale(fsVOLVals[,2], colorScaleNeg=c('blue', 'light blue'), colorScalePos=c('yellow', 'red'))[-1,]
