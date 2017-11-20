@@ -52,6 +52,23 @@ all.train.data <- merge(all.train.data, fsVals, by='bblid')
 all.valid.data <- merge(mergedQAP, validationData, by='bblid')
 all.valid.data <- merge(all.valid.data, fsVals, by='bblid')
 
+# FIrst I need to produce tables for flagged images for the train and test data set
+all.train.data$fsFlag[which(all.train.data$fsReviewExclude!='NA')] <- 1
+nCol <- table(all.train.data$averageManualRating)
+flagColumn <- table(all.train.data$fsFlag, all.train.data$averageManualRating)
+rmColumn <- table(all.train.data$fsReviewExclude, all.train.data$averageManualRating)
+outputCol <- rbind(nCol, flagColumn, rmColumn)
+rownames(outputCol) <- c('n', 'NotFlagged', 'Flagged', 'Include', 'Exclude')
+write.csv(outputCol, 'trainFlagStatus.csv', quote=F)
+# Now do the valid data set 
+all.valid.data$fsFlag[which(all.valid.data$fsReviewExclude!='NA')] <- 1
+nCol <- table(all.valid.data$averageManualRating)
+flagColumn <- table(all.valid.data$fsFlag, all.valid.data$averageManualRating)
+rmColumn <- table(all.valid.data$fsReviewExclude, all.valid.data$averageManualRating)
+outputCol <- rbind(nCol, flagColumn, rmColumn)
+rownames(outputCol) <- c('n', 'NotFlagged', 'Flagged', 'Include', 'Exclude')
+write.csv(outputCol, 'testFlagStatus.csv', quote=F)
+
 # Remove 0 scans 
 all.train.data <- all.train.data[which(all.train.data$averageRating!=0),]
 all.valid.data <- all.valid.data[which(all.valid.data$averageRating!=0),]
