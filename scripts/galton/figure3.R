@@ -47,6 +47,21 @@ summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
     return(datac)
 }
 
+range01 <- function(x){
+        # Now make sure we have some standard deviation
+        # If no standard deviation return 1
+        if( is.na(sd(x)) == 'TRUE'){
+            output <- rep(1, length(x))
+            return(output)
+        }
+        else if (sd(x) < 0 ){
+            output <- rep(1, length(x))
+            return(output)
+        }
+        else
+        (x-min(x))/diff(range(x))
+}
+
 # load library(s)
 install_load('caret', 'ggplot2', 'lme4', 'car', 'visreg', 'scales', 'MASS')
 
@@ -59,23 +74,27 @@ all.mgi.data <- all.mgi.data[complete.cases(all.mgi.data$mean_euler),]
 #folds <- createFolds(raw.lme.data$averageRating.x, k=3, list=T, returnTrain=T)
 load('/home/adrose/qapQA/data/foldsToUse.RData')
 index <- unlist(folds[1])
-trainingData <- raw.lme.data[index,]
-validationData <- raw.lme.data[-index,] 
+
+# Now produce the sex and age regressed values for the raw.lme.data
+manualQAData$age <- (manualQAData$ageAtGo1Scan / 12)
+raw.lme.data <- merge(raw.lme.data, manualQAData)
+raw.lme.data$averageRatingAR <- range01(residuals(lm(rawAverageRating ~ ageAtGo1Scan, data = raw.lme.data)))
+raw.lme.data$averageRatingSR <- range01(residuals(lm(rawAverageRating ~ sex, data = raw.lme.data)))
+
+all.train.data <- raw.lme.data[index,]
+all.valid.data <- raw.lme.data[-index,] 
 manualQAData$age <- (manualQAData$ageAtGo1Scan / 12)
 
-# Now prep our individual data sets
-all.train.data <- merge(trainingData, manualQAData, by='bblid')
-all.valid.data <- merge(validationData, manualQAData, by='bblid')
 
 # Now age reg the ratings
-all.train.data$averageRatingAR <- scale(residuals(lm(averageRating ~ ageAtGo1Scan, data = all.train.data)))
-all.valid.data$averageRatingAR <- scale(residuals(lm(averageRating ~ ageAtGo1Scan, data = all.valid.data)))
+#all.train.data$averageRatingAR <- scale(residuals(lm(averageRating ~ ageAtGo1Scan, data = all.train.data)))
+#all.valid.data$averageRatingAR <- scale(residuals(lm(averageRating ~ ageAtGo1Scan, data = all.valid.data)))
 all.mgi.data$averageRatingAR <- scale(residuals(lm(averageRating ~ age, data = all.mgi.data)))
 
 # Now sex reg the ratings
-all.train.data$averageRatingSR <- residuals(lm(averageRating ~ sex, data = all.train.data))
-all.valid.data$averageRatingSR <- residuals(lm(averageRating ~ sex, data = all.valid.data))
-all.mgi.data$averageRatingSR <- residuals(lm(averageRating ~ Gender, data = all.mgi.data))
+#all.train.data$averageRatingSR <- residuals(lm(averageRating ~ sex, data = all.train.data))
+#all.valid.data$averageRatingSR <- residuals(lm(averageRating ~ sex, data = all.valid.data))
+all.mgi.data$averageRatingSR <- range01(residuals(lm(averageRating ~ Gender, data = all.mgi.data)))
 
 # Now age reg 
 all.train.data$ageSR <- residuals(lm(age ~ sex, data=all.train.data))
@@ -181,25 +200,27 @@ corVal <- cor(all.train.data$averageRatingSR, all.train.data$ageSR, method='spea
 corSig <- cor.test(all.train.data$averageRatingSR, all.train.data$ageSR, method='spearman')$p.value
 corText1 <- expression(~rho == .14)
 corText2 <- paste("p < 0.001")
-mod1 <- ggplot(all.train.data, aes(y=scale(averageRatingSR), x=age)) +
+mod1 <- ggplot(all.train.data, aes(y=averageRatingSR, x=age)) +
    geom_smooth(method=lm, color='black') +
+        geom_point() +
    theme_bw() +
-   coord_cartesian(xlim=c(8,22), ylim=c(-.4,.6)) +
-   labs(title='', y='Manual Quality Rating (z-score)', x='Age (years)') +
+   coord_cartesian(xlim=c(8,22), ylim=c(0,1)) +
+   labs(title='', y='Manual Quality Rating (Scaled 0-1)', x='Age (years)') +
    theme(
     axis.text=element_text(size=20),
     axis.title=element_text(size=30)) +
-   scale_y_continuous(breaks=c(-.4,-.2,0,.2,.4,.6)) +
+   scale_y_continuous(breaks=c(0,.25,.50,.75,1)) +
    annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=c(as.character(corText2), as.character(corText1)), hjust=c(1, 1), vjust=c(-.5, -2.5), size=8, parse=T)
 
 corVal <- cor(all.valid.data$averageRatingSR, all.valid.data$age, method='spearman')
 corSig <- cor.test(all.valid.data$averageRatingSR, all.valid.data$age, method='spearman')$p.value
 corText1 <- expression(~rho == paste(0.12))
 corText2 <- paste("p < 0.01")
-mod2 <- ggplot(all.valid.data, aes(y=scale(averageRatingSR), x=age)) +
+mod2 <- ggplot(all.valid.data, aes(y=averageRatingSR, x=age)) +
    geom_smooth(method=lm, color='black') +
+   geom_point() +
    theme_bw() +
-   coord_cartesian(xlim=c(8,22), ylim=c(-.4,.6)) +
+   coord_cartesian(xlim=c(8,22), ylim=c(0,1)) +
    labs(title='', y='Mean Manual Quality Rating', x='Age (years)') +
    theme(
     axis.text=element_text(size=20),
@@ -214,10 +235,11 @@ corVal <- cor(all.mgi.data$averageRatingSR, all.mgi.data$age, method='spearman')
 corSig <- cor.test(all.mgi.data$averageRatingSR, all.mgi.data$age, method='spearman')$p.value
 corText1 <-expression(~rho == paste(-0.15))
 corText2 <- paste("p < 0.05")
-mod3 <- ggplot(all.mgi.data, aes(y=scale(averageRatingSR), x=age)) +
+mod3 <- ggplot(all.mgi.data, aes(y=range01(averageRatingSR), x=age)) +
 	geom_smooth(method=lm, color='black') +
+        geom_point() +
 	theme_bw() +
-	coord_cartesian(xlim=c(20,80), ylim=c(-.4,.6)) +
+	coord_cartesian(xlim=c(20,80), ylim=c(0,1)) +
 	labs(title='', y='Manual Quality Rating (mean value)', x='Age (years)') +
 	theme(
 	axis.text=element_text(size=20),
@@ -230,13 +252,14 @@ mod3 <- ggplot(all.mgi.data, aes(y=scale(averageRatingSR), x=age)) +
 	annotate("text", x=c(Inf, Inf), y=c(-Inf, -Inf), label=c(as.character(corText2), as.character(corText1)), hjust=c(1, 1), vjust=c(-.5, -2.5), size=8, parse=T)
 
 
-png('figure3-demographicsvsRatingQAPPaper.png', width=24, height=16, units='in', res=300)
-multiplot(bg1, mod1, bg2, mod2, bg3, mod3, cols=3)
+png('figure3-demographicsvsRatingQAPPaper.png', width=24, height=8, units='in', res=300)
+#multiplot(bg1, mod1, bg2, mod2, bg3, mod3, cols=3)
+multiplot(mod1, mod2, mod3, cols=3)
 dev.off()
 
 # Now look at beta weights in these demographics in lm's
 # Now build a lm model in the training data 
-m1 <- lm(rawAverageRating.y ~ age + sex, data = all.train.data)
+m1 <- lm(rawAverageRating ~ age + sex, data = all.train.data)
 sigValsTrain <- summary(m1)
 
 # Now do the same for the testing data
