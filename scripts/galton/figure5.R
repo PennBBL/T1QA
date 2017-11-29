@@ -148,8 +148,10 @@ aucValsAll <- cbind(aucVals, rep('Training', 27))
 # Now create our data frame to plot
 aucVals <- as.data.frame(aucValsAll)
 aucVals$trainAUC <- as.numeric(as.character(aucVals$trainAUC))
-levels(aucVals$V2) <- c('Training', 'Testing: Internal', 'Testing: External')
-levels(aucVals$V4) <- c('Training', 'Testing: Internal', 'Testing: External')
+#levels(aucVals$V2) <- c('Training', 'Testing: Internal', 'Testing: External')
+#levels(aucVals$V4) <- c('Training', 'Testing: Internal', 'Testing: External')
+aucVals$V2 <- factor(aucVals$V2, levels=c('Training', 'Testing: Internal', 'Testing: External'))
+aucVals$V4 <- factor(aucVals$V4, levels=c('Training', 'Testing: Internal', 'Testing: External'))
 aucVals$BG <- 0
 aucVals$BG[which(aucVals$V2==aucVals$V4)] <- 1
 aucVals$prettyQap <- rep(rep(c('QI1', 'EFC', 'WM Skewness', 'SNR', 'CNR', 'FBER', 'BG Skewness', 'BG Kurtosis', 'Mean Euler'), each=3), 1)
